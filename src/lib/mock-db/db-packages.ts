@@ -1,0 +1,183 @@
+import { gt, roundCm, roundKg } from '@/domain/geometry'
+import { HANDLING_CLASSES } from '@/domain/models'
+import type { Role } from '@/types/user'
+import { nextId, optionalText, put, type DbContext } from './db-context'
+import type { Review1Db } from './db-api-review1'
+import { MockDbError } from './errors'
+import { canTransitionPackage, type Package, type PackageChanges, type PackageFlag, type PackageHistoryEntry, type PackageInput, type PackageSource, type PackageStatus } from './package-model'
+import { normalizeQrToken } from './qr-token'
+
+type PackageMethods = Pick<
+  Review1Db,
+  | 'listPackages' | 'getPackage' | 'findPackageByQr' | 'lookupPackages' | 'createPackage' | 'createPackages' | 'updatePackage'
+  | 'updatePackageStatus' | 'flagPackage' | 'clearPackageFlag' | 'reportPackageFound'
+>
+
+/** Giới hạn một lần tạo (một file nhập). */
+export const MAX_PACKAGES_PER_CREATE = 1000
+
+const SIZE_FIELDS = ['lengthCm', 'widthCm', 'heightCm', 'weightKg'] as const
+
+/** Trường của kiện đã làm tròn tại biên (D-03); trường sai: `PACKAGE_INVALID` kèm tên trường đầu tiên sai. */
+function packageFields(input: PackageInput): Omit<PackageInput, 'packageCode' | 'packageTypeId'> {
+  for (const field of SIZE_FIELDS) {
+    if (!Number.isFinite(input[field]) || !gt(input[field], 0)) throw new MockDbError('PACKAGE_INVALID', { field })
+  }
+  if (!HANDLING_CLASSES.includes(input.handlingClass)) throw new MockDbError('PACKAGE_INVALID', { field: 'handlingClass' })
+  const destination = input.destination.trim()
+  if (destination === '') throw new MockDbError('PACKAGE_INVALID', { field: 'destination' })
+  return {
+    lengthCm: roundCm(input.lengthCm),
+    widthCm: roundCm(input.widthCm),
+    heightCm: roundCm(input.heightCm),
+    weightKg: roundKg(input.weightKg),
+    handlingClass: input.handlingClass,
+    destination,
+  }
+}
+
+/**
+ * Chuyển trạng thái một kiện theo bảng `PACKAGE_TRANSITIONS` — nơi **duy nhất** trong kho đổi `status`. Sai bảng:
+ * `INVALID_PACKAGE_STATUS_TRANSITION`. `patch` ghi cùng lúc (chuyến, điểm giao, cờ); về `IMPORTED` thì kiện rời chuyến. Mỗi lần chuyển
+ * thêm một mốc vào `history` (kèm chuyến lúc đó); cờ mới trong `patch` thêm mốc `flagged`.
+ */
+export function movePackage(ctx: DbContext, pkg: Package, to: PackageStatus, patch: Partial<Package> = {}): Package {
+  if (!canTransitionPackage(pkg.status, to)) throw new MockDbError('INVALID_PACKAGE_STATUS_TRANSITION', { packageId: pkg.id, from: pkg.status, to })
+  const at = ctx.nowIso()
+  const actorId = ctx.state.session.userId
+  const tripId = patch.tripId ?? pkg.tripId
+  const history: PackageHistoryEntry[] = [
+    ...pkg.history,
+    { at, actorId, kind: 'status', from: pkg.status, to, ...(tripId === undefined ? {} : { tripId }) },
+    ...(patch.flags ?? []).filter((flag) => !pkg.flags.includes(flag)).map((flag): PackageHistoryEntry => ({ at, actorId, kind: 'flagged', flag })),
+  ]
+  const next: Package = { ...pkg, ...patch, status: to, history }
+  if (to === 'IMPORTED') {
+    delete next.tripId
+    delete next.stopId
+  }
+  return put(ctx.state.packages, next)
+}
+
+/**
+ * Kho kiện (FE-3b-01): tạo một / nhiều kiện, sửa, chuyển trạng thái, gắn và gỡ cờ, tra cứu theo mã (FE-3b-06). Kiện thuộc công ty của
+ * người tạo và chỉ công ty đó đọc được, kể cả khi tra bằng mã QR hay mã của bên gửi (D-64); loại kiện của kiện phải cùng công ty. Mã QR
+ * cấp một lần lúc tạo.
+ */
+export function packageMethods(ctx: DbContext): PackageMethods {
+  const { state } = ctx
+  const { packages } = state
+  const scope = ctx.scope.packages
+
+  function create(rows: readonly PackageInput[], source: PackageSource): Package[] {
+    const companyId = ctx.scope.newRecordCompany()
+    if (rows.length === 0) throw new MockDbError('PACKAGES_REQUIRED', {})
+    if (rows.length > MAX_PACKAGES_PER_CREATE) throw new MockDbError('QUANTITY_INVALID', { min: 1, max: MAX_PACKAGES_PER_CREATE })
+    // Kiểm hết trước khi ghi: một dòng sai thì không dòng nào được ghi
+    const checked = rows.map((row) => {
+      if (row.packageTypeId !== undefined) ctx.scope.packageTypes.ref(row.packageTypeId, companyId)
+      return { fields: packageFields(row), packageCode: optionalText(row.packageCode), packageTypeId: row.packageTypeId }
+    })
+    const at = ctx.nowIso()
+    const created = checked.map(({ fields, packageCode, packageTypeId }) => {
+      const id = nextId('PK', packages.keys(), 4)
+      return put(packages, {
+        id, companyId, packageCode: packageCode ?? id, qrToken: ctx.newQrToken(), ...fields,
+        ...(packageTypeId === undefined ? {} : { packageTypeId }),
+        status: 'IMPORTED', flags: [], source, createdAt: at, createdBy: state.session.userId,
+        history: [{ at, actorId: state.session.userId, kind: 'created', source }],
+      })
+    })
+    const types = [...new Set(checked.flatMap((row) => row.packageTypeId ?? []))]
+    // Nhập file là một sự kiện riêng (`PACKAGE_IMPORT_CONFIRMED` của backend); thêm lẻ, thêm trong chuyến là `package.created`
+    ctx.log(source === 'IMPORT' ? 'package.importConfirmed' : 'package.created', { type: 'package', id: created[0]?.id ?? '' }, {
+      count: created.length,
+      ...(types.length > 0 ? { packageTypeId: types.join(',') } : {}),
+      ...(created.length > 1 ? { lastPackageId: created.at(-1)?.id ?? '' } : {}),
+    })
+    return created
+  }
+
+  const mark = (kind: 'flagged' | 'flagCleared', flag: PackageFlag): PackageHistoryEntry => ({ at: ctx.nowIso(), actorId: state.session.userId, kind, flag })
+
+  /**
+   * Gỡ cờ là việc của điều phối viên; nhân viên kho chỉ gỡ cờ "Không tìm thấy" bằng cách quét thấy lại kiện (D-92). Kho không có phiên
+   * (test logic kho) thì không xét vai trò.
+   */
+  function assertRole(role: Role) {
+    const user = state.session.userId === null ? undefined : state.users.get(state.session.userId)
+    if (user !== undefined && user.role !== role) throw new MockDbError('ROLE_NOT_ALLOWED', { role: user.role })
+  }
+
+  /** Kiện của công ty khớp mã QR; mã của kiện công ty khác cũng là "không khớp kiện nào": không lộ là mã đó có thật. */
+  function byQr(token: string): Package {
+    const wanted = normalizeQrToken(token)
+    const pkg = scope.list().find((item) => item.qrToken === wanted)
+    if (!pkg) throw new MockDbError('QR_UNKNOWN', { token: wanted })
+    return pkg
+  }
+
+  function clearFlag(current: Package, flag: PackageFlag): Package {
+    return put(packages, { ...current, flags: current.flags.filter((item) => item !== flag), history: [...current.history, mark('flagCleared', flag)] })
+  }
+
+  return {
+    listPackages: () => ctx.respond(() => scope.list()),
+    getPackage: (id) => ctx.respond(() => scope.read(id)),
+    findPackageByQr: (token) => ctx.respond(() => byQr(token)),
+    lookupPackages: (code) =>
+      ctx.respond(() => {
+        const token = normalizeQrToken(code)
+        const text = code.trim().toLowerCase()
+        const found = text === '' ? [] : scope.list().filter((pkg) => pkg.qrToken === token || pkg.packageCode.toLowerCase() === text || pkg.id.toLowerCase() === text)
+        if (found.length === 0) throw new MockDbError('QR_UNKNOWN', { token })
+        return found.toReversed()
+      }),
+    createPackage: (input) => ctx.respond(() => create([input], 'MANUAL')[0] as Package),
+    createPackages: (rows, source = 'MANUAL') => ctx.respond(() => create(rows, source)),
+    updatePackage: (id, changes: PackageChanges) =>
+      ctx.respond(() => {
+        const current = scope.own(id)
+        if (current.status !== 'IMPORTED') throw new MockDbError('PACKAGE_UNAVAILABLE', { packageId: id, status: current.status })
+        const { packageTypeId: currentType, ...rest } = current
+        const { packageTypeId: requestedType, ...fieldChanges } = changes
+        const packageTypeId = requestedType === undefined ? currentType : (requestedType ?? undefined)
+        if (packageTypeId !== undefined) ctx.scope.packageTypes.ref(packageTypeId, current.companyId)
+        const fields = packageFields({ ...rest, ...fieldChanges })
+        const packageCode = changes.packageCode === undefined ? current.packageCode : (optionalText(changes.packageCode) ?? id)
+        ctx.log('package.updated', { type: 'package', id }, { packageCode })
+        return put(packages, { ...rest, ...fields, packageCode, ...(packageTypeId === undefined ? {} : { packageTypeId }) })
+      }),
+    updatePackageStatus: (id, status) =>
+      ctx.respond(() => {
+        const current = scope.own(id)
+        const next = movePackage(ctx, current, status)
+        ctx.log('package.statusChanged', { type: 'package', id }, { before: current.status, after: status })
+        return next
+      }),
+    flagPackage: (id, flag: PackageFlag) =>
+      ctx.respond(() => {
+        const current = scope.own(id)
+        if (current.status !== 'IMPORTED') throw new MockDbError('PACKAGE_UNAVAILABLE', { packageId: id, status: current.status })
+        if (current.flags.includes(flag)) return current
+        ctx.log('package.flagged', { type: 'package', id }, { flag })
+        return put(packages, { ...current, flags: [...current.flags, flag], history: [...current.history, mark('flagged', flag)] })
+      }),
+    clearPackageFlag: (id, flag: PackageFlag) =>
+      ctx.respond(() => {
+        const current = scope.own(id)
+        assertRole('dispatcher')
+        if (!current.flags.includes(flag)) throw new MockDbError('PACKAGE_FLAG_NOT_SET', { packageId: id, flag })
+        ctx.log('package.flagCleared', { type: 'package', id }, { flag })
+        return clearFlag(current, flag)
+      }),
+    reportPackageFound: (token) =>
+      ctx.respond(() => {
+        const current = byQr(token)
+        assertRole('warehouse')
+        if (!current.flags.includes('NOT_FOUND')) throw new MockDbError('PACKAGE_FLAG_NOT_SET', { packageId: current.id, flag: 'NOT_FOUND' })
+        ctx.log('package.found', { type: 'package', id: current.id }, { flag: 'NOT_FOUND', packageCode: current.packageCode })
+        return clearFlag(current, 'NOT_FOUND')
+      }),
+  }
+}

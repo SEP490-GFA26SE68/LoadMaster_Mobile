@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main, developer, 'feat/**', 'fix/**']
+  pull_request:
+    branches: [main, developer]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # File chép từ bản web không được sửa ở đây (AGENTS mục 4)
+      - run: pnpm sync:web:verify
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      # Đóng gói JS cho Android: bắt lỗi mà kiểm kiểu và Jest không thấy (import không đóng gói được, cú pháp Hermes không hiểu)
+      - run: pnpm exec expo export --platform android --output-dir dist

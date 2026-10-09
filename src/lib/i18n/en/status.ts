@@ -1,0 +1,22 @@
+import type { Dictionary } from '../types'
+import type { status as source } from '../vi/status'
+
+export const status = {
+  DRAFT: 'Draft',
+  PLANNED: 'Planned',
+  LOADING: 'Loading',
+  IN_TRANSIT: 'In transit',
+  DELIVERED: 'Delivered',
+  CANCELLED: 'Cancelled',
+  sub: {
+    awaitingApproval: 'Awaiting approval',
+    approved: 'Approved',
+    stale: 'Stale — optimize again',
+    staging: 'Staging {recorded} / {total}',
+    shortage: 'Package missing — dispatcher to decide',
+    loading: 'Loading {recorded} / {total}',
+    loaded: 'Loaded — ready to depart',
+    manualPending: 'Manual confirmations to approve ({count})',
+    lateStops: 'Stops expected late',
+  },
+} satisfies Dictionary<typeof source>

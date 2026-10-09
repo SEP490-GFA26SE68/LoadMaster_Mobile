@@ -1,0 +1,63 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+example
+
+# generated native folders
+/ios
+/android
+
+# tài liệu nội bộ: PRD, issue, nhật ký, ảnh chụp — chỉ lưu trên máy (AGENTS.md mục 10)
+/docs/
+
+# biến môi trường: chỉ .env.example được commit
+.env
+.env.*
+!.env.example
+
+# kết quả test
+/coverage/
+
+# cấu hình cá nhân của công cụ soạn thảo
+.claude/
+.vscode/*
+!.vscode/extensions.json
+.idea
+
+# bản xem thử trên trình duyệt
+/dist-web/
