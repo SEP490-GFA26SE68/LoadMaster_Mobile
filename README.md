@@ -14,7 +14,7 @@ Bản nền (09/10/2026):
 - Tài xế: danh sách "Chuyến của tôi" (chỉ đọc).
 - Dữ liệu: **kho mẫu trong máy**, cùng logic và seed với bản web. App chưa nối backend; lớp dữ liệu đã tách sẵn để nối từng
   chức năng một.
-- Chưa chạy trên thiết bị thật: mới kiểm bằng test, đóng gói Android và bản xem thử trên trình duyệt.
+- Đã build file APK và chạy trên máy ảo Android 16 (đăng nhập, chuyến của tài xế, tài khoản). Chưa chạy trên điện thoại thật và iOS.
 
 Kiểm thử: 31 test (Jest), lint và kiểm kiểu sạch, `expo-doctor` 21 / 21.
 
@@ -24,12 +24,14 @@ Cần Node 22 và pnpm 11.
 
 ```bash
 pnpm install
-pnpm start        # quét mã QR bằng Expo Go trên điện thoại, hoặc bấm "a" để mở máy ảo Android
+pnpm start        # dev server; bấm "a" để mở trên máy ảo Android
 pnpm web          # xem thử trên trình duyệt (chỉ để dev)
 pnpm check        # lint + kiểm kiểu + test
 ```
 
 Đăng nhập bằng một tài khoản trong danh sách "Tài khoản dùng thử" ở màn đăng nhập.
+
+Xuất file APK để cài lên điện thoại: xem mục "Xuất file APK" trong [AGENTS.md](AGENTS.md).
 
 ## Nguồn dữ liệu
 

@@ -78,6 +78,24 @@ function plan() {
   return files
 }
 
+/**
+ * Thứ bộ máy JavaScript của điện thoại (Hermes) không có và app không bù (`src/polyfills.ts`): code chép từ web dùng tới là app hỏng
+ * trên máy, trong khi test trên Node vẫn xanh. Đo trên Android, bản APK của SDK 57.
+ */
+const UNSUPPORTED = /Object\.groupBy|Map\.groupBy|Array\.fromAsync|Intl\.(PluralRules|ListFormat|RelativeTimeFormat|Segmenter)/
+
+function assertRunsOnDevice(files) {
+  const offenders = [...files].flatMap(([path, text]) => {
+    const found = text.match(UNSUPPORTED)
+    return found ? [`${path}: ${found[0]}`] : []
+  })
+  if (offenders.length === 0) return
+  console.error('Code chép từ web dùng thứ điện thoại không có:')
+  for (const offender of offenders) console.error(`  ${offender}`)
+  console.error('Đổi cách viết ở bản web, hoặc thêm bản bù vào src/polyfills.ts rồi bỏ nó khỏi UNSUPPORTED.')
+  process.exit(1)
+}
+
 /** Dấu của nội dung, không phụ thuộc kiểu xuống dòng của máy. */
 function digest(files) {
   const hash = createHash('sha256')
@@ -89,6 +107,7 @@ function digest(files) {
 if (process.argv.includes('--verify')) {
   const manifest = JSON.parse(readFileSync(MANIFEST, 'utf8'))
   const local = new Map(manifest.files.map((path) => [path, read(join(ROOT, 'src', path))]))
+  assertRunsOnDevice(local)
   if (digest(local) === manifest.digest) {
     console.log(`File chép từ bản web còn nguyên: ${local.size} file.`)
     process.exit(0)
@@ -103,6 +122,7 @@ if (!existsSync(WEB_SRC)) {
 }
 
 const files = plan()
+assertRunsOnDevice(files)
 const next = digest(files)
 
 if (process.argv.includes('--check')) {

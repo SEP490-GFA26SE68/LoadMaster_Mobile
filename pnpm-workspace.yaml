@@ -1,2 +1,5 @@
 allowBuilds:
   unrs-resolver: true
+
+# Cấu trúc node_modules phẳng: đường dẫn ngắn, để biên dịch phần native trên Windows không vượt giới hạn 260 ký tự
+nodeLinker: hoisted

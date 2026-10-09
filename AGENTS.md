@@ -75,11 +75,35 @@ pnpm sync:web             # chép lại logic từ bản web (mục 4)
 pnpm dlx expo-doctor      # kiểm cấu hình và version các gói
 ```
 
+- `pnpm-workspace.yaml` đặt `nodeLinker: hoisted` (thư mục `node_modules` phẳng). **Không bỏ:** với cấu trúc lồng mặc định của pnpm,
+  đường dẫn file khi biên dịch phần native vượt 260 ký tự và build Android trên Windows hỏng ở bước `ninja`
+  ("manifest 'build.ninja' still dirty").
 - Thư mục `android/`, `ios/` không có trong repo: chúng được sinh ra khi build (Continuous Native Generation). Không tạo hay sửa
   tay — cấu hình native đặt ở `app.json` và config plugin.
 - Expo Go chỉ chạy được module native nó có sẵn. Thêm thư viện có code native (bản đồ, GPS chạy nền, thông báo đẩy…) thì app cần
   **development build** (`eas build --profile development`), và phải ghi điều đó vào issue của việc thêm thư viện.
 - Build và phát hành dùng EAS (`pnpm dlx eas-cli@latest <lệnh>`): build iOS không cần máy Mac.
+
+### Xuất file APK
+
+Hai đường, cùng ra một file cài được lên máy Android:
+
+```bash
+# 1. Trên cloud của Expo (cần tài khoản Expo; không cần Android Studio)
+pnpm dlx eas-cli@latest build --platform android --profile preview     # hồ sơ "preview" ở eas.json: buildType apk
+
+# 2. Trên máy (cần JDK 17 và Android SDK: platform 36, build-tools 36.0.0, NDK 27.1; JAVA_HOME và ANDROID_HOME đã đặt)
+pnpm exec expo prebuild --platform android      # sinh thư mục android/ (không commit); lệnh này đổi script trong package.json — đừng commit phần đó
+cd android && ./gradlew assembleRelease          # → android/app/build/outputs/apk/release/app-release.apk
+```
+
+- Bản build trên máy ký bằng khoá debug của mẫu dự án: cài thử được, **không** nộp lên store được. Khoá phát hành do EAS giữ.
+- Thêm `-PreactNativeArchitectures=arm64-v8a` khi chỉ cần chạy trên điện thoại thật (file nhỏ hơn, build nhanh hơn); máy ảo trên
+  máy tính cần thêm `x86_64`.
+- JDK 24 không dùng được cho build Android; phải là JDK 17.
+- Tên gói `com.loadmaster.mobile` ở `app.json` là giá trị tạm: đổi tự do trước lần đầu lên store, sau đó không đổi được.
+- **Expo Go không phải cách chạy chính của dự án.** Bản Expo Go trên store không phải lúc nào cũng theo kịp SDK mới nhất, và nó
+  không chạy được thư viện native ngoài bộ có sẵn. Chạy trên máy bằng bản APK ở trên hoặc development build.
 
 ## 3. Cấu trúc thư mục
 
@@ -216,8 +240,9 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
 - Câu số nhiều là object `{ one, other }` với `{count}`; hai dạng của câu tiếng Việt giống hệt nhau.
 - Không dịch: **MOCK RESULT**, LoadMaster, tên riêng trong dữ liệu.
 - Logic thuần trả mã, component dịch. Schema zod dùng key từ điển làm message.
-- Hermes không bảo đảm đủ `Intl`: `translate.ts` tự chọn dạng số nhiều, `format.ts` có đường lui cho đơn vị và danh sách. Đừng gọi
-  `Intl.PluralRules`, `Intl.ListFormat`, `Intl.RelativeTimeFormat` trực tiếp.
+- Hermes **không có** `Intl.PluralRules`, `Intl.ListFormat`, `Intl.RelativeTimeFormat`, `Intl.Segmenter` (đã đo trên máy):
+  `translate.ts` tự chọn dạng số nhiều, `format.ts` tự ghép danh sách. Đừng gọi bốn thứ đó trực tiếp. `Intl.NumberFormat` (kể cả đơn
+  vị, tiền) và `Intl.DateTimeFormat` dùng được.
 
 ## 9. Kiểm thử
 
@@ -232,6 +257,12 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
 - Hạn mức: test đúng việc của issue; không viết test trùng với test đã có ở bản web cho logic chép sang.
 - Jest chạy trên Node, **không phải Hermes**: nó không chứng minh được hiệu năng, `Intl` của máy, bàn phím ảo, camera, GPS. Việc như
   vậy ghi vào danh sách "chưa kiểm trên thiết bị" ở `docs/progress.md` và không được báo là đã kiểm.
+- **Hermes thiếu một số hàm JavaScript mới mà Node có** — đã gặp: 31 test xanh nhưng đăng nhập hỏng trên máy vì thiếu
+  `Array.prototype.toSorted`. Danh sách đã đo và các bản bù nằm ở `src/polyfills.ts`; `Object.groupBy`, `Array.fromAsync` không có
+  và không được bù — đừng dùng. Việc đụng tới logic chạy lúc mở app hoặc đăng nhập phải được chạy thử trên máy (bản APK) trước khi
+  báo xong.
+- Lỗi không mang mã (lỗi lập trình, máy thiếu tính năng) hiện câu chung cho người dùng và được ghi vào nhật ký của máy
+  (`adb logcat -s ReactNativeJS`, dòng `[LoadMaster] lỗi không có mã`).
 - `pnpm web` + trình duyệt chỉ để xem bố cục nhanh; không thay cho chạy trên máy thật.
 
 ## 10. Git và bộ mặt repo

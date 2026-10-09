@@ -12,6 +12,21 @@ function coded(error: unknown): Coded | null {
   return null
 }
 
+const reported = new WeakSet<object>()
+
+/**
+ * Lỗi không mang mã là lỗi lập trình (hoặc máy thiếu một tính năng JavaScript mà logic chép từ web dùng): người dùng thấy câu chung,
+ * còn nguyên nhân phải vào nhật ký của máy để tìm được — mỗi lỗi ghi một lần dù màn vẽ lại nhiều lần.
+ */
+function reportUnexpected(error: unknown): void {
+  if (typeof error === 'object' && error !== null) {
+    if (reported.has(error)) return
+    reported.add(error)
+  }
+  const detail = error instanceof Error ? [error.name, error.message, error.stack ?? ''].join(' | ') : String(error)
+  console.warn('[LoadMaster] lỗi không có mã:', detail)
+}
+
 /**
  * Câu cho lỗi của một lượt gọi dữ liệu, dù nguồn là kho mẫu (`MockDbError`) hay backend (`ApiError`): cả hai mang **mã + tham số**, màn
  * không cần biết lỗi đến từ đâu. Thứ tự tìm câu: `apiErrors.<mã>` (lỗi mạng, phiên, máy chủ) → `dataErrors.<mã>` (mã nghiệp vụ, trùng
@@ -19,7 +34,10 @@ function coded(error: unknown): Coded | null {
  */
 export function dataErrorMessage(error: unknown, t: TFunction): string {
   const known = coded(error)
-  if (!known) return t('dataErrors.UNKNOWN')
+  if (!known) {
+    reportUnexpected(error)
+    return t('dataErrors.UNKNOWN')
+  }
   const branch = known.code in vi.apiErrors ? 'apiErrors' : known.code in vi.dataErrors ? 'dataErrors' : null
   if (branch === null) return t('dataErrors.UNKNOWN')
   const params = Object.fromEntries(
