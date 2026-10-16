@@ -8,4 +8,5 @@ export const apiErrors = {
   UNAUTHORIZED: 'You do not have permission to do this.',
   SERVER_ERROR: 'The server ran into a problem. Try again later.',
   HTTP_NOT_WIRED: 'This feature is not connected to the server yet.',
+  NOT_SUPPORTED: 'The server cannot do this yet.',
 } satisfies Dictionary<typeof source>

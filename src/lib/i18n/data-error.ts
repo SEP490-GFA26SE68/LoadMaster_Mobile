@@ -29,8 +29,9 @@ function reportUnexpected(error: unknown): void {
 
 /**
  * Câu cho lỗi của một lượt gọi dữ liệu, dù nguồn là kho mẫu (`MockDbError`) hay backend (`ApiError`): cả hai mang **mã + tham số**, màn
- * không cần biết lỗi đến từ đâu. Thứ tự tìm câu: `apiErrors.<mã>` (lỗi mạng, phiên, máy chủ) → `dataErrors.<mã>` (mã nghiệp vụ, trùng
- * tên giữa kho mẫu và backend) → câu chung. Mã backend chưa có câu thì hiện câu chung, không hiện thông điệp thô của máy chủ.
+ * không cần biết lỗi đến từ đâu. Thứ tự tìm câu: `apiErrors.<mã>` (lỗi mạng, phiên, máy chủ) → `backendErrors.<mã>` (mã nghiệp vụ chỉ
+ * nguồn backend có) → `dataErrors.<mã>` (mã nghiệp vụ, trùng tên giữa kho mẫu và backend) → câu chung. Mã backend chưa có câu thì hiện
+ * câu chung, không hiện thông điệp thô của máy chủ.
  */
 export function dataErrorMessage(error: unknown, t: TFunction): string {
   const known = coded(error)
@@ -38,7 +39,7 @@ export function dataErrorMessage(error: unknown, t: TFunction): string {
     reportUnexpected(error)
     return t('dataErrors.UNKNOWN')
   }
-  const branch = known.code in vi.apiErrors ? 'apiErrors' : known.code in vi.dataErrors ? 'dataErrors' : null
+  const branch = (['apiErrors', 'backendErrors', 'dataErrors'] as const).find((name) => known.code in vi[name]) ?? null
   if (branch === null) return t('dataErrors.UNKNOWN')
   const params = Object.fromEntries(
     Object.entries(known.params).map(([name, value]) => [name, Array.isArray(value) ? value.join(', ') : String(value)]),

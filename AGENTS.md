@@ -24,8 +24,10 @@ App không ôm hết việc bàn giấy. Phạm vi theo vai trò (tám vai trò,
 Màn nào đã có, màn nào chưa: xem `docs/progress.md`. Vai trò chưa có màn làm việc vẫn đăng nhập được và thấy màn Tài khoản kèm
 một câu nói rõ (`features/auth/landing.ts`).
 
-**Trạng thái dữ liệu:** app chạy trên **kho dữ liệu mẫu trong máy** (cùng logic và seed với bản web). Kho mẫu không thay backend:
-bản web và máy khác không thấy gì trong đó. Mỗi feature nối backend riêng, khi backend có phần đó (mục 5).
+**Trạng thái dữ liệu:** mặc định app chạy trên **kho dữ liệu mẫu trong máy** (cùng logic và seed với bản web). Kho mẫu không thay
+backend: bản web và máy khác không thấy gì trong đó. Mỗi feature nối backend riêng, khi backend có phần đó (mục 5). Đã nối được:
+đăng nhập (`auth`, Keycloak của backend — mục 6) và màn tài xế (`driver`, phần backend đã có; việc backend chưa có thì màn ẩn nút).
+Cách chạy với backend: README.
 
 Luật chung, giữ từ bản web:
 
@@ -47,6 +49,9 @@ react-hook-form + zod v4    — mọi form
 lucide-react-native         — icon, không dùng bộ khác (nét 1,5; cỡ 20 / 24)
 expo-secure-store           — phiên đăng nhập, ngôn ngữ (không lưu dữ liệu nghiệp vụ)
 expo-crypto                 — polyfill crypto.getRandomValues cho logic chép từ web
+expo-auth-session           — đăng nhập Keycloak (PKCE); CHỈ import trong features/auth/keycloak-oauth.ts
+expo-camera                 — quét mã QR trên nhãn kiện
+expo-location               — vị trí xe khi tài xế bật GPS
 jest-expo + @testing-library/react-native v14 — test
 ```
 
@@ -111,12 +116,17 @@ cd android && ./gradlew assembleRelease          # → android/app/build/outputs
 src/
   app/                 route của Expo Router — MỎNG: mỗi file chỉ export màn lấy từ features/
     _layout.tsx        provider + hai nhóm route theo phiên (sign-in | (app))
-    (app)/_layout.tsx  thanh tab đáy; mỗi tab nằm sau quyền của nó
+    +native-intent.tsx địa chỉ Keycloak trả phiên về (`loadmaster://auth`) không mở màn nào
+    (app)/_layout.tsx  Stack: thanh tab `(tabs)` và các màn mở chồng có lối quay lại (`trip/[tripId]`, `notifications`), sau quyền
+    (app)/(tabs)/      thanh tab đáy; mỗi tab nằm sau quyền của nó
   features/<tên>/      màn, component, hook, <tên>-api.ts của một feature
-    auth/              đăng nhập, phiên, quyền, màn Tài khoản
-    driver/            màn của tài xế
-  components/          component dùng từ hai feature trở lên: AppText, Button, TextField, Screen, Banner, StateView,
-                       LanguageSwitch, TripStatus
+    auth/              đăng nhập (kho mẫu, Keycloak), phiên, quyền, màn Tài khoản
+    driver/            màn của tài xế: chuyến của tôi, một chuyến (điểm giao, dỡ, hoàn tất, sự cố, GPS), tổng kết, thông báo;
+                       adapter driver-mock.ts (kho mẫu) và driver-http.ts (backend)
+    notifications/     ← chép từ web: sự kiện nào báo cho ai
+    viewer3d/          ← chép từ web: phần thuần (kiện theo điểm giao, thứ tự dỡ) — không có Three.js
+  components/          component dùng từ hai feature trở lên: AppText, Button, IconButton, TextField, Screen, Card, Chip,
+                       ChoiceGroup, Sheet, Banner, StateView, LanguageSwitch, TripStatus, StopDot
   data/                lớp dữ liệu (mục 5): config.ts, adapter.ts, mock-db.ts, http/
   theme/tokens.ts      màu, khoảng cách, bo góc, thang chữ
   lib/
@@ -129,7 +139,8 @@ src/
   types/               ← chép từ web
   providers/           Providers.tsx: mọi provider của app
   polyfills.ts         nạp đầu tiên ở src/app/_layout.tsx
-  test/                setup.ts (giả module native), render.tsx (vẽ màn trong đủ provider)
+  test/                setup.ts (giả module native), render.tsx (vẽ màn trong đủ provider), native-mocks.ts (camera, vị trí,
+                       router giả), driver-flow.tsx (chuyến mẫu của tài xế)
   web-mirror.json      danh sách file chép từ web và dấu nội dung của chúng
 scripts/
   sync-from-web.mjs    chép logic từ bản web
@@ -145,9 +156,11 @@ File có logic không dài quá 250 dòng; từ điển và dữ liệu phẳng 
 Phần logic thuần của web được **chép nguyên văn** sang đây bằng `pnpm sync:web`, để app và web tính cùng một kết quả mà không viết
 hai lần. Bản web là nguồn chuẩn.
 
-- Danh sách file nằm ở `src/web-mirror.json`: `src/domain`, `src/types`, `src/services/optimization`, `src/lib/mock-db`, cùng vài
-  file lẻ (`features/auth/permissions.ts`, `features/driver/my-trips.ts`, `lib/i18n/types.ts`, và các nhánh từ điển `dataErrors`,
-  `issues`, `language`, `roles`, `status`).
+- Danh sách file nằm ở `src/web-mirror.json`: `src/domain`, `src/types`, `src/services/optimization`, `src/lib/mock-db`, cùng các file
+  lẻ khai ở `MIRRORED_FILES` của `scripts/sync-from-web.mjs` — quyền và hồ sơ backend (`features/auth/permissions.ts`,
+  `backend-user.ts`), phần thuần của màn tài xế (`features/driver/`: tiến độ giao, giờ đến, hoàn tất điểm, form sự cố…), của viewer
+  3D và chuông, `lib/stops.ts`, `lib/calendar-date.ts`, `lib/i18n/types.ts` và các nhánh từ điển `dataErrors`, `issues`, `language`,
+  `roles`, `status`.
 - **Không sửa các file đó ở mobile.** Cần đổi thì sửa ở bản web (qua quy trình của web), rồi chạy `pnpm sync:web`.
   `pnpm sync:web:verify` (nằm trong `pnpm check` và CI) đỏ khi có file trong danh sách bị sửa tay.
 - Thêm một file logic thuần của web vào app: thêm đường dẫn vào `MIRRORED_FILES` của `scripts/sync-from-web.mjs`, không chép tay.
@@ -190,6 +203,16 @@ màn / component  →  hook Query của feature  →  features/<tên>/<tên>-api
 9. Khoá Query của một feature nằm dưới tên feature (`['driver', …]`). Khoá không cần mang người dùng: `AuthProvider` xoá sạch
    cache lúc đăng nhập và đăng xuất. Ghi dữ liệu bằng `useMutation` rồi làm mới khoá liên quan.
 10. Không thêm store phía client cho dữ liệu nghiệp vụ. Không lưu dữ liệu nghiệp vụ vào `expo-secure-store`.
+11. **Hợp đồng nói nguồn làm được gì** (`capabilities`, ví dụ `DriverCapabilities`). Việc nguồn chưa làm được (backend chưa có
+    endpoint, vai trò chưa có quyền ở backend) thì màn **ẩn** nút — không nút giả; gọi tới vẫn là lỗi `NOT_SUPPORTED`, không âm thầm bỏ
+    qua. Backend thêm endpoint: viết hàm ở adapter `http` rồi bật cờ, màn không đổi.
+12. Backend chưa gắn mã vào lỗi nghiệp vụ (về tay là `SERVER_ERROR` kèm mã HTTP). Adapter `http` đổi lỗi **chưa có mã** sang mã của
+    app theo từng lệnh (409 lúc dỡ = kiện đã dỡ…) bằng `uncoded(error, status)`, câu ở nhánh `backendErrors`; lỗi đã có mã đi thẳng.
+    Backend gắn mã rồi thì bỏ phép đổi đó.
+13. Endpoint cần mã người dùng (backend hiện nhận mã tài xế ở tham số) đọc `currentUserId()` của `src/data/http`, nối với
+    `backendUserId()` của adapter đăng nhập — **không** đọc từ state React: query của màn con chạy trước effect của `AuthProvider`.
+14. Điều màn cần mà backend chưa trả (kiện nào của điểm đã dỡ, chuyến vừa giao xong) thì adapter `http` giữ trong bộ nhớ của lần mở
+    app, theo người đang đăng nhập — đổi người là xoá; không cất xuống máy.
 
 Trước khi viết adapter `http` cho một feature: đọc controller và DTO thật ở repo backend (nhánh `develop`), không đoán dạng dữ
 liệu. Backend lệch với hợp đồng của app thì ghi vào issue và hỏi nhóm backend, không uốn màn theo.
@@ -204,6 +227,25 @@ liệu. Backend lệch với hợp đồng của app thì ghi vào issue và h�
   (`Tabs.Protected` / `Stack.Protected`); backend vẫn kiểm lại ở máy chủ.
 - Sau khi đăng nhập mở màn của vai trò (`landingOf`). Màn đó phải là màn vai trò mở được.
 - Danh sách tài khoản dùng thử chỉ hiện khi feature `auth` chạy trên kho mẫu.
+- Khoá cất phiên (`SESSION_KEY`), `backendUserId()` và mã `SIGN_IN_CANCELLED` khai ở `auth-adapter.ts`.
+
+### Đăng nhập bằng Keycloak (`auth` dùng backend)
+
+- `keycloak-oauth.ts` là nơi duy nhất nói chuyện với Keycloak: Authorization Code + PKCE S256, scope `openid offline_access`, luôn
+  hỏi lại mật khẩu (`prompt=login`; iOS còn dùng phiên trình duyệt riêng). Keycloak trả về `loadmaster://auth` (`AUTH_REDIRECT_PATH`);
+  `app/+native-intent.tsx` không để router mở màn nào cho địa chỉ đó. Mỗi lệnh tới Keycloak tối đa 15 giây.
+- `keycloak-auth.ts` giữ phiên, không import thư viện Expo nào (test bằng client giả). Token chỉ nằm trong bộ nhớ; chuỗi cất là
+  `{ v: 1, refreshToken, profile }`. Token còn dưới 20 giây thì làm mới; các lượt gọi cùng lúc chung một lần làm mới; refresh token mới
+  được cất lại. Keycloak không nhận refresh token nữa → `UNAUTHENTICATED`, app đăng xuất; không tới được Keycloak → lỗi mạng, giữ phiên.
+  Mở app lúc mất sóng thì vào bằng hồ sơ đã cất.
+- Hồ sơ `GET /api/users/me` đổi sang người dùng của app bằng `backend-user.ts` (chép từ web). Vai trò app chưa biết: `ROLE_UNKNOWN`;
+  tài khoản bị khoá: `ACCOUNT_SUSPENDED`; backend trả 401 cho token vừa cấp: `SIGN_IN_REJECTED` (địa chỉ Keycloak của app khác địa chỉ
+  backend tin, hoặc client thiếu audience `loadmaster-api`). Bị từ chối thì phiên vừa mở ở Keycloak được đóng luôn.
+- Đóng trang đăng nhập không phải lỗi: `signIn` ném `SIGN_IN_CANCELLED`, màn không báo gì.
+- Đăng xuất quên phiên **ngay** (trước `await` đầu tiên, để lượt làm mới đang chạy không cất lại phiên), rồi gọi endpoint logout của
+  Keycloak bằng refresh token. Không dùng endpoint thu hồi token: thu hồi refresh token cắt phiên của client đó trên mọi máy.
+- `auth` dùng backend mà feature khác còn ở kho mẫu: kho mẫu mở phiên của tài khoản dùng thử **cùng vai trò** — mã, công ty, kho của
+  người dùng là của tài khoản mẫu, tên và email của backend; `backendUserId()` vẫn là mã backend.
 
 ## 7. Giao diện
 
@@ -221,6 +263,13 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
 - **Máy tính bảng:** nội dung dừng ở `CONTENT_MAX_WIDTH`, căn giữa; lề nằm trong cột để tiêu đề và thẻ thẳng một mép.
 - Luôn chừa vùng an toàn (tai thỏ, thanh điều hướng của máy) bằng `useSafeAreaInsets`.
 - Hành động bị chặn vì luật hiện mờ kèm lý do ngay tại chỗ, không để bấm rồi mới báo lỗi.
+- Hộp thoại là **tờ trượt từ đáy** `Sheet`: tiêu đề là header của tờ, nội dung cuộn, hàng nút ở `footer` (dính đáy, trong tầm ngón
+  cái); `busy` khi đang ghi thì tờ không đóng được.
+- Mọi `ScrollView` / `SectionList` chứa ô nhập **hoặc chứa một `Sheet`** đặt `keyboardShouldPersistTaps="handled"` (`Screen` đã đặt).
+  Lần chạm đi theo cây React xuyên qua `Modal`: thiếu nó thì khi bàn phím đang mở, mọi nút của tờ trượt phải bấm hai lần — lần đầu
+  chỉ đóng bàn phím. Jest không bắt được lỗi này, chỉ thấy trên máy.
+- Icon của nút đặt bằng `icon` / `trailingIcon` của `Button` (Lucide), không đặt trong `children` — chữ của nút nằm trong một `Text`.
+  Nút chỉ có icon dùng `IconButton` (56 × 56, `label` là tên đọc được).
 - Màn đọc dữ liệu có đủ ba trạng thái: đang tải, lỗi kèm nút thử lại, chưa có gì (`StateView`). Danh sách kéo xuống để đọc lại.
 - Chuyển động ngắn (dưới 300 ms), tôn trọng cài đặt giảm chuyển động của máy.
 
@@ -253,7 +302,13 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
   "overlapping act() calls".
 - Vẽ màn bằng `renderApp` (`src/test/render.tsx`) để có đủ provider; đầu mỗi test gọi `resetMockDb()` và `clearStored()`.
 - Giá trị kỳ vọng lấy từ nguồn độc lập (kho mẫu, chữ trong từ điển), không tính lại theo cách code tính.
-- Mỗi adapter `http` có test với `fetch` giả: đường dẫn, phong bì, đổi DTO, mã lỗi.
+- Mỗi adapter `http` có test với `fetch` giả: đường dẫn, phong bì, đổi DTO, mã lỗi (`driver-http.test.ts` định tuyến backend giả theo
+  `"PHƯƠNG THỨC đường dẫn"`).
+- Màn dùng camera, vị trí, router: `src/test/native-mocks.ts` thay module native (nối ở `setup.ts`); test điều khiển bằng
+  `setCameraPermission`, `setLocation`, `emitPosition`, `failPosition`… Luồng tài xế: `src/test/driver-flow.tsx` (`renderTrip`, chuyến
+  mẫu đã xếp xong `TRIP-010`, `labelsAt`, `departLoadedTrip`…) đưa chuyến tới đúng bước bằng hàm của kho; chỉ bấm qua màn đúng việc
+  đang test.
+- Jest bật `clearMocks`: số lần gọi của `jest.fn` về 0 trước mỗi test.
 - Hạn mức: test đúng việc của issue; không viết test trùng với test đã có ở bản web cho logic chép sang.
 - Jest chạy trên Node, **không phải Hermes**: nó không chứng minh được hiệu năng, `Intl` của máy, bàn phím ảo, camera, GPS. Việc như
   vậy ghi vào danh sách "chưa kiểm trên thiết bị" ở `docs/progress.md` và không được báo là đã kiểm.

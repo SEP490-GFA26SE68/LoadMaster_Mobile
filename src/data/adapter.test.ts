@@ -3,7 +3,13 @@ import { resolveDataConfig } from './config'
 import { isApiError } from './http/api-error'
 
 const onMock = resolveDataConfig({})
-const onHttp = resolveDataConfig({ defaultSource: 'http', apiUrl: 'http://x.test' })
+const onHttp = resolveDataConfig({
+  defaultSource: 'http',
+  apiUrl: 'http://x.test',
+  keycloakUrl: 'http://id.test',
+  keycloakRealm: 'loadmaster',
+  keycloakClientId: 'loadmaster-mobile',
+})
 
 describe('createAdapter', () => {
   test('chọn adapter theo nguồn của feature và chỉ dựng một lần, ở lần gọi đầu', () => {

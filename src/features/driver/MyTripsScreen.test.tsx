@@ -19,14 +19,14 @@ describe('màn Chuyến của tôi', () => {
 
   test('tài xế thấy chuyến của mình theo nhóm, mỗi chuyến kèm chip trạng thái', async () => {
     await getMockDb().authenticate(driver?.email ?? '', SEED_PASSWORD)
-    const expected = await fetchMyTrips()
-    const first = MY_TRIP_GROUPS.flatMap((group) => expected[group])[0]
+    const { groups } = await fetchMyTrips()
+    const first = MY_TRIP_GROUPS.flatMap((group) => groups[group])[0]
     if (first === undefined) throw new Error('seed không có chuyến nào cho tài xế mẫu')
 
     await renderApp(<MyTripsScreen />, { auth: createMockAuth() })
     expect(await screen.findByRole('header', { name: 'Chuyến của tôi' })).toBeOnTheScreen()
-    expect(await screen.findByText(first.name)).toBeOnTheScreen()
-    expect(screen.getByText(first.id)).toBeOnTheScreen()
+    expect(await screen.findByText(first.code)).toBeOnTheScreen()
+    if (first.name !== undefined) expect(screen.getByText(first.name)).toBeOnTheScreen()
   })
 
   test('chưa có phiên ở kho: hiện lỗi kèm nút thử lại, không hiện danh sách rỗng', async () => {

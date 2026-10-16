@@ -1,10 +1,8 @@
-import { StyleSheet, View } from 'react-native'
-
 import { useT } from '@/lib/i18n'
-import { badgeTones, radius, space, type BadgeTone } from '@/theme/tokens'
+import type { BadgeTone } from '@/theme/tokens'
 import type { TripStatus, TripSubStatus } from '@/types/trip'
 
-import { AppText } from './AppText'
+import { Chip } from './Chip'
 
 /** Màu kể giai đoạn của chuyến, như bản web: xám nháp · cyan đã lập kế hoạch · xanh lam đang chạy · xanh lá đã giao · đỏ đã huỷ. */
 const STATUS_TONE: Record<TripStatus, BadgeTone> = {
@@ -29,18 +27,6 @@ const SUB_TONE: Record<TripSubStatus['kind'], BadgeTone> = {
   manualPending: 'warning',
 }
 
-function Chip({ tone, label }: { tone: BadgeTone; label: string }) {
-  const { bg, fg } = badgeTones[tone]
-  return (
-    <View style={[styles.chip, { backgroundColor: bg }]}>
-      <View style={[styles.dot, { backgroundColor: fg }]} />
-      <AppText variant="meta" color={fg}>
-        {label}
-      </AppText>
-    </View>
-  )
-}
-
 /** Chip trạng thái của chuyến (sáu trạng thái của backend). Màu luôn đi kèm chữ. */
 export function TripStatusChip({ status }: { status: TripStatus }) {
   const t = useT()
@@ -58,8 +44,3 @@ export function TripSubStatusTag({ sub }: { sub: TripSubStatus }) {
         : t(`status.sub.${sub.kind}`)
   return <Chip tone={SUB_TONE[sub.kind]} label={label} />
 }
-
-const styles = StyleSheet.create({
-  chip: { flexDirection: 'row', alignItems: 'center', gap: space[1], alignSelf: 'flex-start', paddingHorizontal: space[2], paddingVertical: 4, borderRadius: radius.pill },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-})

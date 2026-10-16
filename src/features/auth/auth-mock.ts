@@ -26,5 +26,9 @@ export function createMockAuth(db: () => MockDb = getMockDb): PasswordAuth {
     async accessToken() {
       return null
     },
+    // Kho mẫu không có backend phía sau: không feature nào được dùng backend khi đăng nhập giả lập (`data/config.ts`)
+    backendUserId() {
+      return null
+    },
   }
 }

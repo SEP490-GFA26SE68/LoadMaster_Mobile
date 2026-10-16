@@ -36,6 +36,19 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "LoadMaster dùng camera để quét mã QR trên nhãn kiện khi dỡ hàng.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "LoadMaster gửi vị trí xe khi bạn bật GPS trên chuyến đang giao."
+        }
       ]
     ],
     "experiments": {
