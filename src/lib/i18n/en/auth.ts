@@ -11,6 +11,7 @@ export const auth = {
     emailRequired: 'Enter your email',
     emailInvalid: 'This email is not valid',
     passwordRequired: 'Enter your password',
+    redirectHint: 'The LoadMaster sign-in page opens in your browser. Once you sign in, the app comes back on its own.',
   },
   passwordToggle: {
     show: 'Show password',

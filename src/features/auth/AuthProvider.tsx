@@ -5,12 +5,9 @@ import { connectAuth } from '@/data/http'
 import { readStored, writeStored } from '@/lib/storage'
 import type { User } from '@/types/user'
 
-import type { AuthAdapter } from './auth-adapter'
+import { SESSION_KEY, type AuthAdapter } from './auth-adapter'
 import { authAdapter } from './auth-api'
 import { can, type Permission } from './permissions'
-
-/** Khoá cất phiên trong kho khoá của máy (`@/lib/storage`). */
-const SESSION_KEY = 'phien'
 
 type AuthState = { readonly status: 'restoring' } | { readonly status: 'signedOut' } | { readonly status: 'signedIn'; readonly user: User }
 
@@ -39,9 +36,11 @@ export function AuthProvider({ children, adapter: injected }: { children: ReactN
   const signOut = useCallback(async () => {
     setState({ status: 'signedOut' })
     queryClient.clear()
+    // Adapter quên phiên ngay trong phần chạy đồng bộ của nó: lượt làm mới token đang dở không cất lại phiên vừa xoá dưới đây
+    const closing = adapter.signOut().catch(() => undefined)
     await writeStored(SESSION_KEY, null)
     // Phiên phía nguồn dữ liệu đóng sau cùng: người dùng đã ra khỏi app dù lượt gọi này có lỗi.
-    await adapter.signOut().catch(() => undefined)
+    await closing
   }, [adapter, queryClient])
 
   useEffect(() => {
@@ -50,7 +49,8 @@ export function AuthProvider({ children, adapter: injected }: { children: ReactN
       const saved = await readStored(SESSION_KEY)
       const session = saved === null ? null : await adapter.restore(saved).catch(() => null)
       if (cancelled) return
-      if (session === null && saved !== null) await writeStored(SESSION_KEY, null)
+      // Phiên đã cất hết hiệu lực thì xoá; mở lại được thì cất bản adapter trả (token làm mới lúc mở app có thể đã đổi)
+      if (saved !== null && session?.saved !== saved) await writeStored(SESSION_KEY, session?.saved ?? null)
       setState(session === null ? { status: 'signedOut' } : { status: 'signedIn', user: session.user })
     })()
     return () => {
@@ -59,7 +59,12 @@ export function AuthProvider({ children, adapter: injected }: { children: ReactN
   }, [adapter])
 
   useEffect(() => {
-    connectAuth({ accessToken: () => adapter.accessToken(), onUnauthenticated: () => void signOut() })
+    connectAuth({
+      accessToken: () => adapter.accessToken(),
+      onUnauthenticated: () => void signOut(),
+      // Đọc thẳng từ adapter, không từ state: màn mở ngay sau khi đăng nhập gọi backend trước khi effect này kịp chạy lại
+      userId: () => adapter.backendUserId(),
+    })
   }, [adapter, signOut])
 
   const value = useMemo<AuthValue>(

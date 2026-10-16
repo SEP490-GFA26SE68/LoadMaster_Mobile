@@ -22,7 +22,20 @@ const MIRRORED_DIRS = ['domain', 'types', 'services/optimization', 'lib/mock-db'
 /** File lẻ: logic thuần nằm trong một feature của web mà mobile dùng lại nguyên văn. */
 const MIRRORED_FILES = [
   'features/auth/permissions.ts',
-  'features/driver/my-trips.ts',
+  // Hồ sơ `GET /api/users/me` của backend → vai trò và người dùng của app (đăng nhập bằng Keycloak)
+  'features/auth/backend-user.ts',
+  // Màn điểm giao của tài xế: tiến độ giao, kiện của từng điểm, giờ đến, hoàn tất điểm, form báo sự cố
+  ...['delivery-progress', 'driver-pickups', 'driver-plan', 'issue-form.schema', 'my-trips', 'stop-completion', 'stop-timing'].map(
+    (name) => `features/driver/${name}.ts`,
+  ),
+  // Phương án đã duyệt → kiện theo điểm giao và thứ tự dỡ (phần thuần của viewer 3D, không có Three.js)
+  ...['scene-input', 'scene-pickups', 'scene-types', 'viewer-types', 'operations/unloading'].map((name) => `features/viewer3d/${name}.ts`),
+  // Chuông: sự kiện nào báo cho ai, câu riêng của tài xế
+  'features/notifications/notifications.ts',
+  // Màu định danh điểm giao và màu chữ tương phản trên từng màu
+  'lib/stops.ts',
+  // Ngày lịch `YYYY-MM-DD` (ngày chạy) → giữa trưa giờ máy, để ngày hiện đúng ở mọi múi giờ
+  'lib/calendar-date.ts',
   'lib/i18n/types.ts',
   ...['dataErrors', 'issues', 'language', 'roles', 'status'].flatMap((branch) => [`lib/i18n/vi/${branch}.ts`, `lib/i18n/en/${branch}.ts`]),
 ]

@@ -9,6 +9,8 @@ export const auth = {
     emailRequired: 'Nhập email',
     emailInvalid: 'Email không đúng định dạng',
     passwordRequired: 'Nhập mật khẩu',
+    /** Đăng nhập bằng backend: app mở trang đăng nhập của máy chủ (Keycloak) thay cho form. */
+    redirectHint: 'Trang đăng nhập của LoadMaster sẽ mở trong trình duyệt. Đăng nhập xong, app tự quay lại.',
   },
   passwordToggle: {
     show: 'Hiện mật khẩu',

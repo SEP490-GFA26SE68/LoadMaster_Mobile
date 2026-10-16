@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react-native'
 import type { ReactNode } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, type PressableProps, type ViewStyle } from 'react-native'
 
@@ -23,12 +24,17 @@ export type ButtonProps = Omit<PressableProps, 'children' | 'style'> & {
   /** Đang gửi: nút giữ nguyên bề rộng, hiện vòng quay và không nhận bấm. */
   loading?: boolean
   style?: ViewStyle
+  /** Icon trước chữ (Lucide, nét 1,5, cỡ 20), cùng màu chữ. Không đặt icon trong `children`: chữ của nút nằm trong một `Text`. */
+  icon?: LucideIcon
+  /** Icon sau chữ: mũi tên "đi tiếp". */
+  trailingIcon?: LucideIcon
 }
 
 /** Nút cao 56 (vùng chạm tối thiểu của app). Nhấn chỉ đổi màu nền: không phóng to, không nhấc lên. */
-export function Button({ children, variant = 'primary', loading = false, disabled = false, style, ...rest }: ButtonProps) {
+export function Button({ children, variant = 'primary', loading = false, disabled = false, style, icon: Icon, trailingIcon: TrailingIcon, ...rest }: ButtonProps) {
   const look = LOOKS[variant]
   const blocked = disabled || loading
+  const color = disabled ? colors.textDisabled : look.text
   return (
     <Pressable
       accessibilityRole="button"
@@ -36,10 +42,11 @@ export function Button({ children, variant = 'primary', loading = false, disable
       disabled={blocked}
       {...rest}
       style={({ pressed }) => [styles.base, look.rest, pressed && look.pressed, disabled && styles.disabled, style]}>
-      {loading && <ActivityIndicator color={look.text} />}
-      <AppText variant="label" color={disabled ? colors.textDisabled : look.text}>
+      {loading ? <ActivityIndicator color={look.text} /> : Icon === undefined ? null : <Icon color={color} size={20} strokeWidth={1.5} />}
+      <AppText variant="label" color={color}>
         {children}
       </AppText>
+      {TrailingIcon === undefined ? null : <TrailingIcon color={color} size={20} strokeWidth={1.5} />}
     </Pressable>
   )
 }

@@ -1,3 +1,4 @@
+import { isApiError } from '@/data/http'
 import type { User } from '@/types/user'
 
 /**
@@ -12,12 +13,25 @@ export type AuthSession = {
   readonly saved: string
 }
 
+/** Khoá cất phiên trong kho khoá của máy (`@/lib/storage`). */
+export const SESSION_KEY = 'phien'
+
+/** Người dùng đóng trang đăng nhập của máy chủ mà không đăng nhập: không phải lỗi, màn đăng nhập không báo gì. */
+export const SIGN_IN_CANCELLED = 'SIGN_IN_CANCELLED'
+
+export function isSignInCancelled(error: unknown): boolean {
+  return isApiError(error) && error.code === SIGN_IN_CANCELLED
+}
+
 type AuthBase = {
   /** Mở lại phiên từ chuỗi đã cất; `null` khi phiên không còn dùng được. */
   restore(saved: string): Promise<AuthSession | null>
+  /** Quên phiên ngay ở phần chạy đồng bộ (trước lần `await` đầu tiên), rồi mới đóng phiên ở máy chủ. */
   signOut(): Promise<void>
   /** Token gửi kèm mỗi lượt gọi backend; `null` khi nguồn không dùng token. */
   accessToken(): Promise<string | null>
+  /** Mã người dùng của backend của phiên đang mở (endpoint của tài xế gửi kèm mã này); `null` khi chưa đăng nhập hoặc đăng nhập trên kho mẫu. */
+  backendUserId(): string | null
 }
 
 export type PasswordAuth = AuthBase & {
@@ -27,6 +41,7 @@ export type PasswordAuth = AuthBase & {
 
 export type RedirectAuth = AuthBase & {
   readonly kind: 'redirect'
+  /** Người dùng đóng trang đăng nhập: ném lỗi `SIGN_IN_CANCELLED`. */
   signIn(): Promise<AuthSession>
 }
 

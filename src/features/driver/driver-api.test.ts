@@ -18,7 +18,7 @@ describe('fetchMyTrips trên kho mẫu', () => {
     const driver = await db.authenticate(emailOf('driver'), SEED_PASSWORD)
     const mine = (await db.listTrips()).filter((trip) => trip.driverId === driver.id && trip.phase !== 'planning' && trip.phase !== 'cancelled')
 
-    const groups = await fetchMyTrips()
+    const { groups } = await fetchMyTrips()
     expect(Object.keys(groups).sort()).toEqual([...MY_TRIP_GROUPS].sort())
     const shown = MY_TRIP_GROUPS.flatMap((group) => groups[group])
     expect(shown.length).toBeGreaterThan(0)

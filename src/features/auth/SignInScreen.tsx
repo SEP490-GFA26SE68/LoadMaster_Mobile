@@ -13,6 +13,7 @@ import { dataConfig } from '@/data/config'
 import { dataErrorMessage, useT } from '@/lib/i18n'
 import { colors, CONTENT_MAX_WIDTH, radius, shadow, space } from '@/theme/tokens'
 
+import { isSignInCancelled } from './auth-adapter'
 import { useAuth } from './AuthProvider'
 import { DemoAccounts } from './DemoAccounts'
 import { signInSchema, type SignInValues } from './sign-in-form'
@@ -33,6 +34,21 @@ export function SignInScreen() {
       setFailure(dataErrorMessage(error, t))
     }
   })
+
+  // Đăng nhập bằng backend: nút mở trang đăng nhập của máy chủ, giữ trạng thái đang tải tới khi phiên vào app
+  const [opening, setOpening] = useState(false)
+  const openSignInPage = async () => {
+    setFailure(null)
+    setOpening(true)
+    try {
+      await auth.signIn()
+    } catch (error) {
+      // Người dùng đóng trang đăng nhập: không phải lỗi
+      if (!isSignInCancelled(error)) setFailure(dataErrorMessage(error, t))
+    } finally {
+      setOpening(false)
+    }
+  }
 
   // Câu lỗi của schema là key từ điển không có tham số (`sign-in-form.ts`)
   const errorOf = (key: string | undefined) => (key === undefined ? undefined : (t as unknown as (key: string) => string)(key))
@@ -97,7 +113,10 @@ export function SignInScreen() {
                 />
               </>
             )}
-            <Button loading={form.formState.isSubmitting} onPress={() => void (auth.kind === 'password' ? submit() : auth.signIn().catch((error: unknown) => setFailure(dataErrorMessage(error, t))))}>
+            {auth.kind === 'redirect' && <AppText color={colors.text2}>{t('auth.login.redirectHint')}</AppText>}
+            <Button
+              loading={auth.kind === 'password' ? form.formState.isSubmitting : opening}
+              onPress={() => void (auth.kind === 'password' ? submit() : openSignInPage())}>
               {t('auth.login.submit')}
             </Button>
           </View>

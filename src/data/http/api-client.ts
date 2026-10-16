@@ -1,4 +1,4 @@
-import { ApiError } from './api-error'
+import { ApiError, isApiError } from './api-error'
 
 /**
  * Nơi duy nhất của app gọi `fetch` tới backend LoadMaster (dùng chung với bản web). Mỗi lượt gọi: gắn token của phiên, giới hạn thời
@@ -62,7 +62,14 @@ async function readJson(response: Response): Promise<unknown> {
 
 export function createApiClient({ baseUrl, accessToken, onUnauthenticated, fetch: fetchImpl = fetch, timeoutMs = DEFAULT_TIMEOUT_MS }: ApiClientOptions): ApiClient {
   async function request<T>(method: string, path: string, { query, body }: RequestOptions = {}): Promise<T> {
-    const token = await accessToken()
+    let token: string | null
+    try {
+      token = await accessToken()
+    } catch (error) {
+      // Máy chủ định danh không gia hạn phiên nữa: như backend trả 401. Endpoint mở (không đòi token) sẽ không bao giờ báo điều đó.
+      if (isApiError(error) && error.code === 'UNAUTHENTICATED') onUnauthenticated?.()
+      throw error
+    }
     const headers: Record<string, string> = { Accept: 'application/json' }
     if (body !== undefined) headers['Content-Type'] = 'application/json'
     if (token !== null) headers.Authorization = `Bearer ${token}`

@@ -1,8 +1,9 @@
 /**
  * Lỗi của một lượt gọi backend, cùng dạng **mã + tham số** với `MockDbError` của kho mẫu để màn hiện câu bằng một hàm chung
- * (`dataErrorMessage`). Mã nghiệp vụ là `code` backend trả trong phong bì; mã dưới đây là các lỗi không thuộc nghiệp vụ.
+ * (`dataErrorMessage`). Mã nghiệp vụ là `code` backend trả trong phong bì; mã dưới đây là các lỗi không thuộc nghiệp vụ —
+ * `NOT_SUPPORTED`: nguồn backend chưa có endpoint cho việc được gọi.
  */
-export const TRANSPORT_ERROR_CODES = ['NETWORK_ERROR', 'TIMEOUT', 'UNAUTHENTICATED', 'UNAUTHORIZED', 'SERVER_ERROR', 'HTTP_NOT_WIRED'] as const
+export const TRANSPORT_ERROR_CODES = ['NETWORK_ERROR', 'TIMEOUT', 'UNAUTHENTICATED', 'UNAUTHORIZED', 'SERVER_ERROR', 'HTTP_NOT_WIRED', 'NOT_SUPPORTED'] as const
 
 export type TransportErrorCode = (typeof TRANSPORT_ERROR_CODES)[number]
 

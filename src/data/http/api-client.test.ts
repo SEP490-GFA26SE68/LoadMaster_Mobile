@@ -61,6 +61,23 @@ describe('createApiClient', () => {
     expect(onUnauthenticated).toHaveBeenCalledTimes(1)
   })
 
+  test('không gia hạn được phiên: không gọi backend, báo cho nơi giữ phiên; lỗi mạng lúc gia hạn thì không', async () => {
+    const onUnauthenticated = jest.fn()
+    const fetchImpl = jest.fn()
+    const clientFor = (error: ApiError) =>
+      createApiClient({
+        baseUrl: 'http://api.test',
+        accessToken: () => Promise.reject(error),
+        onUnauthenticated,
+        fetch: fetchImpl as unknown as typeof fetch,
+      })
+    expect((await failure(() => clientFor(new ApiError('UNAUTHENTICATED')).get('/api/driver/trips'))).code).toBe('UNAUTHENTICATED')
+    expect(onUnauthenticated).toHaveBeenCalledTimes(1)
+    expect((await failure(() => clientFor(new ApiError('NETWORK_ERROR')).get('/api/driver/trips'))).code).toBe('NETWORK_ERROR')
+    expect(onUnauthenticated).toHaveBeenCalledTimes(1)
+    expect(fetchImpl).not.toHaveBeenCalled()
+  })
+
   test('403 → UNAUTHORIZED, 500 không đọc được → SERVER_ERROR', async () => {
     expect((await failure(() => clientWith(respond(403, undefined)).client.get('/x'))).code).toBe('UNAUTHORIZED')
     const broken = { ok: false, status: 500, text: async () => '<html>' } as Response

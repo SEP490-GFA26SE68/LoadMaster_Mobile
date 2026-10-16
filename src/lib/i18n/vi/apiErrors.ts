@@ -6,4 +6,5 @@ export const apiErrors = {
   UNAUTHORIZED: 'Bạn không có quyền làm việc này.',
   SERVER_ERROR: 'Máy chủ gặp lỗi. Thử lại sau.',
   HTTP_NOT_WIRED: 'Chức năng này chưa được nối với máy chủ.',
+  NOT_SUPPORTED: 'Máy chủ chưa làm được việc này.',
 } as const

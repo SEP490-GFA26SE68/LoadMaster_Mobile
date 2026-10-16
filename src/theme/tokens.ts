@@ -79,24 +79,29 @@ export const colors = {
   skySolidBorder: cyan[600],
   /** Vòng focus trên nền tối */
   skyFocus: cyan[300],
+  /** Ô chưa tới của dải tiến độ theo điểm trong dải trời (web: `bg-white/20`) */
+  skyTrack: 'rgba(255, 255, 255, 0.2)',
 
   focus: cyan[500],
+
+  /** Lớp phủ dưới tờ trượt từ đáy */
+  scrim: 'rgba(2, 34, 45, 0.5)',
 } as const
 
-/** Bảy tông của chip trạng thái. Không có tím: "đang chạy" dùng xanh lam (azure). */
+/**
+ * Sáu tông của chip trạng thái và khung nhấn (nền, chữ, viền). Không có tím: "đang chạy" dùng xanh lam (azure). Màu định danh điểm giao
+ * không nằm ở đây: `@/lib/stops` (chép từ web).
+ */
 export const badgeTones = {
-  neutral: { bg: neutral[100], fg: neutral[700] },
-  cyan: { bg: cyan[50], fg: cyan[800] },
-  success: { bg: green[50], fg: green[700] },
-  warning: { bg: amber[50], fg: amber[700] },
-  danger: { bg: red[50], fg: red[700] },
-  azure: { bg: azure[50], fg: azure[700] },
+  neutral: { bg: neutral[100], fg: neutral[700], border: neutral[200] },
+  cyan: { bg: cyan[50], fg: cyan[800], border: cyan[200] },
+  success: { bg: green[50], fg: green[700], border: green[200] },
+  warning: { bg: amber[50], fg: amber[700], border: amber[200] },
+  danger: { bg: red[50], fg: red[700], border: red[200] },
+  azure: { bg: azure[50], fg: azure[700], border: azure[200] },
 } as const
 
 export type BadgeTone = keyof typeof badgeTones
-
-/** Màu định danh điểm giao (Okabe–Ito). Chỉ dùng cho điểm giao, luôn kèm số hoặc tên. */
-export const stopColors = ['#e69f00', '#56b4e9', '#009e73', '#f0e442', '#0072b2', '#d55e00', '#cc79a7', '#555555'] as const
 
 /** Khoảng cách: bội số của 4. */
 export const space = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48 } as const
