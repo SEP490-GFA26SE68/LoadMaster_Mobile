@@ -1,11 +1,11 @@
 /**
  * Hàm → endpoint backend; mỗi nguồn là một adapter (`driver-mock.ts` kho mẫu, `driver-http.ts` backend).
  *   fetchMyTrips          GET  /api/driver/trips
- *   fetchTripScreen       GET  /api/driver/trips/{id}/current-stop
+ *   fetchTripScreen       GET  /api/driver/trips/{id}/current-stop (+ GET /api/trips/{id}/route-plans/active)
  *   confirmUnload         POST /api/driver/packages/{id}/unload
  *   completeStop          POST /api/driver/stops/{id}/complete
  *   postLocation          POST /api/driver/location
- *   reportTripException   POST /api/trips/{id}/exceptions (tài xế chưa có quyền ở BE)
+ *   reportTripException   POST /api/driver/trips/{id}/exceptions
  *   chưa có ở BE: startDelivery, arriveAtStop, confirmUnloadManually, reportDeliveryIssue, setDriverGps, fetchNotifications
  */
 import { createAdapter } from '@/data/adapter'

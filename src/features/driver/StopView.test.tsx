@@ -45,6 +45,13 @@ describe('việc phụ ở điểm giao', () => {
     expect(screen.queryByText(/^Sự cố: /)).toBeNull()
   })
 
+  test('bản đồ tuyến Goong hiện trên màn điểm giao, không mở Google Maps', async () => {
+    await departLoadedTrip({ arrive: false })
+    await renderTrip()
+    expect(await screen.findByLabelText(/^Bản đồ tuyến tới /)).toBeOnTheScreen()
+    expect(screen.queryByRole('button', { name: /Google/ })).toBeNull()
+  })
+
   test('sự cố trên đường: kiểm từng ô, báo xong có câu xác nhận kèm mã sự cố', async () => {
     await departLoadedTrip({ arrive: false })
     await renderTrip()

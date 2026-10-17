@@ -44,9 +44,10 @@ Chép `.env.example` thành `.env` khi cần đổi. Mặc định mọi chức 
 | Biến | Nghĩa |
 |---|---|
 | `EXPO_PUBLIC_DATA_SOURCE` | `mock` (mặc định) hoặc `http` cho mọi chức năng |
-| `EXPO_PUBLIC_HTTP_FEATURES` | Các chức năng đã nối backend khi mặc định là `mock`: `auth`, `driver` |
+| `EXPO_PUBLIC_HTTP_FEATURES` | Các chức năng đã nối backend khi mặc định là `mock`: `auth`, `driver`, `warehouse`, `monitoring`, `fleet` |
 | `EXPO_PUBLIC_API_URL` | Địa chỉ backend |
 | `EXPO_PUBLIC_KEYCLOAK_URL`, `_REALM`, `_CLIENT_ID` | Keycloak của backend; bắt buộc khi `auth` dùng backend |
+| `EXPO_PUBLIC_GOONG_MAPTILES_KEY` | Khoá map tiles Goong (cùng loại với web). Trống: bản đồ nền trống, vẫn vẽ tuyến |
 
 ## Chạy với backend
 
@@ -60,7 +61,7 @@ Cần backend và Keycloak của repo backend chạy trên máy tính (cổng 80
 2. **`.env`** (chép từ `.env.example`):
 
    ```bash
-   EXPO_PUBLIC_HTTP_FEATURES=auth,driver
+   EXPO_PUBLIC_HTTP_FEATURES=auth,driver,warehouse,monitoring,fleet
    EXPO_PUBLIC_API_URL=http://localhost:8080
    EXPO_PUBLIC_KEYCLOAK_URL=http://localhost:8180
    EXPO_PUBLIC_KEYCLOAK_REALM=loadmaster

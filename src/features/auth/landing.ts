@@ -6,7 +6,11 @@ import { can } from './permissions'
 
 /** Màn mở ra sau khi đăng nhập. Phải là màn vai trò đó mở được: vai trò chưa có màn làm việc trên app thì về Tài khoản. */
 export function landingOf(role: Role): Href {
-  return can(role, 'driver.operate') ? '/trips' : '/account'
+  if (can(role, 'driver.operate')) return '/trips'
+  if (can(role, 'warehouse.operate')) return '/warehouse'
+  if (can(role, 'trips.edit')) return '/fleet'
+  if (can(role, 'monitoring.view')) return '/monitoring'
+  return '/account'
 }
 
 /**
@@ -14,6 +18,6 @@ export function landingOf(role: Role): Href {
  * quản trị công ty); `notYet` — app sẽ có màn cho vai trò này nhưng bản này chưa làm; `null` — đã có màn.
  */
 export function scopeNote(role: Role): 'webOnly' | 'notYet' | null {
-  if (can(role, 'driver.operate')) return null
+  if (can(role, 'driver.operate') || can(role, 'warehouse.operate') || can(role, 'trips.edit') || can(role, 'monitoring.view')) return null
   return isPlatformRole(role) || role === 'companyAdmin' ? 'webOnly' : 'notYet'
 }

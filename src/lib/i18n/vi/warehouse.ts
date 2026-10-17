@@ -1,0 +1,41 @@
+/** Màn kho: nhiệm vụ xếp hàng, từng bước xếp, tra cứu kiện bằng QR. */
+export const warehouse = {
+  tasks: {
+    title: 'Nhiệm vụ kho',
+    empty: { title: 'Chưa có chuyến cần xếp', description: 'Chuyến đã duyệt phương án xếp sẽ hiện ở đây.' },
+    packages: { one: '{count} kiện', other: '{count} kiện' },
+    start: 'Bắt đầu xếp',
+    resume: 'Tiếp tục xếp',
+    openLabel: '{action} {tripId}',
+    scan: 'Tra cứu kiện',
+  },
+  loading: {
+    title: 'Xếp chuyến {tripId}',
+    toTasks: 'Về danh sách nhiệm vụ',
+    next: 'Kiện tiếp theo',
+    done: 'Đã xếp đủ kiện',
+    position: 'Vị trí {x} · {y} · {z} cm',
+    confirm: 'Xác nhận đã xếp',
+    deviate: 'Ghi sai lệch',
+    complete: 'Hoàn tất xếp hàng',
+    completed: 'Đã xếp xong chuyến {tripId}.',
+    deviation: {
+      title: 'Sai lệch vị trí',
+      x: 'X thực tế (cm)',
+      y: 'Y thực tế (cm)',
+      z: 'Z thực tế (cm)',
+      reason: 'Lý do',
+      submit: 'Ghi sai lệch',
+    },
+  },
+  scan: {
+    title: 'Tra cứu kiện',
+    hint: 'Quét QR trên nhãn hoặc gõ mã kiện.',
+    code: 'Mã kiện / QR',
+    submit: 'Tra cứu',
+    destination: 'Điểm đến',
+    trip: 'Chuyến {tripId}',
+    stop: 'Điểm {number}: {name}',
+    weight: '{weight}',
+  },
+} as const

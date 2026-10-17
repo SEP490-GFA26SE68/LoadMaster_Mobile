@@ -81,6 +81,8 @@ function stopScreen(trip: Trip, view: DeliveryView, stops: readonly StopDelivery
       phone: stop.phone,
       contactName: stop.contactName,
       kind: stop.kind ?? 'DELIVERY',
+      lat: trip.stops[stop.number - 1]?.lat,
+      lng: trip.stops[stop.number - 1]?.lng,
     },
     stops: tripStops,
     stopCount: stops.length,
@@ -129,6 +131,14 @@ function stopScreen(trip: Trip, view: DeliveryView, stops: readonly StopDelivery
     hasPickupStops: stops.some((item) => item.kind === 'PICKUP'),
     // Giờ đến tính từ vị trí xe đổi theo nhịp kho trả; đã đến điểm thì giờ đến là giờ thật, không cần đọc lại
     refreshMs: delivering && trip.routePlan !== undefined ? (live?.refreshMs ?? null) : null,
+    routeMap: {
+      depot: { name: trip.depot.name, lat: trip.depot.lat, lng: trip.depot.lng },
+      stops: trip.stops.flatMap((item, index) =>
+        item.lat === undefined || item.lng === undefined
+          ? []
+          : [{ id: item.id, number: index + 1, name: item.name, lat: item.lat, lng: item.lng }],
+      ),
+    },
   }
 }
 

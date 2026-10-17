@@ -68,6 +68,7 @@ export const expoLocation = {
     state.watchers.add(watcher)
     return { remove: () => void state.watchers.delete(watcher) }
   },
+  getLastKnownPositionAsync: async () => null,
 }
 
 /** Bộ điều hướng giả: test kiểm màn đã đi đâu bằng `expect(router.push).toHaveBeenCalledWith(…)`. */

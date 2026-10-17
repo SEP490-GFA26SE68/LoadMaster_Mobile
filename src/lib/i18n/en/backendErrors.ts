@@ -11,4 +11,7 @@ export const backendErrors = {
   SIGN_IN_REJECTED: 'The server did not accept the new session: the sign-in settings of the app and the server do not match. Tell your system administrator.',
   PROFILE_UNAVAILABLE: 'Your account profile could not be read from the server. Try signing in again.',
   ROLE_UNKNOWN: 'Your account has a role ("{role}") this app does not support. Contact your company administrator.',
+  LOADING_NOT_STARTED: 'Loading has not started for trip {tripId}.',
+  PACKAGE_LOOKUP_UNKNOWN: 'No package matches code {code}.',
+  PLACEMENT_ALREADY_CONFIRMED: 'This placement is already confirmed.',
 } satisfies Dictionary<typeof source>

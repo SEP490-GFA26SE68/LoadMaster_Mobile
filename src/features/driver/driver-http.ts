@@ -9,13 +9,14 @@ import {
   type CurrentStopDto,
   type DriverTripDto,
   type LocationPointDto,
+  type RoutePlanDetailDto,
 } from './driver-http-mapping'
 import type { DriverTripRow, DriverTripScreen, TripHead, VerifyVia } from './driver-model'
 
 /*
  * Nguồn backend của màn tài xế. Backend hiện có: chuyến đang vận chuyển của tài xế, điểm giao hiện tại kèm kiện cần dỡ, ghi dỡ một kiện,
- * hoàn tất điểm, gửi vị trí điện thoại. Chưa có (hoặc tài xế chưa có quyền): xuất phát, "Đã đến", xác nhận tay, sự cố theo kiện, sự cố
- * trên đường, thông báo — `capabilities` tắt để màn ẩn nút, gọi tới là `NOT_SUPPORTED`.
+ * hoàn tất điểm, gửi vị trí điện thoại, báo sự cố trên đường. Chưa có: xuất phát, "Đã đến", xác nhận tay, sự cố theo kiện, thông báo —
+ * `capabilities` tắt để màn ẩn nút, gọi tới là `NOT_SUPPORTED`.
  *
  * Điều backend chưa trả thì adapter tự giữ trong lần mở app này, theo người đang đăng nhập: kiện nào của điểm hiện tại đã dỡ, chuyến nào
  * vừa giao xong (chuyến đã giao rời khỏi danh sách). Mở lại app thì quét lại kiện đã dỡ: backend báo trùng và adapter ghi nhận lại.
@@ -90,6 +91,15 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     return dto
   }
 
+  // GET /api/trips/{id}/route-plans/active — bản đồ / chỉ dẫn; không có thì màn điểm giao vẫn mở, không vẽ tuyến
+  async function activePlan(tripId: string): Promise<RoutePlanDetailDto | null> {
+    try {
+      return await client().get<RoutePlanDetailDto>(`/api/trips/${encodeURIComponent(tripId)}/route-plans/active`)
+    } catch {
+      return null
+    }
+  }
+
   function unloadedAt(stopId: string): Map<string, VerifyVia | undefined> {
     const { unloaded } = mine()
     const entries = unloaded.get(stopId) ?? new Map<string, VerifyVia | undefined>()
@@ -106,7 +116,7 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       (dto) => ({ dto }),
       (error: unknown) => ({ error }),
     )
-    const [rows, current] = await Promise.all([listTrips(), settled])
+    const [rows, current, plan] = await Promise.all([listTrips(), settled, activePlan(tripId)])
     const row = rows.find((entry) => entry.id === tripId)
     if (row === undefined) {
       const finished = mine().finished.get(tripId)
@@ -122,7 +132,7 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       throw current.error
     }
     const { dto } = current
-    return { kind: 'stop', trip, screen: stopScreenOf(dto, row.stopCount, unloadedAt(String(dto.stopId))) }
+    return { kind: 'stop', trip, screen: stopScreenOf(dto, row.stopCount, unloadedAt(String(dto.stopId)), plan) }
   }
 
   return {
@@ -131,7 +141,7 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       arrive: false,
       manualConfirm: false,
       deliveryIssues: false,
-      tripExceptions: false,
+      tripExceptions: true,
       gps: true,
       notifications: false,
       gpsLocalOnly: false,
@@ -207,7 +217,13 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     arriveAtStop: unsupported,
     confirmUnloadManually: unsupported,
     reportDeliveryIssue: unsupported,
-    reportTripException: unsupported,
+    async reportTripException(tripId, input) {
+      const result = await client().post<{ id?: string }>(`/api/driver/trips/${encodeURIComponent(tripId)}/exceptions`, {
+        body: input,
+        query: { driverId: driverId() },
+      })
+      return { id: result.id ?? 'EXC-0' }
+    },
     fetchNotifications: unsupported,
   }
 }

@@ -6,8 +6,8 @@ import { useCan } from '@/features/auth/AuthProvider'
 export const unstable_settings = { initialRouteName: '(tabs)' }
 
 /**
- * Nhóm đã đăng nhập: thanh tab đáy (`(tabs)`) và các màn mở chồng lên nó, có lối quay lại — một chuyến của tài xế, thông báo. Màn làm việc
- * nằm sau quyền của nó (`Stack.Protected`): vai trò thiếu quyền không mở được route. Màn chồng mới thêm một `Stack.Screen` ở đây.
+ * Nhóm đã đăng nhập: thanh tab đáy (`(tabs)`) và các màn mở chồng lên nó, có lối quay lại — chuyến tài xế, xếp kho, giám sát, tra cứu
+ * kiện, thông báo. Màn làm việc nằm sau quyền của nó (`Stack.Protected`).
  */
 export default function AppLayout() {
   const can = useCan()
@@ -17,6 +17,15 @@ export default function AppLayout() {
       <Stack.Protected guard={can('driver.operate')}>
         <Stack.Screen name="trip/[tripId]" />
         <Stack.Screen name="notifications" />
+      </Stack.Protected>
+      <Stack.Protected guard={can('warehouse.operate')}>
+        <Stack.Screen name="warehouse/[tripId]" />
+      </Stack.Protected>
+      <Stack.Protected guard={can('monitoring.view')}>
+        <Stack.Screen name="monitoring/[tripId]" />
+      </Stack.Protected>
+      <Stack.Protected guard={can('packages.lookup')}>
+        <Stack.Screen name="scan" />
       </Stack.Protected>
     </Stack>
   )

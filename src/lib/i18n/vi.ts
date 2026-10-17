@@ -5,14 +5,17 @@ import { backendErrors } from './vi/backendErrors'
 import { common } from './vi/common'
 import { dataErrors } from './vi/dataErrors'
 import { driver } from './vi/driver'
+import { fleet } from './vi/fleet'
 import { issues } from './vi/issues'
 import { language } from './vi/language'
+import { monitoring } from './vi/monitoring'
 import { nav } from './vi/nav'
 import { notifications } from './vi/notifications'
 import { roles } from './vi/roles'
 import { status } from './vi/status'
 import { tripException } from './vi/tripException'
 import { verify } from './vi/verify'
+import { warehouse } from './vi/warehouse'
 
 /**
  * Từ điển nguồn của app. `en.ts` khai `satisfies Dictionary<typeof vi>`: thiếu hoặc thừa key là lỗi lúc kiểm kiểu.
@@ -30,12 +33,15 @@ export const vi = {
   common,
   dataErrors,
   driver,
+  fleet,
   issues,
   language,
+  monitoring,
   nav,
   notifications,
   roles,
   status,
   tripException,
   verify,
+  warehouse,
 } as const

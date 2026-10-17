@@ -5,7 +5,7 @@
  */
 
 /** Feature có lớp dữ liệu riêng. Thêm feature mới thì thêm tên vào đây, trong cùng issue với `-api.ts` của nó. */
-export const FEATURES = ['auth', 'driver'] as const
+export const FEATURES = ['auth', 'driver', 'warehouse', 'monitoring', 'fleet'] as const
 
 export type Feature = (typeof FEATURES)[number]
 
@@ -67,7 +67,7 @@ export function resolveDataConfig(env: DataEnv): DataConfig {
   if (unknown.length > 0) throw new Error(`EXPO_PUBLIC_HTTP_FEATURES có tên feature không tồn tại: ${unknown.join(', ')}`)
 
   const sourceOfFeature = (feature: Feature): DataSource => (fallback === 'http' || wired.includes(feature) ? 'http' : 'mock')
-  const sources: Record<Feature, DataSource> = { auth: sourceOfFeature('auth'), driver: sourceOfFeature('driver') }
+  const sources = Object.fromEntries(FEATURES.map((feature) => [feature, sourceOfFeature(feature)])) as Record<Feature, DataSource>
   const onHttp = FEATURES.filter((feature) => sources[feature] === 'http')
   const onMock = FEATURES.filter((feature) => sources[feature] === 'mock')
   const apiUrl = trimmed(env.apiUrl)?.replace(/\/+$/, '') ?? null

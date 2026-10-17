@@ -126,6 +126,19 @@ export type StopInfo = StopKey & {
   readonly phone: string | undefined
   readonly contactName: string | undefined
   readonly kind: StopKind
+  readonly lat: number | undefined
+  readonly lng: number | undefined
+}
+
+/** Tuyến vẽ trên màn chỉ đường trong app (kho + điểm có toạ độ). */
+export type DriverRouteMap = {
+  readonly depot: { readonly name: string; readonly lat: number; readonly lng: number }
+  readonly stops: readonly { readonly id: string; readonly number: number; readonly name: string; readonly lat: number; readonly lng: number }[]
+  /** Polyline Goong khi nguồn có; không có thì bản đồ nối thẳng kho → điểm. */
+  readonly path?: readonly { readonly lat: number; readonly lng: number }[]
+  readonly planVersion?: number
+  /** Bước chỉ dẫn của đoạn đang đi (leg trùng số điểm hiện tại). */
+  readonly guidanceSteps?: readonly unknown[]
 }
 
 /** Hoàn tất điểm sẽ ghi gì — hộp hỏi lại đọc từ đây. */
@@ -171,6 +184,8 @@ export type StopScreen = {
   readonly hasPickupStops: boolean
   /** Bao lâu nữa nên đọc lại (vị trí xe, giờ đến); `null` khi không cần. */
   readonly refreshMs: number | null
+  /** Kho + điểm có toạ độ để vẽ chỉ đường trong app; vắng khi nguồn không biết. */
+  readonly routeMap: DriverRouteMap | undefined
 }
 
 export type SummaryIssue = {

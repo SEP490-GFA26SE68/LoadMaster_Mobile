@@ -18,6 +18,7 @@ import { GpsToggle } from './GpsToggle'
 import { NotificationBell } from './NotificationBell'
 import { PackageVerifySheet } from './PackageVerifySheet'
 import { ReportIssueSheet } from './ReportIssueSheet'
+import { DriverNavigation } from './DriverNavigation'
 import { StopContactCard } from './StopContactCard'
 import { footerStep, StopFooter } from './StopFooter'
 import { DeliveryItemRow, PickupItemRow } from './StopItemRows'
@@ -73,6 +74,7 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
       <StopNotices screen={screen} />
       {delivering && capabilities.gps ? <GpsToggle tripId={trip.id} localOnly={capabilities.gpsLocalOnly} /> : null}
       {screen.hasPickupStops ? <StopList screen={screen} /> : null}
+      <DriverNavigation tripId={trip.id} screen={screen} />
       <StopContactCard screen={screen} />
       <StopProgress screen={screen} />
 
