@@ -84,6 +84,9 @@ export const colors = {
 
   focus: cyan[500],
 
+  /** Kiện "Hiện tại" — kiện đang xếp — trên nền tối (web: `--highlight`). Chữ đặt lên màu này phải tối: trắng chỉ 1,5:1. */
+  highlight: '#f7cf40',
+
   /** Lớp phủ dưới tờ trượt từ đáy */
   scrim: 'rgba(2, 34, 45, 0.5)',
 } as const

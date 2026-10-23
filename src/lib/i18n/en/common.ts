@@ -16,4 +16,16 @@ export const common = {
   arrivalStatuses: { onTime: 'Arrived on time', late: 'Arrived late' },
   verifyMethods: { QR: 'QR scan', CODE: 'Typed code', MANUAL: 'By hand' },
   manualConfirmReasons: { LABEL_DAMAGED: 'Label torn / missing', QR_UNREADABLE: 'QR unreadable', OTHER: 'Other' },
+  handlingClasses: { STANDARD: 'Standard', FRAGILE: 'Fragile', REFRIGERATED: 'Refrigerated', HAZARDOUS: 'Hazardous', HIGH_VALUE: 'High value' },
+  packageStatuses: {
+    IMPORTED: 'Imported',
+    ASSIGNED: 'Assigned to trip',
+    STAGED: 'Staged',
+    LOADED: 'Loaded',
+    IN_TRANSIT: 'In transit',
+    DELIVERED: 'Delivered',
+    RETURNED: 'Returned',
+  },
+  packageFlags: { NOT_FOUND: 'Not found', DAMAGED: 'Damaged' },
+  obstacleTypes: { WHEEL_ARCH: 'Wheel arch', COOLING_UNIT: 'Cooling unit', PARTITION: 'Partition', RESERVED_ZONE: 'Reserved zone' },
 } satisfies Dictionary<typeof source>

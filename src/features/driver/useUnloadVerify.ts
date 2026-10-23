@@ -1,26 +1,11 @@
 import { useState } from 'react'
 
+import type { ManualValues, VerifyCandidate, VerifyController, VerifyOutcome } from '@/components/verify/verify-types'
 import { dataErrorMessage, useT, type TFunction } from '@/lib/i18n'
-import type { LabelVerifyMethod, ManualConfirmReason } from '@/lib/mock-db'
+import type { LabelVerifyMethod } from '@/lib/mock-db'
 
 import type { StopScreen } from './driver-model'
 import { useConfirmManuallyMutation, useConfirmUnloadMutation } from './useDriverQueries'
-
-/** Kết quả của lần đối chiếu gần nhất, đã dịch: hiện trong tờ, trình đọc màn hình đọc được. */
-export type VerifyOutcome = { readonly tone: 'success' | 'warning' | 'error'; readonly message: string }
-
-/** Một kiện chọn được ở mức xác nhận tay. */
-export type VerifyCandidate = {
-  /** Mã nguồn dùng để ghi. */
-  readonly id: string
-  /** Mã in trên nhãn. */
-  readonly label: string
-  readonly name: string
-  /** Dòng phụ: thứ tự dỡ, yêu cầu nhận. */
-  readonly description: string
-}
-
-export type ManualValues = { readonly itemId: string; readonly reason: ManualConfirmReason; readonly note: string | undefined }
 
 /** Kiện của điểm khác (`QR_WRONG_STOP`, cùng mã ở kho mẫu và backend): mã kiện và số điểm đúng; lỗi khác thì `undefined`. */
 function wrongStop(error: unknown): { readonly id: string; readonly stop: number } | undefined {
@@ -44,11 +29,12 @@ function errorMessage(error: unknown, screen: StopScreen, t: TFunction): string 
 }
 
 /**
- * Đối chiếu kiện khi dỡ hoặc nhận (như `useUnloadScan` của web) — cách duy nhất ghi một kiện "đã dỡ": quét hoặc gõ đúng mã thì nguồn ghi
- * kèm cách đối chiếu và tờ ở lại cho kiện kế tiếp; xong kiện cuối còn chờ của điểm thì tờ tự đóng. Kiện của điểm khác: nói kiện đó thuộc
- * điểm nào, không ghi gì. Nhãn không đọc được: xác nhận tay một kiện kèm lý do, chờ điều phối viên duyệt — còn chờ thì chưa hoàn tất điểm.
+ * Bộ điều khiển tờ đối chiếu (`PackageVerifySheet`) khi dỡ hoặc nhận (như `useUnloadScan` của web) — cách duy nhất ghi một kiện "đã
+ * dỡ": quét hoặc gõ đúng mã thì nguồn ghi kèm cách đối chiếu và tờ ở lại cho kiện kế tiếp; xong kiện cuối còn chờ của điểm thì hook đóng
+ * tờ. Kiện của điểm khác: nói kiện đó thuộc điểm nào, không ghi gì. Nhãn không đọc được: xác nhận tay một kiện kèm lý do, chờ điều phối
+ * viên duyệt — còn chờ thì chưa hoàn tất điểm.
  */
-export function useUnloadVerify(tripId: string, screen: StopScreen) {
+export function useUnloadVerify(tripId: string, screen: StopScreen): VerifyController {
   const t = useT()
   const scan = useConfirmUnloadMutation(tripId)
   const manual = useConfirmManuallyMutation(tripId)
@@ -117,5 +103,3 @@ export function useUnloadVerify(tripId: string, screen: StopScreen) {
 
   return { open, setOpen: setOpenState, candidates, result, pending: scan.isPending || manual.isPending, verify, confirmManually }
 }
-
-export type UnloadVerify = ReturnType<typeof useUnloadVerify>

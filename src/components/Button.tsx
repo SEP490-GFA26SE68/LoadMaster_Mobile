@@ -43,7 +43,7 @@ export function Button({ children, variant = 'primary', loading = false, disable
       {...rest}
       style={({ pressed }) => [styles.base, look.rest, pressed && look.pressed, disabled && styles.disabled, style]}>
       {loading ? <ActivityIndicator color={look.text} /> : Icon === undefined ? null : <Icon color={color} size={20} strokeWidth={1.5} />}
-      <AppText variant="label" color={color}>
+      <AppText variant="label" color={color} style={styles.label}>
         {children}
       </AppText>
       {TrailingIcon === undefined ? null : <TrailingIcon color={color} size={20} strokeWidth={1.5} />}
@@ -53,5 +53,7 @@ export function Button({ children, variant = 'primary', loading = false, disable
 
 const styles = StyleSheet.create({
   base: { minHeight: TOUCH, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space[2], paddingHorizontal: space[4], borderRadius: radius.md, borderWidth: 1 },
+  // Chữ dài (cỡ chữ lớn của máy) co lại nhường chỗ cho icon rồi xuống dòng, các dòng căn giữa — không tràn vào lề của nút
+  label: { flexShrink: 1, textAlign: 'center' },
   disabled: { backgroundColor: colors.border, borderColor: colors.border },
 })

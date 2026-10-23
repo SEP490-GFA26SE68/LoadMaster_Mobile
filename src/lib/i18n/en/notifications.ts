@@ -1,5 +1,7 @@
 import type { Dictionary } from '../types'
 import type { notifications as source } from '../vi/notifications'
+import { lookup as lookupScreen } from './lookup'
+import { warehouse as warehouseScreen } from './warehouse'
 
 export const notifications = {
   label: 'Notifications',
@@ -30,6 +32,14 @@ export const notifications = {
     pickupRejected: 'En-route pickup request rejected',
     stopsReordered: 'The dispatcher changed the stop order — check the route',
   },
+  warehouse: {
+    shortageKept: 'The dispatcher chose to keep searching for package {id} — find it and bring it to the staging area',
+    shortageDropped: 'The dispatcher dropped package {id} from the trip — staged packages stay in the staging area; continue once the new plan is approved',
+    manualRejected: warehouseScreen.confirms.rejected,
+    cancelled: warehouseScreen.cancelledTitle,
+    cancelledUnload: warehouseScreen.cancelledUnload,
+    nothingLoaded: 'No package is on the truck yet, nothing to unload.',
+  },
   manualRejected: 'The dispatcher rejected your manual confirmation — check the package again',
   ticketReplied: 'Support replied to your request',
   params: {
@@ -37,6 +47,7 @@ export const notifications = {
     loaded: 'Loaded',
     returned: 'Returned',
     packageInstanceId: 'Package',
+    packageCode: lookupScreen.fields.senderCode,
     count: 'Packages',
     lateStops: 'Stops expected late',
   },

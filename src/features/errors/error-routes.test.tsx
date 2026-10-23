@@ -29,9 +29,9 @@ jest.mock('@/features/auth/AccountScreen', () => {
   }
 })
 
-jest.mock('@/features/driver/NotificationsScreen', () => {
+jest.mock('@/features/bell/NotificationsScreen', () => {
   const { createElement } = jest.requireActual<typeof import('react')>('react')
-  const actual = jest.requireActual<typeof import('@/features/driver/NotificationsScreen')>('@/features/driver/NotificationsScreen')
+  const actual = jest.requireActual<typeof import('@/features/bell/NotificationsScreen')>('@/features/bell/NotificationsScreen')
   return {
     NotificationsScreen: () => {
       if (mockNotificationsFailure !== undefined) throw mockNotificationsFailure
@@ -197,8 +197,14 @@ describe('màn lỗi chung', () => {
 })
 
 describe('màn không tìm thấy', () => {
-  // Tài xế có tab Chuyến; mọi vai trò khác chỉ có tab Tài khoản
-  const HOMES = ROLES.map((role) => (role === 'driver' ? { role, path: '/trips', header: 'Chuyến của tôi' } : { role, path: '/account', header: 'Tài khoản' }))
+  // Tài xế mở tab Chuyến, nhân viên kho tab Kho; mọi vai trò khác chỉ có tab Tài khoản
+  const HOMES = ROLES.map((role) =>
+    role === 'driver'
+      ? { role, path: '/trips', header: 'Chuyến của tôi' }
+      : role === 'warehouse'
+        ? { role, path: '/warehouse', header: 'Chuyến cần xếp' }
+        : { role, path: '/account', header: 'Tài khoản' },
+  )
 
   test('chưa đăng nhập: địa chỉ lạ hiện "Không có màn này", "Về màn chính" mở màn đăng nhập', async () => {
     const { pathname } = await openApp('/khong-co-man-nay')

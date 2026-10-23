@@ -1,3 +1,3 @@
-import { NotificationsScreen } from '@/features/driver/NotificationsScreen'
+import { NotificationsScreen } from '@/features/bell/NotificationsScreen'
 
 export default NotificationsScreen

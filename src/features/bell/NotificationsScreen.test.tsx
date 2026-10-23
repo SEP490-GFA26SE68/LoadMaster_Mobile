@@ -2,6 +2,7 @@ import { configure, fireEvent, screen } from '@testing-library/react-native'
 
 import { getMockDb, resetMockDb } from '@/data/mock-db'
 import { createMockAuth } from '@/features/auth/auth-mock'
+import { tripPath } from '@/features/driver/TripCard'
 import { SEED_PASSWORD } from '@/lib/mock-db'
 import { DRIVER_EMAIL, LOADED_TRIP } from '@/test/driver-flow'
 import { router } from '@/test/native-mocks'
@@ -10,7 +11,6 @@ import { clearStored, renderApp, signInAs } from '@/test/render'
 import { NotificationBell } from './NotificationBell'
 import { resetReadNotifications } from './notification-read'
 import { NotificationsScreen } from './NotificationsScreen'
-import { tripPath } from './TripCard'
 
 configure({ asyncUtilTimeout: 5000 })
 

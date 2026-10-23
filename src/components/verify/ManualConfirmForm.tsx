@@ -11,7 +11,8 @@ import { useT } from '@/lib/i18n'
 import { MANUAL_CONFIRM_REASONS, MAX_MANUAL_NOTE_LENGTH } from '@/lib/mock-db'
 import { colors, space } from '@/theme/tokens'
 
-import type { ManualValues, VerifyCandidate } from './useUnloadVerify'
+import { CandidatePicker } from './CandidatePicker'
+import type { ManualValues, VerifyCandidate } from './verify-types'
 
 /** Lỗi của form là mã; component dịch qua `verify.errors.<mã>`. */
 const ERRORS = ['packageRequired', 'reasonRequired', 'noteRequired', 'noteTooLong'] as const
@@ -32,8 +33,9 @@ type Values = z.output<typeof schema>
 
 /**
  * Mức 3 của đối chiếu kiện (như `PackageVerifyManual` của web): chọn kiện và lý do — "Nhãn rách / mất", "QR không đọc được", "Khác"
- * (bắt buộc ghi chú). Gửi đi là một xác nhận tay chờ điều phối viên duyệt. Chỉ một kiện chọn được thì kiện đó được chọn sẵn. Nơi gọi đặt
- * `key` theo danh sách kiện chọn được: ghi xong một kiện thì danh sách đổi và form bắt đầu lại; lỗi thì giữ nguyên dữ liệu đang nhập.
+ * (bắt buộc ghi chú). Gửi đi là một xác nhận tay chờ điều phối viên duyệt. Chỉ một kiện chọn được thì kiện đó được chọn sẵn; nhiều kiện
+ * thì có ô tìm (`CandidatePicker`). Nơi gọi đặt `key` theo danh sách kiện chọn được: ghi xong một kiện thì danh sách đổi và form bắt đầu
+ * lại; lỗi thì giữ nguyên dữ liệu đang nhập.
  */
 export function ManualConfirmForm({ candidates, pending, onSubmit }: { candidates: readonly VerifyCandidate[]; pending: boolean; onSubmit: (values: ManualValues) => unknown }) {
   const t = useT()
@@ -55,14 +57,7 @@ export function ManualConfirmForm({ candidates, pending, onSubmit }: { candidate
         control={form.control}
         name="itemId"
         render={({ field, fieldState }) => (
-          <ChoiceGroup
-            label={t('verify.manualPackage')}
-            choices={candidates.map((candidate) => ({ value: candidate.id, label: candidate.label, description: `${candidate.name} · ${candidate.description}` }))}
-            value={field.value === '' ? undefined : field.value}
-            onChange={field.onChange}
-            error={message(fieldState.error?.message)}
-            codeLabels
-          />
+          <CandidatePicker candidates={candidates} value={field.value} onChange={field.onChange} error={message(fieldState.error?.message)} />
         )}
       />
       <Controller
