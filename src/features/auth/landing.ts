@@ -1,12 +1,20 @@
 import type { Href } from 'expo-router'
 
-import { isPlatformRole, type Role } from '@/types/user'
+import { isPlatformRole, type Role, type User } from '@/types/user'
 
 import { can } from './permissions'
 
 /** Màn mở ra sau khi đăng nhập. Phải là màn vai trò đó mở được: vai trò chưa có màn làm việc trên app thì về Tài khoản. */
 export function landingOf(role: Role): Href {
   return can(role, 'driver.operate') ? '/trips' : '/account'
+}
+
+/**
+ * "Màn chính" của người đang dùng app — đích của nút "Về màn chính" ở màn lỗi và màn không tìm thấy: màn của vai trò khi đã đăng nhập,
+ * màn đăng nhập khi chưa (route của nhóm `(app)` nằm sau phiên, người chưa đăng nhập không mở được `/`).
+ */
+export function homeOf(user: User | null): Href {
+  return user === null ? '/sign-in' : landingOf(user.role)
 }
 
 /**

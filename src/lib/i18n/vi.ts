@@ -5,6 +5,7 @@ import { backendErrors } from './vi/backendErrors'
 import { common } from './vi/common'
 import { dataErrors } from './vi/dataErrors'
 import { driver } from './vi/driver'
+import { errors } from './vi/errors'
 import { issues } from './vi/issues'
 import { language } from './vi/language'
 import { nav } from './vi/nav'
@@ -30,6 +31,7 @@ export const vi = {
   common,
   dataErrors,
   driver,
+  errors,
   issues,
   language,
   nav,

@@ -117,12 +117,15 @@ src/
   app/                 route của Expo Router — MỎNG: mỗi file chỉ export màn lấy từ features/
     _layout.tsx        provider + hai nhóm route theo phiên (sign-in | (app))
     +native-intent.tsx địa chỉ Keycloak trả phiên về (`loadmaster://auth`) không mở màn nào
-    (app)/_layout.tsx  Stack: thanh tab `(tabs)` và các màn mở chồng có lối quay lại (`trip/[tripId]`, `notifications`), sau quyền
+    +not-found.tsx     địa chỉ không khớp route nào: màn "Không có màn này", nút về màn chính
+    (app)/_layout.tsx  Stack: thanh tab `(tabs)` và các màn mở chồng có lối quay lại (`trip/[tripId]`, `notifications`), sau quyền;
+                       export `ErrorBoundary` cho cả nhóm (`sign-in.tsx`, `+not-found.tsx` cũng export)
     (app)/(tabs)/      thanh tab đáy; mỗi tab nằm sau quyền của nó
   features/<tên>/      màn, component, hook, <tên>-api.ts của một feature
     auth/              đăng nhập (kho mẫu, Keycloak), phiên, quyền, màn Tài khoản
     driver/            màn của tài xế: chuyến của tôi, một chuyến (điểm giao, dỡ, hoàn tất, sự cố, GPS), tổng kết, thông báo;
                        adapter driver-mock.ts (kho mẫu) và driver-http.ts (backend)
+    errors/            màn lỗi chung `RouteErrorScreen` (là `ErrorBoundary` của route) và màn không tìm thấy `NotFoundScreen`
     notifications/     ← chép từ web: sự kiện nào báo cho ai
     viewer3d/          ← chép từ web: phần thuần (kiện theo điểm giao, thứ tự dỡ) — không có Three.js
   components/          component dùng từ hai feature trở lên: AppText, Button, IconButton, TextField, Screen, Card, Chip,
@@ -159,8 +162,8 @@ hai lần. Bản web là nguồn chuẩn.
 - Danh sách file nằm ở `src/web-mirror.json`: `src/domain`, `src/types`, `src/services/optimization`, `src/lib/mock-db`, cùng các file
   lẻ khai ở `MIRRORED_FILES` của `scripts/sync-from-web.mjs` — quyền và hồ sơ backend (`features/auth/permissions.ts`,
   `backend-user.ts`), phần thuần của màn tài xế (`features/driver/`: tiến độ giao, giờ đến, hoàn tất điểm, form sự cố…), của viewer
-  3D và chuông, `lib/stops.ts`, `lib/calendar-date.ts`, `lib/i18n/types.ts` và các nhánh từ điển `dataErrors`, `issues`, `language`,
-  `roles`, `status`.
+  3D và chuông, `lib/stops.ts`, `lib/calendar-date.ts`, `lib/i18n/types.ts`, `lib/i18n/hardcoded-strings.ts` (bộ dò chữ viết cứng của
+  cổng i18n, mục 8) và các nhánh từ điển `dataErrors`, `issues`, `language`, `roles`, `status`.
 - **Không sửa các file đó ở mobile.** Cần đổi thì sửa ở bản web (qua quy trình của web), rồi chạy `pnpm sync:web`.
   `pnpm sync:web:verify` (nằm trong `pnpm check` và CI) đỏ khi có file trong danh sách bị sửa tay.
 - Thêm một file logic thuần của web vào app: thêm đường dẫn vào `MIRRORED_FILES` của `scripts/sync-from-web.mjs`, không chép tay.
@@ -244,8 +247,9 @@ liệu. Backend lệch với hợp đồng của app thì ghi vào issue và h�
 - Đóng trang đăng nhập không phải lỗi: `signIn` ném `SIGN_IN_CANCELLED`, màn không báo gì.
 - Đăng xuất quên phiên **ngay** (trước `await` đầu tiên, để lượt làm mới đang chạy không cất lại phiên), rồi gọi endpoint logout của
   Keycloak bằng refresh token. Không dùng endpoint thu hồi token: thu hồi refresh token cắt phiên của client đó trên mọi máy.
-- `auth` dùng backend mà feature khác còn ở kho mẫu: kho mẫu mở phiên của tài khoản dùng thử **cùng vai trò** — mã, công ty, kho của
-  người dùng là của tài khoản mẫu, tên và email của backend; `backendUserId()` vẫn là mã backend.
+- `auth` dùng backend mà feature khác còn ở kho mẫu: kho mẫu mở phiên của tài khoản dùng thử **cùng vai trò** — mã và công ty của
+  người dùng là của tài khoản mẫu, tên và email của backend; kho / chi nhánh của tài khoản mẫu không chép sang (backend không có trường
+  đó, màn Tài khoản không hiện kho của người khác); `backendUserId()` vẫn là mã backend.
 
 ## 7. Giao diện
 
@@ -271,6 +275,13 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
 - Icon của nút đặt bằng `icon` / `trailingIcon` của `Button` (Lucide), không đặt trong `children` — chữ của nút nằm trong một `Text`.
   Nút chỉ có icon dùng `IconButton` (56 × 56, `label` là tên đọc được).
 - Màn đọc dữ liệu có đủ ba trạng thái: đang tải, lỗi kèm nút thử lại, chưa có gì (`StateView`). Danh sách kéo xuống để đọc lại.
+- Màn ném lỗi lúc vẽ nhường chỗ cho **màn lỗi chung** (`features/errors/RouteErrorScreen`): `(app)/_layout.tsx` bắt cho cả nhóm nên
+  route mới trong nhóm không tự bắt lỗi; route mới ngang hàng `sign-in` export `ErrorBoundary` như `sign-in.tsx`. Layout gốc không bắt
+  lỗi (màn lỗi ở đó nằm ngoài `Providers`, không có ngôn ngữ). "Thử lại" dựng lại cả nhóm: màn mở trong lúc dùng không tự mở lại.
+  "Về màn chính" chỉ hiện khi màn chính khác route đang mở (màn đăng nhập lỗi thì không có); người đã đăng nhập luôn có "Đăng xuất" —
+  lối ra duy nhất khi chính màn chính hay thanh tab lỗi mãi, vì nút đăng xuất của màn Tài khoản nằm trong nhóm đang lỗi. Màn lỗi về màn
+  chính bằng `replace` (route mới, nhóm dựng lại); màn không tìm thấy bằng `dismissAll` + `dismissTo` (`useReturnHome`): liên kết lạ mở
+  lúc app đang chạy chồng nó lên nhóm đang mở, và `replace` ở đó dựng thêm một bản thứ hai của nhóm.
 - Chuyển động ngắn (dưới 300 ms), tôn trọng cài đặt giảm chuyển động của máy.
 
 ### Khả năng truy cập
@@ -283,6 +294,13 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
 ## 8. Ngôn ngữ
 
 - Chuỗi hiển thị viết qua `t()` (`useT()`), kể cả `accessibilityLabel`. Số, đơn vị, ngày giờ qua `useFormat()` — không tự nối chuỗi số.
+- **Cổng i18n** `src/lib/i18n/no-hardcoded-vietnamese.test.ts` (cùng cách với bản web): chữ có dấu tiếng Việt viết thẳng trong code của
+  mobile (`src/**/*.ts`, `*.tsx`: chữ JSX, `accessibilityLabel`, chuỗi thường; chú thích không tính) làm test đỏ, kèm file và số dòng.
+  Không quét: file chép từ web (`src/web-mirror.json` — bản web có cổng riêng; file mobile viết đè ở `scripts/web-overrides` vẫn quét),
+  nhánh từ điển `lib/i18n/vi/`, `lib/i18n/en/`, test và `src/test/`. Lỗi bất biến cho lập trình viên (`throw new Error(...)`, thông điệp
+  cùng dòng) được viết tiếng Việt. Ngoại lệ khác ghi vào `ALLOWED` của test: file, đúng đoạn chữ và một dòng lý do — chỉ cho chữ không phải
+  giao diện (dòng nhật ký `[LoadMaster] lỗi không có mã`, tên ngôn ngữ); ngoại lệ giữ đoạn chữ chứ không cả file, và ngoại lệ không còn
+  khớp dòng nào cũng làm test đỏ.
 - Từ điển ở `src/lib/i18n/vi/<nhánh>.ts` và `en/<nhánh>.ts`; `en` khai `satisfies Dictionary<…>` nên thiếu hoặc thừa key là lỗi kiểm
   kiểu. Màn mới thêm nhánh bằng file mới và một dòng ghép ở `vi.ts`, `en.ts`. Mỗi nhánh có chú thích nói nó phục vụ màn nào.
 - Năm nhánh chép từ web (mục 4) không sửa ở đây.
@@ -290,8 +308,8 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
 - Không dịch: **MOCK RESULT**, LoadMaster, tên riêng trong dữ liệu.
 - Logic thuần trả mã, component dịch. Schema zod dùng key từ điển làm message.
 - Hermes **không có** `Intl.PluralRules`, `Intl.ListFormat`, `Intl.RelativeTimeFormat`, `Intl.Segmenter` (đã đo trên máy):
-  `translate.ts` tự chọn dạng số nhiều, `format.ts` tự ghép danh sách. Đừng gọi bốn thứ đó trực tiếp. `Intl.NumberFormat` (kể cả đơn
-  vị, tiền) và `Intl.DateTimeFormat` dùng được.
+  `translate.ts` tự chọn dạng số nhiều, `format.ts` tự ghép danh sách (liên từ lấy ở `common.listAnd` của từ điển). Đừng gọi bốn thứ
+  đó trực tiếp. `Intl.NumberFormat` (kể cả đơn vị, tiền) và `Intl.DateTimeFormat` dùng được.
 
 ## 9. Kiểm thử
 
@@ -308,6 +326,11 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
   `setCameraPermission`, `setLocation`, `emitPosition`, `failPosition`… Luồng tài xế: `src/test/driver-flow.tsx` (`renderTrip`, chuyến
   mẫu đã xếp xong `TRIP-010`, `labelsAt`, `departLoadedTrip`…) đưa chuyến tới đúng bước bằng hàm của kho; chỉ bấm qua màn đúng việc
   đang test.
+- Test đi qua router thật (màn lỗi, màn không tìm thấy: `src/features/errors/error-routes.test.tsx`): `jest.unmock('expo-router')` rồi
+  `renderRouter('src/app', { initialUrl })` của `expo-router/testing-library`; màn cần ném lỗi thay bằng `jest.mock`. `act` của RNTL v14
+  luôn bất đồng bộ: `await act(async () => { router.push(…) })`; không dùng `testRouter` (nó gọi `act` không `await`, sau đó các lần vẽ
+  lại không chạy nữa). `renderRouter` bật đồng hồ giả: `afterEach` gọi `await cleanup()` rồi mới `jest.useRealTimers()`. Ngăn xếp
+  kiểm bằng `getRouterState()` (route `__root` bọc stack của layout gốc); `Href` chỉ nhận route có thật nên địa chỉ lạ đi qua `string`.
 - Jest bật `clearMocks`: số lần gọi của `jest.fn` về 0 trước mỗi test.
 - Hạn mức: test đúng việc của issue; không viết test trùng với test đã có ở bản web cho logic chép sang.
 - Jest chạy trên Node, **không phải Hermes**: nó không chứng minh được hiệu năng, `Intl` của máy, bàn phím ảo, camera, GPS. Việc như

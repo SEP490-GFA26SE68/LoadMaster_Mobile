@@ -38,6 +38,8 @@ const MIRRORED_FILES = [
   'lib/calendar-date.ts',
   'lib/i18n/types.ts',
   ...['dataErrors', 'issues', 'language', 'roles', 'status'].flatMap((branch) => [`lib/i18n/vi/${branch}.ts`, `lib/i18n/en/${branch}.ts`]),
+  // Dò chữ tiếng Việt viết cứng ngoài từ điển (hàm thuần): test `lib/i18n/no-hardcoded-vietnamese.test.ts` của mobile dùng như bản web
+  'lib/i18n/hardcoded-strings.ts',
 ]
 
 /** Không chép: test, bench và phần chỉ chạy được trong trình duyệt. */

@@ -5,6 +5,7 @@ import { backendErrors } from './en/backendErrors'
 import { common } from './en/common'
 import { dataErrors } from './en/dataErrors'
 import { driver } from './en/driver'
+import { errors } from './en/errors'
 import { issues } from './en/issues'
 import { language } from './en/language'
 import { nav } from './en/nav'
@@ -24,6 +25,7 @@ export const en = {
   common,
   dataErrors,
   driver,
+  errors,
   issues,
   language,
   nav,

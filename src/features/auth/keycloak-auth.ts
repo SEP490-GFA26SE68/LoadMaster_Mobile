@@ -87,7 +87,7 @@ function roleOf(profile: BackendUserProfile): Role {
   return role
 }
 
-/** Có tài khoản mẫu: mã, công ty, kho là của nó (dữ liệu mẫu gắn với các mã đó); không thì mọi thứ là của backend. */
+/** Có tài khoản mẫu: mã, công ty là của nó (dữ liệu mẫu gắn với các mã đó), kho của nó bị bỏ; không thì mọi thứ là của backend. */
 function userOf(profile: BackendUserProfile, role: Role, standIn: User | null): User {
   if (standIn !== null) return userFromBackend(profile, role, standIn)
   return {

@@ -8,19 +8,20 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
 
 ## Trạng thái
 
-16/10/2026:
+22/10/2026:
 
 - Đăng nhập, phiên, phân quyền theo tám vai trò; màn Tài khoản; chuyển ngôn ngữ vi / en. Đăng nhập bằng kho mẫu hoặc bằng Keycloak
-  của backend.
+  của backend. Màn lỗi chung khi một màn hỏng lúc vẽ, và màn "Không có màn này" cho địa chỉ lạ.
 - Tài xế, đủ luồng trên kho mẫu: "Chuyến của tôi"; màn một chuyến — xuất phát, đã đến điểm, đối chiếu kiện khi dỡ (quét QR, gõ mã,
   xác nhận tay), báo sự cố theo kiện, sự cố trên đường, hoàn tất điểm, tổng kết; gửi vị trí GPS; thông báo.
 - Nối backend: đăng nhập (Keycloak + `GET /api/users/me`) và năm endpoint của tài xế (danh sách chuyến, điểm hiện tại, dỡ kiện, hoàn
   tất điểm, vị trí). Việc backend chưa có (xuất phát, đã đến, xác nhận tay, sự cố, thông báo) thì app ẩn nút khi chạy với backend.
-- Đã chạy bản debug trên máy ảo Android 16: với kho mẫu — đăng nhập tài xế, xuất phát, đã đến điểm, dỡ kiện bằng gõ mã; với backend —
-  nút Đăng nhập mở trang Keycloak trong trình duyệt đúng tham số (PKCE `S256`, `loadmaster://auth`). **Chưa** chạy với backend thật
-  (đăng nhập trọn vòng, năm endpoint của tài xế), chưa kiểm camera QR, GPS thật, điện thoại thật và iOS.
+- Ngày 16/10 đã chạy bản debug trên máy ảo Android 16: với kho mẫu — đăng nhập tài xế, xuất phát, đã đến điểm, dỡ kiện bằng gõ mã; với
+  backend — nút Đăng nhập mở trang Keycloak trong trình duyệt đúng tham số (PKCE `S256`, `loadmaster://auth`). **Chưa** chạy với backend
+  thật (đăng nhập trọn vòng, năm endpoint của tài xế), chưa kiểm camera QR, GPS thật, điện thoại thật và iOS; hai màn lỗi thêm sau ngày
+  đó chưa chạy trên máy.
 
-Kiểm thử: 97 test (Jest), lint và kiểm kiểu sạch; đóng gói Android (`expo export`) chạy được.
+Kiểm thử: 116 test (Jest), lint và kiểm kiểu sạch; đóng gói Android (`expo export`) chạy được.
 
 ## Chạy
 
@@ -80,8 +81,9 @@ Cần backend và Keycloak của repo backend chạy trên máy tính (cổng 80
    `exp://*` vào client.
 
 Đăng nhập bằng tài khoản của realm. Tài khoản vai trò `DRIVER` vào màn tài xế và thấy chuyến **Đang vận chuyển** của xe mình được gán
-(backend tìm chuyến theo tài xế của xe). Chỉ `auth` (bỏ `driver`): đăng nhập bằng backend, dữ liệu vẫn là kho mẫu của tài khoản dùng
-thử cùng vai trò.
+(backend tìm chuyến theo tài xế của xe). Nhánh `develop` của backend hiện đã bỏ `GET /api/driver/trips` (từ 19/10): tới khi endpoint này
+có lại, màn tài xế báo lỗi khi chạy với backend. Chỉ `auth` (bỏ `driver`): đăng nhập bằng backend, dữ liệu vẫn là kho mẫu của tài khoản
+dùng thử cùng vai trò.
 
 ## Logic dùng chung với bản web
 

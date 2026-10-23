@@ -10,6 +10,8 @@ export const common = {
   close: 'Đóng',
   dismiss: 'Ẩn thông báo',
   stop: 'Điểm {number}',
+  /** Liên từ nối hai phần tử cuối của danh sách khi máy không có `Intl.ListFormat` (Hermes): "A, B và C" (`lib/format.ts`). */
+  listAnd: 'và',
   /** Loại sự cố giao của một kiện (`DeliveryIssueKind`). */
   deliveryIssueKinds: { damaged: 'Hàng hỏng', missing: 'Thiếu hàng', refused: 'Khách từ chối', other: 'Khác' },
   /** Loại sự cố cấp chuyến (`TripExceptionType`). */

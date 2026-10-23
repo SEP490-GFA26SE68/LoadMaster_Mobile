@@ -3,6 +3,8 @@
  * gọi y như cũ. Khác web ở một điểm: Hermes không bảo đảm có `Intl.ListFormat` và kiểu `unit` của `Intl.NumberFormat`, nên hai chỗ đó
  * có đường lui tự ghép. Đầu vào luôn là đơn vị nghiệp vụ: cm, kg, cm³.
  */
+import { en } from '@/lib/i18n/en'
+import { vi } from '@/lib/i18n/vi'
 
 export type FormatLocale = 'vi-VN' | 'en-US'
 
@@ -44,8 +46,8 @@ const DATE_OPTIONS: Record<FormatLocale, Intl.DateTimeFormatOptions> = {
 
 const TIME_OPTIONS: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }
 
-/** Liên từ nối hai phần tử cuối khi máy không có `Intl.ListFormat`. */
-const LIST_JOINT: Record<FormatLocale, string> = { 'vi-VN': ' và ', 'en-US': ' and ' }
+/** Liên từ nối hai phần tử cuối khi máy không có `Intl.ListFormat`: chữ nằm ở từ điển (`common.listAnd`). */
+const LIST_AND: Record<FormatLocale, string> = { 'vi-VN': vi.common.listAnd, 'en-US': en.common.listAnd }
 
 function withoutYear(formatter: Intl.DateTimeFormat, value: Date): string {
   const parts = formatter.formatToParts(value)
@@ -74,7 +76,7 @@ function listJoiner(locale: FormatLocale): (items: readonly string[]) => string 
     const conjunction = new Intl.ListFormat(locale, { type: 'conjunction' })
     return (items) => conjunction.format(items)
   }
-  return (items) => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')}${LIST_JOINT[locale]}${items[items.length - 1]}`)
+  return (items) => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} ${LIST_AND[locale]} ${items[items.length - 1]}`)
 }
 
 export function createFormatter(locale: FormatLocale): Formatter {

@@ -9,6 +9,7 @@ export const common = {
   close: 'Close',
   dismiss: 'Dismiss',
   stop: 'Stop {number}',
+  listAnd: 'and',
   deliveryIssueKinds: { damaged: 'Damaged', missing: 'Missing', refused: 'Refused by customer', other: 'Other' },
   tripExceptionTypes: { TRAFFIC: 'Traffic jam', ACCIDENT: 'Accident', ROAD_CONSTRUCTION: 'Road works', VEHICLE_BREAKDOWN: 'Vehicle breakdown', OTHER: 'Other' },
   deadlineStatuses: { OK: 'On time', AT_RISK: 'Tight', MISSED: 'Expected late' },

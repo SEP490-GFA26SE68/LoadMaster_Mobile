@@ -89,11 +89,12 @@ function stopScreen(trip: Trip, view: DeliveryView, stops: readonly StopDelivery
     timing: stopTiming(trip, stop.number, view.arrivedAt, liveNow),
     items: view.items.map(({ item, unloaded, issue, returned, verification }) => ({
       id: item.id,
-      label: item.id,
+      label: item.label ?? item.id,
       name: item.name,
       weightKg: item.weightKg,
       unloadingOrder: item.unloadingOrder,
-      place: { area: item.area, layer: item.layer },
+      // Thiếu vùng hoặc lớp thì dòng kiện bỏ hẳn chỗ xếp, như `DeliveryItemRow` của web
+      place: item.area === undefined || item.layer === undefined ? undefined : { area: item.area, layer: item.layer },
       unloaded,
       via: unloaded ? verifyVia(verification) : undefined,
       rejectedReason: rejectedReason(unloaded, verification),
@@ -119,7 +120,7 @@ function stopScreen(trip: Trip, view: DeliveryView, stops: readonly StopDelivery
     pendingConfirms: view.pendingConfirms,
     completion: {
       delivered: completion.delivered,
-      returned: completion.returned.map((item) => ({ id: item.id, label: item.id, name: item.name })),
+      returned: completion.returned.map((item) => ({ id: item.id, label: item.label ?? item.id, name: item.name })),
       picked: completion.picked,
       issues: completion.issues,
       next: completion.next === undefined ? undefined : { number: completion.next.number, name: completion.next.name },
