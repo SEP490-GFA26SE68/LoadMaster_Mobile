@@ -18,6 +18,21 @@ export const verify = {
   codeSubmit: 'Verify code',
   manualIntro: 'Use this when the label is torn, missing or unreadable. The dispatcher must approve a manual confirmation before this step can finish.',
   manualPackage: 'Package',
+  manualFilter: {
+    label: 'Find a package',
+    hint: 'Type the label code, package ID or package name. Accents are optional.',
+    all: { one: '{count} package to choose from.', other: '{count} packages to choose from.' },
+    allMore: {
+      one: '{count} package to choose from — showing the first {shown}. Type a code or name to find another.',
+      other: '{count} packages to choose from — showing the first {shown}. Type a code or name to find another.',
+    },
+    matches: { one: '{count} package matches.', other: '{count} packages match.' },
+    matchesMore: {
+      one: '{count} package matches — showing the first {shown}. Type more to narrow the list.',
+      other: '{count} packages match — showing the first {shown}. Type more to narrow the list.',
+    },
+    none: 'No package matches. Check what you typed.',
+  },
   manualReason: 'Reason',
   manualNote: 'Note',
   manualNoteHint: 'Required when you choose Other.',

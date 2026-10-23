@@ -1,6 +1,7 @@
 /**
- * Tờ đối chiếu kiện ba mức (`features/driver/PackageVerifySheet.tsx`): quét QR bằng camera → gõ mã in trên nhãn → xác nhận tay chờ
- * điều phối viên duyệt. Câu theo bản web (nhánh `qr.verify`, `qr.scan.camera`); tên ba mức và lý do xác nhận tay ở nhánh `common`.
+ * Tờ đối chiếu kiện ba mức (`components/verify/PackageVerifySheet.tsx`; tài xế dỡ, nhận dọc đường; kho soạn, xếp): quét QR bằng camera →
+ * gõ mã in trên nhãn → xác nhận tay chờ điều phối viên duyệt. Câu theo bản web (nhánh `qr.verify`, `qr.scan.camera`); tên ba mức và lý do
+ * xác nhận tay ở nhánh `common`. Tiêu đề và mô tả của tờ là của từng bước, ở nhánh của màn đó.
  */
 export const verify = {
   levels: 'Cách đối chiếu',
@@ -19,6 +20,22 @@ export const verify = {
   codeSubmit: 'Đối chiếu mã',
   manualIntro: 'Dùng khi nhãn rách, mất hoặc không đọc được. Điều phối viên phải duyệt xác nhận tay trước khi bước này hoàn tất.',
   manualPackage: 'Kiện',
+  /** Ô tìm kiện khi có hơn 8 kiện chọn được (`CandidatePicker`); danh sách chỉ hiện 20 kiện khớp đầu tiên. */
+  manualFilter: {
+    label: 'Tìm kiện',
+    hint: 'Gõ mã trên nhãn, mã kiện hoặc tên kiện. Không cần gõ dấu.',
+    all: { one: 'Có {count} kiện để chọn.', other: 'Có {count} kiện để chọn.' },
+    allMore: {
+      one: 'Có {count} kiện để chọn — đang hiện {shown} kiện đầu. Gõ mã hoặc tên để tìm kiện khác.',
+      other: 'Có {count} kiện để chọn — đang hiện {shown} kiện đầu. Gõ mã hoặc tên để tìm kiện khác.',
+    },
+    matches: { one: '{count} kiện khớp.', other: '{count} kiện khớp.' },
+    matchesMore: {
+      one: '{count} kiện khớp — đang hiện {shown} kiện đầu. Gõ thêm để thu hẹp.',
+      other: '{count} kiện khớp — đang hiện {shown} kiện đầu. Gõ thêm để thu hẹp.',
+    },
+    none: 'Không có kiện nào khớp. Kiểm tra lại chữ đã gõ.',
+  },
   manualReason: 'Lý do',
   manualNote: 'Ghi chú',
   manualNoteHint: 'Bắt buộc khi chọn Khác.',

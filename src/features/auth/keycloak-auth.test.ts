@@ -217,7 +217,7 @@ describe('mở lại phiên đã cất', () => {
   })
 })
 
-test('feature khác còn ở kho mẫu: mã, công ty, kho là của tài khoản mẫu cùng vai trò; tên, email là của backend', async () => {
+test('feature khác còn ở kho mẫu: mã, công ty là của tài khoản mẫu cùng vai trò, kho của nó không chép sang; tên, email là của backend', async () => {
   const standInUser: User = {
     id: 'US-0013',
     fullName: 'Tài xế mẫu',
@@ -233,7 +233,9 @@ test('feature khác còn ở kho mẫu: mã, công ty, kho là của tài khoả
   const { auth, oauth } = setup({ standIn })
   const { user } = await auth.signIn()
   expect(standIn.open).toHaveBeenCalledWith('driver')
-  expect(user).toMatchObject({ id: 'US-0013', companyId: 'LOG-001', depot: 'Kho Long Bình', fullName: 'Trần Văn Bình', email: 'binh@longbinh.vn' })
+  expect(user).toMatchObject({ id: 'US-0013', companyId: 'LOG-001', fullName: 'Trần Văn Bình', email: 'binh@longbinh.vn' })
+  // Backend không có kho / chi nhánh: màn Tài khoản không hiện kho của tài khoản mẫu
+  expect(user.depot).toBeUndefined()
   expect(auth.backendUserId()).toBe('15')
 
   await auth.signOut()

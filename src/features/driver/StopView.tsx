@@ -8,15 +8,15 @@ import { Button } from '@/components/Button'
 import { IconButton } from '@/components/IconButton'
 import { Screen } from '@/components/Screen'
 import { StopDot } from '@/components/StopDot'
+import { PackageVerifySheet } from '@/components/verify/PackageVerifySheet'
 import { useCan } from '@/features/auth/AuthProvider'
+import { NotificationBell } from '@/features/bell/NotificationBell'
 import { useT } from '@/lib/i18n'
 import { stopColor } from '@/lib/stops'
 import { colors, palette, radius, shadow, space } from '@/theme/tokens'
 
 import type { StopScreen, TripHead } from './driver-model'
 import { GpsToggle } from './GpsToggle'
-import { NotificationBell } from './NotificationBell'
-import { PackageVerifySheet } from './PackageVerifySheet'
 import { ReportIssueSheet } from './ReportIssueSheet'
 import { StopContactCard } from './StopContactCard'
 import { footerStep, StopFooter } from './StopFooter'
@@ -128,7 +128,18 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
         </AppText>
       ) : null}
 
-      {arrived ? <PackageVerifySheet verify={verify} screen={screen} manualAllowed={capabilities.manualConfirm} /> : null}
+      {arrived ? (
+        <PackageVerifySheet
+          verify={verify}
+          title={t(pickupStop ? 'driver.pickup.scanTitle' : 'driver.scan.title', { number: stop.number })}
+          description={t(pickupStop ? 'driver.pickup.scanDescription' : 'driver.scan.description', {
+            number: stop.number,
+            done: screen.doneCount,
+            total: screen.total,
+          })}
+          manualAllowed={capabilities.manualConfirm}
+        />
+      ) : null}
       <ReportIssueSheet
         key={`issue-${issue.key}`}
         open={issue.open}

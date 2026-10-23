@@ -40,7 +40,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "LoadMaster dùng camera để quét mã QR trên nhãn kiện khi dỡ hàng.",
+          "cameraPermission": "LoadMaster dùng camera để quét mã QR trên nhãn kiện khi soạn, xếp, dỡ hàng hoặc tra cứu kiện.",
           "recordAudioAndroid": false
         }
       ],

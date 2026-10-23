@@ -3,12 +3,12 @@ import { RefreshControl, SectionList, StyleSheet, View } from 'react-native'
 import { AppText } from '@/components/AppText'
 import { Screen } from '@/components/Screen'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateView'
+import { NotificationBell } from '@/features/bell/NotificationBell'
 import { dataErrorMessage, useFormat, useT } from '@/lib/i18n'
 import { colors, CONTENT_MAX_WIDTH, space } from '@/theme/tokens'
 
 import type { DriverTripRow } from './driver-model'
 import { MY_TRIP_GROUPS } from './my-trips'
-import { NotificationBell } from './NotificationBell'
 import { TripCard } from './TripCard'
 import { useMyTripsQuery } from './useDriverQueries'
 

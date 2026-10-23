@@ -33,7 +33,7 @@ function tripRow(row: MyTripRow, live: TripMonitoring | undefined): DriverTripRo
   const { byStop, sources } = stopListTimings(row.schedule, row.status === 'IN_TRANSIT' ? live : undefined)
   return {
     id: row.id,
-    code: row.id,
+    code: row.code ?? row.id,
     name: row.name,
     date: row.scheduledDate,
     vehicleName: row.vehicleName,

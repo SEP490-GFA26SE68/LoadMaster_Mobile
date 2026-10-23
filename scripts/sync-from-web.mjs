@@ -32,12 +32,25 @@ const MIRRORED_FILES = [
   ...['scene-input', 'scene-pickups', 'scene-types', 'viewer-types', 'operations/unloading'].map((name) => `features/viewer3d/${name}.ts`),
   // Chuông: sự kiện nào báo cho ai, câu riêng của tài xế
   'features/notifications/notifications.ts',
+  // Màn kho: nhóm chuyến của danh sách kho, phiên soạn → xếp theo bản duyệt, số liệu hướng dẫn đặt từng kiện
+  ...['warehouse-trips', 'loading-session', 'describe-step'].map((name) => `features/warehouse/${name}.ts`),
+  // Phép chiếu đẳng cự cho hình vẽ tĩnh (hướng đặt kiện ở màn kho) và token nó đọc — ngoài trình duyệt `readToken` trả chuỗi rỗng
+  'lib/isometric.ts',
+  'lib/tokens.ts',
   // Màu định danh điểm giao và màu chữ tương phản trên từng màu
   'lib/stops.ts',
   // Ngày lịch `YYYY-MM-DD` (ngày chạy) → giữa trưa giờ máy, để ngày hiện đúng ở mọi múi giờ
   'lib/calendar-date.ts',
   'lib/i18n/types.ts',
-  ...['dataErrors', 'issues', 'language', 'roles', 'status'].flatMap((branch) => [`lib/i18n/vi/${branch}.ts`, `lib/i18n/en/${branch}.ts`]),
+  ...['dataErrors', 'issues', 'language', 'lookup', 'roles', 'status', 'warehouse'].flatMap((branch) => [
+    `lib/i18n/vi/${branch}.ts`,
+    `lib/i18n/en/${branch}.ts`,
+  ]),
+  // Dò chữ tiếng Việt viết cứng ngoài từ điển (hàm thuần): test `lib/i18n/no-hardcoded-vietnamese.test.ts` của mobile dùng như bản web
+  'lib/i18n/hardcoded-strings.ts',
+  // Test: đưa chuyến của kho mẫu qua soạn, xếp, dỡ bằng đúng lối của app (mọi kiện qua đối chiếu), và chuyến hai thùng nhỏ dựng tay
+  'test/trip-flow.ts',
+  'test/mock-db-samples.ts',
 ]
 
 /** Không chép: test, bench và phần chỉ chạy được trong trình duyệt. */

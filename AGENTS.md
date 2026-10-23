@@ -8,15 +8,15 @@ File này là **luật sống**: khi thực tế cho thấy một luật sai ho�
 ## 1. Sản phẩm và phạm vi
 
 LoadMaster là hệ thống lập kế hoạch và tối ưu chất xếp hàng hoá 3D cho doanh nghiệp vận tải. Repo này là **app mobile**
-(Android, iOS; điện thoại và máy tính bảng), viết bằng React Native + Expo. Bản web (repo `LoadMaster_FE`) và app dùng **chung một
-backend** (Spring Boot + Keycloak, cộng một service FastAPI cho tối ưu).
+(Android, iOS), viết bằng React Native + Expo, **thiết kế cho điện thoại trước**: chưa có bố cục riêng cho máy tính bảng (mục 7). Bản
+web (repo `LoadMaster_FE`) và app dùng **chung một backend** (Spring Boot + Keycloak, cộng một service FastAPI cho tối ưu).
 
 App không ôm hết việc bàn giấy. Phạm vi theo vai trò (tám vai trò, mã ở `src/types/user.ts`):
 
 | Vai trò | Trên app | Ghi chú |
 |---|---|---|
 | Tài xế (`driver`) | Đầy đủ | Điện thoại ngoài trời: nắng, một tay, mạng yếu |
-| Nhân viên kho (`warehouse`) | Đầy đủ | Máy tính bảng tại kho: đeo găng, nhìn xa, một thao tác mỗi màn |
+| Nhân viên kho (`warehouse`) | Đầy đủ | Điện thoại tại kho (máy tính bảng dùng cùng bố cục): đeo găng, nhìn xa, một thao tác mỗi màn |
 | Điều phối viên (`dispatcher`) | Chuyến, giám sát, duyệt, thông báo, xem 3D | Lập chuyến, nhập file, chỉnh tay phương án ở lại web |
 | Quản lý công ty (`manager`) | Chuyến, giám sát, số liệu, thông báo, xem 3D | Chỉ đọc, như web |
 | Quản trị công ty, ba vai trò nền tảng | Chỉ màn Tài khoản | Việc của họ ở web |
@@ -27,7 +27,7 @@ một câu nói rõ (`features/auth/landing.ts`).
 **Trạng thái dữ liệu:** mặc định app chạy trên **kho dữ liệu mẫu trong máy** (cùng logic và seed với bản web). Kho mẫu không thay
 backend: bản web và máy khác không thấy gì trong đó. Mỗi feature nối backend riêng, khi backend có phần đó (mục 5). Đã nối được:
 đăng nhập (`auth`, Keycloak của backend — mục 6) và màn tài xế (`driver`, phần backend đã có; việc backend chưa có thì màn ẩn nút).
-Cách chạy với backend: README.
+Màn kho (`warehouse`) và Tra cứu kiện (`packages`) mới chạy trên kho mẫu: chưa có adapter `http`. Cách chạy với backend: README.
 
 Luật chung, giữ từ bản web:
 
@@ -51,6 +51,7 @@ expo-secure-store           — phiên đăng nhập, ngôn ngữ (không lưu d
 expo-crypto                 — polyfill crypto.getRandomValues cho logic chép từ web
 expo-auth-session           — đăng nhập Keycloak (PKCE); CHỈ import trong features/auth/keycloak-oauth.ts
 expo-camera                 — quét mã QR trên nhãn kiện
+react-native-svg            — hình 2D của màn kho (sơ đồ thùng nhìn từ trên, hình hướng đặt)
 expo-location               — vị trí xe khi tài xế bật GPS
 jest-expo + @testing-library/react-native v14 — test
 ```
@@ -117,16 +118,27 @@ src/
   app/                 route của Expo Router — MỎNG: mỗi file chỉ export màn lấy từ features/
     _layout.tsx        provider + hai nhóm route theo phiên (sign-in | (app))
     +native-intent.tsx địa chỉ Keycloak trả phiên về (`loadmaster://auth`) không mở màn nào
-    (app)/_layout.tsx  Stack: thanh tab `(tabs)` và các màn mở chồng có lối quay lại (`trip/[tripId]`, `notifications`), sau quyền
-    (app)/(tabs)/      thanh tab đáy; mỗi tab nằm sau quyền của nó
+    +not-found.tsx     địa chỉ không khớp route nào: màn "Không có màn này", nút về màn chính
+    (app)/_layout.tsx  Stack: thanh tab `(tabs)` và các màn mở chồng có lối quay lại (`trip/[tripId]` của tài xế, `loading/[tripId]`
+                       — phiên soạn → xếp của kho, `notifications`), sau quyền; export `ErrorBoundary` cho cả nhóm (`sign-in.tsx`,
+                       `+not-found.tsx` cũng export)
+    (app)/(tabs)/      thanh tab đáy; mỗi tab nằm sau quyền của nó (tài xế: Chuyến của tôi; kho: Kho, Tra cứu kiện; ai cũng có Tài khoản)
   features/<tên>/      màn, component, hook, <tên>-api.ts của một feature
     auth/              đăng nhập (kho mẫu, Keycloak), phiên, quyền, màn Tài khoản
-    driver/            màn của tài xế: chuyến của tôi, một chuyến (điểm giao, dỡ, hoàn tất, sự cố, GPS), tổng kết, thông báo;
+    bell/              chuông theo vai trò (`NotificationBell`) và màn thông báo `NotificationsScreen` của tài xế và kho
+    driver/            màn của tài xế: chuyến của tôi, một chuyến (điểm giao, dỡ, hoàn tất, sự cố, GPS), tổng kết;
                        adapter driver-mock.ts (kho mẫu) và driver-http.ts (backend)
+    warehouse/         màn của nhân viên kho: danh sách chuyến (`WarehouseTripsScreen`, `trips/`) và phiên soạn → xếp một chuyến
+                       (`LoadingSessionScreen` chọn bước: `staging/` soạn hàng, `loading/` xếp, `finished/` xếp xong + số seal);
+                       adapter warehouse-mock.ts; ← chép từ web: `warehouse-trips.ts`, `loading-session.ts`, `describe-step.ts`
+    lookup/            Tra cứu kiện: quét hoặc gõ mã, thẻ kiện, báo đã tìm thấy kiện; adapter lookup-mock.ts
+    errors/            màn lỗi chung `RouteErrorScreen` (là `ErrorBoundary` của route) và màn không tìm thấy `NotFoundScreen`
     notifications/     ← chép từ web: sự kiện nào báo cho ai
     viewer3d/          ← chép từ web: phần thuần (kiện theo điểm giao, thứ tự dỡ) — không có Three.js
   components/          component dùng từ hai feature trở lên: AppText, Button, IconButton, TextField, Screen, Card, Chip,
                        ChoiceGroup, Sheet, Banner, StateView, LanguageSwitch, TripStatus, StopDot
+    verify/            đối chiếu kiện ba mức của tài xế và kho (mục 7): `PackageVerifySheet`, `QrScanner`, `ManualConfirmForm`,
+                       `CandidatePicker`
   data/                lớp dữ liệu (mục 5): config.ts, adapter.ts, mock-db.ts, http/
   theme/tokens.ts      màu, khoảng cách, bo góc, thang chữ
   lib/
@@ -140,7 +152,8 @@ src/
   providers/           Providers.tsx: mọi provider của app
   polyfills.ts         nạp đầu tiên ở src/app/_layout.tsx
   test/                setup.ts (giả module native), render.tsx (vẽ màn trong đủ provider), native-mocks.ts (camera, vị trí,
-                       router giả), driver-flow.tsx (chuyến mẫu của tài xế)
+                       router giả), driver-flow.tsx (chuyến mẫu của tài xế), warehouse-flow.tsx (chuyến mẫu và phiên của kho);
+                       ← chép từ web: trip-flow.ts (đưa chuyến qua các bước bằng hàm của kho), mock-db-samples.ts (chuyến nhỏ dựng tay)
   web-mirror.json      danh sách file chép từ web và dấu nội dung của chúng
 scripts/
   sync-from-web.mjs    chép logic từ bản web
@@ -158,9 +171,15 @@ hai lần. Bản web là nguồn chuẩn.
 
 - Danh sách file nằm ở `src/web-mirror.json`: `src/domain`, `src/types`, `src/services/optimization`, `src/lib/mock-db`, cùng các file
   lẻ khai ở `MIRRORED_FILES` của `scripts/sync-from-web.mjs` — quyền và hồ sơ backend (`features/auth/permissions.ts`,
-  `backend-user.ts`), phần thuần của màn tài xế (`features/driver/`: tiến độ giao, giờ đến, hoàn tất điểm, form sự cố…), của viewer
-  3D và chuông, `lib/stops.ts`, `lib/calendar-date.ts`, `lib/i18n/types.ts` và các nhánh từ điển `dataErrors`, `issues`, `language`,
-  `roles`, `status`.
+  `backend-user.ts`), phần thuần của màn tài xế (`features/driver/`: tiến độ giao, giờ đến, hoàn tất điểm, form sự cố…), của màn kho
+  (`features/warehouse/`: nhóm chuyến của kho, bước và tiến độ của phiên soạn → xếp, chỉ dẫn đặt từng kiện — vùng, vật cản gần,
+  lưu ý, hướng đặt), của viewer 3D và chuông,
+  `lib/stops.ts`, `lib/calendar-date.ts`, `lib/isometric.ts` + `lib/tokens.ts` (phép chiếu đẳng cự của hình hướng đặt; ngoài trình
+  duyệt `readToken` trả chuỗi rỗng), `lib/i18n/types.ts`, `lib/i18n/hardcoded-strings.ts` (bộ dò chữ viết cứng của cổng i18n, mục 8),
+  các nhánh từ điển `dataErrors`, `issues`, `language`, `lookup`, `roles`, `status`, `warehouse`, và hai file test dùng chung
+  `test/trip-flow.ts`, `test/mock-db-samples.ts`.
+- Hàm chép từ web mà dựng đường dẫn của web thì không dùng: `loadingSessionPath` (`warehouse-trips.ts`) ra `/kho?chuyen=`; app mở
+  phiên bằng `loadingPath` của `features/warehouse/session-routes.ts`.
 - **Không sửa các file đó ở mobile.** Cần đổi thì sửa ở bản web (qua quy trình của web), rồi chạy `pnpm sync:web`.
   `pnpm sync:web:verify` (nằm trong `pnpm check` và CI) đỏ khi có file trong danh sách bị sửa tay.
 - Thêm một file logic thuần của web vào app: thêm đường dẫn vào `MIRRORED_FILES` của `scripts/sync-from-web.mjs`, không chép tay.
@@ -200,10 +219,16 @@ màn / component  →  hook Query của feature  →  features/<tên>/<tên>-api
 8. Mỗi hàm export của `-api.ts` có một dòng chú thích ghi endpoint ngay trên nó (`// GET /api/driver/trips`), đầu file có bảng
    hàm → endpoint; endpoint backend chưa có ghi "chưa có ở BE". Chú thích chỉ gồm phương thức + đường dẫn và nhãn ngắn — không chép
    luật nghiệp vụ hay nội dung tài liệu nội bộ vào code.
-9. Khoá Query của một feature nằm dưới tên feature (`['driver', …]`). Khoá không cần mang người dùng: `AuthProvider` xoá sạch
-   cache lúc đăng nhập và đăng xuất. Ghi dữ liệu bằng `useMutation` rồi làm mới khoá liên quan.
+9. Khoá Query của một feature nằm dưới tên feature (`['driver', …]`, `['warehouse', …]`); Tra cứu kiện đọc dưới `['packages', …]`
+   — khoá của kho kiện, lệnh ghi đổi trạng thái hay cờ của kiện làm mới cả nhánh đó. Khoá không cần mang người dùng: `AuthProvider`
+   xoá sạch cache lúc đăng nhập và đăng xuất. Ghi dữ liệu bằng `useMutation` rồi làm mới khoá liên quan. Lệnh ghi của kho làm mới ở
+   `onSettled` (kể cả khi lỗi — máy khác có thể vừa ghi trước) và **chỉ chờ phần của phiên**: lệnh xong khi chuyến đang xếp (và nhãn,
+   lúc bắt đầu phiên) đã đọc lại — màn không có lúc còn hiện kiện vừa ghi như chưa ghi. Phần còn lại của `['warehouse']` (danh sách
+   chuyến, chuông) và cả `['packages']` làm mới không chờ, sau mọi lần ghi: người xếp không phải đợi chúng giữa hai lần quét. Nhãn không
+   đọc lại sau từng bước (không đổi trong phiên xếp).
 10. Không thêm store phía client cho dữ liệu nghiệp vụ. Không lưu dữ liệu nghiệp vụ vào `expo-secure-store`.
-11. **Hợp đồng nói nguồn làm được gì** (`capabilities`, ví dụ `DriverCapabilities`). Việc nguồn chưa làm được (backend chưa có
+11. **Hợp đồng nói nguồn làm được gì** (`capabilities`: `DriverCapabilities`, `WarehouseCapabilities`, `LookupCapabilities`;
+    màn đọc qua hook `use…Capabilities`). Việc nguồn chưa làm được (backend chưa có
     endpoint, vai trò chưa có quyền ở backend) thì màn **ẩn** nút — không nút giả; gọi tới vẫn là lỗi `NOT_SUPPORTED`, không âm thầm bỏ
     qua. Backend thêm endpoint: viết hàm ở adapter `http` rồi bật cờ, màn không đổi.
 12. Backend chưa gắn mã vào lỗi nghiệp vụ (về tay là `SERVER_ERROR` kèm mã HTTP). Adapter `http` đổi lỗi **chưa có mã** sang mã của
@@ -225,7 +250,14 @@ liệu. Backend lệch với hợp đồng của app thì ghi vào issue và h�
   state của màn, log hay cache Query.
 - Ma trận quyền chép từ web (`features/auth/permissions.ts`): hỏi quyền bằng `useCan()`. Tab và route làm việc nằm sau quyền
   (`Tabs.Protected` / `Stack.Protected`); backend vẫn kiểm lại ở máy chủ.
-- Sau khi đăng nhập mở màn của vai trò (`landingOf`). Màn đó phải là màn vai trò mở được.
+- Sau khi đăng nhập mở màn của vai trò (`landingOf`: tài xế `/trips`, nhân viên kho `/warehouse`, vai trò khác `/account`). Màn đó
+  phải là màn vai trò mở được.
+- Quyền của từng route: `trip/[tripId]` sau `driver.operate`; tab Kho và phiên `loading/[tripId]` sau `warehouse.operate`; tab Tra cứu
+  kiện sau `warehouse.operate` **và** `packages.lookup` (điều phối viên cũng có `packages.lookup` mà chưa có màn trên app);
+  `notifications` sau `driver.operate` hoặc `warehouse.operate`. Liên kết sâu tới route vai trò không mở được thì về màn chính của vai
+  trò (`warehouse-routes.test.tsx`).
+- Mọi lối ra khỏi phiên soạn → xếp (nút thoát, "Về danh sách chuyến") đi qua `useLeaveSession` — `router.dismissTo('/warehouse')`,
+  không `router.back()`: phiên mở từ thông báo hay liên kết sâu vẫn về đúng danh sách chuyến của kho.
 - Danh sách tài khoản dùng thử chỉ hiện khi feature `auth` chạy trên kho mẫu.
 - Khoá cất phiên (`SESSION_KEY`), `backendUserId()` và mã `SIGN_IN_CANCELLED` khai ở `auth-adapter.ts`.
 
@@ -244,8 +276,9 @@ liệu. Backend lệch với hợp đồng của app thì ghi vào issue và h�
 - Đóng trang đăng nhập không phải lỗi: `signIn` ném `SIGN_IN_CANCELLED`, màn không báo gì.
 - Đăng xuất quên phiên **ngay** (trước `await` đầu tiên, để lượt làm mới đang chạy không cất lại phiên), rồi gọi endpoint logout của
   Keycloak bằng refresh token. Không dùng endpoint thu hồi token: thu hồi refresh token cắt phiên của client đó trên mọi máy.
-- `auth` dùng backend mà feature khác còn ở kho mẫu: kho mẫu mở phiên của tài khoản dùng thử **cùng vai trò** — mã, công ty, kho của
-  người dùng là của tài khoản mẫu, tên và email của backend; `backendUserId()` vẫn là mã backend.
+- `auth` dùng backend mà feature khác còn ở kho mẫu: kho mẫu mở phiên của tài khoản dùng thử **cùng vai trò** — mã và công ty của
+  người dùng là của tài khoản mẫu, tên và email của backend; kho / chi nhánh của tài khoản mẫu không chép sang (backend không có trường
+  đó, màn Tài khoản không hiện kho của người khác); `backendUserId()` vẫn là mã backend.
 
 ## 7. Giao diện
 
@@ -260,7 +293,12 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
 - Card nền trắng, viền 1 px, bóng rất nhẹ (`shadow.card`); không nâng card khi nhấn.
 - Màu luôn đi kèm chữ hoặc icon: chip trạng thái có chữ, điểm giao có số. Tám màu điểm giao chỉ dùng cho điểm giao.
 - Không emoji, không viết hoa toàn bộ, không giãn chữ trang trí. Độ đậm chữ: 400, 500, 600 (tiêu đề được 700).
-- **Máy tính bảng:** nội dung dừng ở `CONTENT_MAX_WIDTH`, căn giữa; lề nằm trong cột để tiêu đề và thẻ thẳng một mép.
+- **Điện thoại trước:** bố cục thiết kế cho điện thoại một tay; chưa có bố cục riêng cho máy tính bảng. Trên máy rộng, nội dung dừng ở
+  `CONTENT_MAX_WIDTH`, căn giữa; lề nằm trong cột để tiêu đề và thẻ thẳng một mép.
+- Nút chính của bước nằm ở **chân màn** (`Screen` `footer`, dính đáy, trong tầm ngón cái). Danh sách dài dùng `FlatList` /
+  `SectionList` (`Screen` không bật `scroll`), không `.map` trong `ScrollView`.
+- App **không có toast**: kết quả hiện ngay trên màn (dòng kết quả trong tờ, banner, số tiến độ, dòng kiện đổi trạng thái) trong vùng
+  `accessibilityLiveRegion`; lỗi mang `accessibilityRole="alert"` và hiện cạnh chỗ vừa bấm.
 - Luôn chừa vùng an toàn (tai thỏ, thanh điều hướng của máy) bằng `useSafeAreaInsets`.
 - Hành động bị chặn vì luật hiện mờ kèm lý do ngay tại chỗ, không để bấm rồi mới báo lỗi.
 - Hộp thoại là **tờ trượt từ đáy** `Sheet`: tiêu đề là header của tờ, nội dung cuộn, hàng nút ở `footer` (dính đáy, trong tầm ngón
@@ -270,28 +308,61 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
   chỉ đóng bàn phím. Jest không bắt được lỗi này, chỉ thấy trên máy.
 - Icon của nút đặt bằng `icon` / `trailingIcon` của `Button` (Lucide), không đặt trong `children` — chữ của nút nằm trong một `Text`.
   Nút chỉ có icon dùng `IconButton` (56 × 56, `label` là tên đọc được).
-- Màn đọc dữ liệu có đủ ba trạng thái: đang tải, lỗi kèm nút thử lại, chưa có gì (`StateView`). Danh sách kéo xuống để đọc lại.
+- Màn đọc dữ liệu có đủ ba trạng thái: đang tải, lỗi kèm nút thử lại, chưa có gì (`StateView`). Danh sách kéo xuống để đọc lại. Lần
+  đọc lại lỗi khi màn đã có dữ liệu thì dữ liệu ở lại, câu lỗi là `Banner` ở đầu danh sách — không thay cả màn bằng màn lỗi.
+- Màn ném lỗi lúc vẽ nhường chỗ cho **màn lỗi chung** (`features/errors/RouteErrorScreen`): `(app)/_layout.tsx` bắt cho cả nhóm nên
+  route mới trong nhóm không tự bắt lỗi; route mới ngang hàng `sign-in` export `ErrorBoundary` như `sign-in.tsx`. Layout gốc không bắt
+  lỗi (màn lỗi ở đó nằm ngoài `Providers`, không có ngôn ngữ). "Thử lại" dựng lại cả nhóm: màn mở trong lúc dùng không tự mở lại.
+  "Về màn chính" chỉ hiện khi màn chính khác route đang mở (màn đăng nhập lỗi thì không có); người đã đăng nhập luôn có "Đăng xuất" —
+  lối ra duy nhất khi chính màn chính hay thanh tab lỗi mãi, vì nút đăng xuất của màn Tài khoản nằm trong nhóm đang lỗi. Màn lỗi về màn
+  chính bằng `replace` (route mới, nhóm dựng lại); màn không tìm thấy bằng `dismissAll` + `dismissTo` (`useReturnHome`): liên kết lạ mở
+  lúc app đang chạy chồng nó lên nhóm đang mở, và `replace` ở đó dựng thêm một bản thứ hai của nhóm.
 - Chuyển động ngắn (dưới 300 ms), tôn trọng cài đặt giảm chuyển động của máy.
+
+### Đối chiếu kiện và màn kho
+
+- **Đối chiếu kiện ba mức** dùng chung cho tài xế và kho: `components/verify/PackageVerifySheet` — quét QR (`QrScanner` tự lo quyền
+  camera), gõ mã, xác nhận tay (chọn kiện + lý do; chờ điều phối viên duyệt ở web). Tờ không biết kiện nào đúng: hook điều khiển của màn
+  (`useUnloadVerify` của tài xế, `useStagingVerify`, `useLoadVerify` của kho — kiểu `VerifyController`) gửi mã cho nguồn rồi trả kết
+  quả về tờ; tờ bỏ mã quét trùng và mã đến lúc đang ghi. Mức xác nhận tay chỉ có khi `capabilities.manualConfirm` của nguồn.
+- Phiên soạn → xếp (`LoadingSessionScreen`) chọn bước từ dữ liệu: bản duyệt lỗi thời, chuyến huỷ, chưa có phương án là một màn báo kèm
+  "Về danh sách chuyến"; soạn đủ thì màn tự sang bước xếp, xếp kiện cuối thì tự sang Xếp xong — tờ đang mở của bước cũ đóng theo.
+- Bước xếp chưa có 3D: thẻ chỉ dẫn kèm **sơ đồ thùng 2D nhìn từ trên** (`HoldSketch`) và hình hướng đặt. Sơ đồ ẩn với trình đọc màn
+  hình — chỗ đặt nằm ở chữ của thẻ; hình hướng đặt là `image` có tên. Xếp đúng một kiện thì bảng "Đã xếp" hiện ít nhất 1,2 giây
+  (`CONFIRMED_OVERLAY_MS`) rồi mới sang kiện kế tiếp.
+- Không in nhãn trên app: in nhãn là việc của bản web. Số seal ghi ở tờ của Xếp xong, sửa được tới khi tài xế xuất phát.
 
 ### Khả năng truy cập
 
 - Mọi điều khiển có `accessibilityRole` và tên đọc được (`accessibilityLabel` khi chữ trên nút không đủ nghĩa).
 - Ô nhập: tên truy cập là chữ nhãn; lỗi hiện dưới ô với `accessibilityRole="alert"`.
-- Lỗi và cảnh báo vừa xuất hiện được trình đọc màn hình đọc (`accessibilityLiveRegion`).
+- Lỗi và cảnh báo vừa xuất hiện được trình đọc màn hình đọc: `accessibilityRole="alert"` **một mình không được đọc** (Android chỉ
+  đặt tên vai trò, iOS bỏ qua vai trò này) — luôn kèm `accessibilityLiveRegion`, như `Banner`, `ErrorState`, `EmptyState alert`.
+  `accessibilityLiveRegion` chỉ có ở Android: trên iOS app **chưa tự đọc** câu vừa hiện (cần `AccessibilityInfo.announceForAccessibility`,
+  việc còn tồn).
 - Mỗi màn có lối quay lại hoặc lối thoát nhìn thấy được.
 
 ## 8. Ngôn ngữ
 
 - Chuỗi hiển thị viết qua `t()` (`useT()`), kể cả `accessibilityLabel`. Số, đơn vị, ngày giờ qua `useFormat()` — không tự nối chuỗi số.
+- **Cổng i18n** `src/lib/i18n/no-hardcoded-vietnamese.test.ts` (cùng cách với bản web): chữ có dấu tiếng Việt viết thẳng trong code của
+  mobile (`src/**/*.ts`, `*.tsx`: chữ JSX, `accessibilityLabel`, chuỗi thường; chú thích không tính) làm test đỏ, kèm file và số dòng.
+  Không quét: file chép từ web (`src/web-mirror.json` — bản web có cổng riêng; file mobile viết đè ở `scripts/web-overrides` vẫn quét),
+  nhánh từ điển `lib/i18n/vi/`, `lib/i18n/en/`, test và `src/test/`. Lỗi bất biến cho lập trình viên (`throw new Error(...)`, thông điệp
+  cùng dòng) được viết tiếng Việt. Ngoại lệ khác ghi vào `ALLOWED` của test: file, đúng đoạn chữ và một dòng lý do — chỉ cho chữ không phải
+  giao diện (dòng nhật ký `[LoadMaster] lỗi không có mã`, tên ngôn ngữ); ngoại lệ giữ đoạn chữ chứ không cả file, và ngoại lệ không còn
+  khớp dòng nào cũng làm test đỏ.
 - Từ điển ở `src/lib/i18n/vi/<nhánh>.ts` và `en/<nhánh>.ts`; `en` khai `satisfies Dictionary<…>` nên thiếu hoặc thừa key là lỗi kiểm
   kiểu. Màn mới thêm nhánh bằng file mới và một dòng ghép ở `vi.ts`, `en.ts`. Mỗi nhánh có chú thích nói nó phục vụ màn nào.
-- Năm nhánh chép từ web (mục 4) không sửa ở đây.
+- Bảy nhánh chép từ web (mục 4: `dataErrors`, `issues`, `language`, `lookup`, `roles`, `status`, `warehouse`) không sửa ở đây. Màn kho
+  viết câu riêng ở nhánh của từng màn (`warehouseTrips`, `warehouseSession`, `warehouseStaging`, `warehouseLoading`,
+  `warehouseFinished`, `packageLookup`; tờ đối chiếu ở `verify`), và dùng lại câu của web ở `warehouse.*`, `lookup.*` khi câu đó đã có.
 - Câu số nhiều là object `{ one, other }` với `{count}`; hai dạng của câu tiếng Việt giống hệt nhau.
 - Không dịch: **MOCK RESULT**, LoadMaster, tên riêng trong dữ liệu.
 - Logic thuần trả mã, component dịch. Schema zod dùng key từ điển làm message.
 - Hermes **không có** `Intl.PluralRules`, `Intl.ListFormat`, `Intl.RelativeTimeFormat`, `Intl.Segmenter` (đã đo trên máy):
-  `translate.ts` tự chọn dạng số nhiều, `format.ts` tự ghép danh sách. Đừng gọi bốn thứ đó trực tiếp. `Intl.NumberFormat` (kể cả đơn
-  vị, tiền) và `Intl.DateTimeFormat` dùng được.
+  `translate.ts` tự chọn dạng số nhiều, `format.ts` tự ghép danh sách (liên từ lấy ở `common.listAnd` của từ điển). Đừng gọi bốn thứ
+  đó trực tiếp. `Intl.NumberFormat` (kể cả đơn vị, tiền) và `Intl.DateTimeFormat` dùng được.
 
 ## 9. Kiểm thử
 
@@ -307,7 +378,16 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
 - Màn dùng camera, vị trí, router: `src/test/native-mocks.ts` thay module native (nối ở `setup.ts`); test điều khiển bằng
   `setCameraPermission`, `setLocation`, `emitPosition`, `failPosition`… Luồng tài xế: `src/test/driver-flow.tsx` (`renderTrip`, chuyến
   mẫu đã xếp xong `TRIP-010`, `labelsAt`, `departLoadedTrip`…) đưa chuyến tới đúng bước bằng hàm của kho; chỉ bấm qua màn đúng việc
-  đang test.
+  đang test. Luồng kho: `src/test/warehouse-flow.tsx` — `renderWarehouseScreen` (đăng nhập tài khoản kho rồi vẽ màn), `renderSession`
+  (vẽ phiên của một chuyến, chờ qua lúc đang tải / đang bắt đầu), chuyến mẫu `READY_TRIP`, `LOADING_TRIP`, `LOADED_TRIP`, `STALE_TRIP`,
+  `startSession`, `stageAllBut`, `loadUpTo`, `asDispatcher` (làm việc của điều phối viên như duyệt xác nhận tay), `stagedTwoCartonTrip`.
+- `FlatList` / `SectionList` trong Jest chỉ vẽ mấy ô đầu: test cần ô phía dưới thì bắn `layout` và `contentSizeChange` lên danh sách
+  trước (`WarehouseTripsScreen.test.tsx`).
+- Test đi qua router thật (màn lỗi, màn không tìm thấy: `src/features/errors/error-routes.test.tsx`): `jest.unmock('expo-router')` rồi
+  `renderRouter('src/app', { initialUrl })` của `expo-router/testing-library`; màn cần ném lỗi thay bằng `jest.mock`. `act` của RNTL v14
+  luôn bất đồng bộ: `await act(async () => { router.push(…) })`; không dùng `testRouter` (nó gọi `act` không `await`, sau đó các lần vẽ
+  lại không chạy nữa). `renderRouter` bật đồng hồ giả: `afterEach` gọi `await cleanup()` rồi mới `jest.useRealTimers()`. Ngăn xếp
+  kiểm bằng `getRouterState()` (route `__root` bọc stack của layout gốc); `Href` chỉ nhận route có thật nên địa chỉ lạ đi qua `string`.
 - Jest bật `clearMocks`: số lần gọi của `jest.fn` về 0 trước mỗi test.
 - Hạn mức: test đúng việc của issue; không viết test trùng với test đã có ở bản web cho logic chép sang.
 - Jest chạy trên Node, **không phải Hermes**: nó không chứng minh được hiệu năng, `Intl` của máy, bàn phím ảo, camera, GPS. Việc như
