@@ -19,12 +19,12 @@ import { status } from './en/status'
 import { tripException } from './en/tripException'
 import { verify } from './en/verify'
 import { warehouse } from './en/warehouse'
+import { warehouseTask } from './en/warehouseTask'
 import { warehouseFinished } from './en/warehouseFinished'
 import { warehouseLoading } from './en/warehouseLoading'
 import { warehouseSession } from './en/warehouseSession'
 import { warehouseStaging } from './en/warehouseStaging'
 import { warehouseTrips } from './en/warehouseTrips'
-import { warehouse } from './en/warehouse'
 import type { Dictionary } from './types'
 import type { vi } from './vi'
 
@@ -50,7 +50,7 @@ export const en = {
   tripException,
   verify,
   warehouse,
-  warehouse,
+  warehouseTask,
   warehouseFinished,
   warehouseLoading,
   warehouseSession,

@@ -20,11 +20,6 @@ export function landingOf(role: Role): Href {
  */
 export function homeOf(user: User | null): Href {
   return user === null ? '/sign-in' : landingOf(user.role)
-  if (can(role, 'driver.operate')) return '/trips'
-  if (can(role, 'warehouse.operate')) return '/warehouse'
-  if (can(role, 'trips.edit')) return '/fleet'
-  if (can(role, 'monitoring.view')) return '/monitoring'
-  return '/account'
 }
 
 /**
@@ -33,6 +28,5 @@ export function homeOf(user: User | null): Href {
  */
 export function scopeNote(role: Role): 'webOnly' | 'notYet' | null {
   if (can(role, 'driver.operate') || can(role, 'warehouse.operate') || can(role, 'trips.edit') || can(role, 'monitoring.view')) return null
-  if (can(role, 'driver.operate') || can(role, 'warehouse.operate')) return null
   return isPlatformRole(role) || role === 'companyAdmin' ? 'webOnly' : 'notYet'
 }

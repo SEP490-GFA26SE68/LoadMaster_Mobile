@@ -166,6 +166,11 @@ docs/                  PRD, issue, nhật ký, ảnh chụp — KHÔNG commit (m
 Mỗi feature tự chứa màn, hook và lớp dữ liệu của nó. Chỉ đưa lên `components/`, `lib/` khi có từ hai feature trở lên dùng.
 File có logic không dài quá 250 dòng; từ điển và dữ liệu phẳng được dài hơn.
 
+Tab Kho (`/warehouse`) mở `WarehouseTasksScreen`, dùng `useWarehouseTaskQueries.ts` và `warehouse-task-api.ts` để chọn
+adapter mock hoặc HTTP. Luồng soạn → xếp (`/loading/[tripId]`) giữ `useWarehouseQueries.ts` và `warehouse-api.ts` riêng.
+Hai hợp đồng trả dữ liệu khác nhau, không ghép chung các hàm `startLoading` / `completeLoading`. Chữ của màn nhiệm vụ kho
+nằm ở nhánh mobile `warehouseTask`; nhánh `warehouse` vẫn chép nguyên từ web.
+
 ## 4. Code chép từ bản web
 
 Phần logic thuần của web được **chép nguyên văn** sang đây bằng `pnpm sync:web`, để app và web tính cùng một kết quả mà không viết

@@ -1,8 +1,8 @@
 import { api, ApiError, currentUserId, isApiError, type ApiClient } from '@/data/http'
 import { TRIP_STATUSES, type TripStatus } from '@/types/trip'
 
-import type { WarehouseApi } from './warehouse-api'
-import type { LoadingSession, PackageLookup, WarehousePlacement, WarehouseTask } from './warehouse-model'
+import type { WarehouseApi } from './warehouse-task-api'
+import type { LoadingSession, PackageLookup, WarehousePlacement, WarehouseTask } from './warehouse-task-model'
 
 type TaskDto = {
   readonly tripId: number

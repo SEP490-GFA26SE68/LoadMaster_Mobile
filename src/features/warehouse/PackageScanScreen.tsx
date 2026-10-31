@@ -9,11 +9,11 @@ import { IconButton } from '@/components/IconButton'
 import { Screen } from '@/components/Screen'
 import { ErrorState, LoadingState } from '@/components/StateView'
 import { TextField } from '@/components/TextField'
-import { QrScanner } from '@/features/driver/QrScanner'
+import { QrScanner } from '@/components/verify/QrScanner'
 import { dataErrorMessage, useFormat, useT } from '@/lib/i18n'
 import { colors } from '@/theme/tokens'
 
-import { useScanPackage } from './useWarehouseQueries'
+import { useScanPackage } from './useWarehouseTaskQueries'
 
 export function PackageScanScreen() {
   const t = useT()
@@ -24,14 +24,14 @@ export function PackageScanScreen() {
 
   return (
     <Screen
-      title={t('warehouse.scan.title')}
+      title={t('warehouseTask.scan.title')}
       leading={<IconButton icon={ArrowLeft} tone="sky" label={t('common.back')} onPress={() => router.back()} />}
       scroll>
-      <AppText color={colors.text2}>{t('warehouse.scan.hint')}</AppText>
+      <AppText color={colors.text2}>{t('warehouseTask.scan.hint')}</AppText>
       <QrScanner onDetected={(value) => setLookup(value)} />
-      <TextField label={t('warehouse.scan.code')} value={code} onChangeText={setCode} autoCapitalize="characters" code />
+      <TextField label={t('warehouseTask.scan.code')} value={code} onChangeText={setCode} autoCapitalize="characters" code />
       <Button variant="secondary" disabled={code.trim() === ''} onPress={() => setLookup(code.trim())}>
-        {t('warehouse.scan.submit')}
+        {t('warehouseTask.scan.submit')}
       </Button>
       {lookup === '' ? null : query.isPending ? (
         <LoadingState />
@@ -53,13 +53,13 @@ function ScanResult({ data }: { data: { code: string; status: string; destinatio
       <AppText color={colors.text2}>{data.status}</AppText>
       {data.destination === '' ? null : (
         <AppText>
-          {t('warehouse.scan.destination')}: {data.destination}
+          {t('warehouseTask.scan.destination')}: {data.destination}
         </AppText>
       )}
-      {data.weightKg === undefined ? null : <AppText color={colors.text2}>{t('warehouse.scan.weight', { weight: format.weight(data.weightKg) })}</AppText>}
-      {data.tripCode === undefined ? null : <AppText color={colors.text2}>{t('warehouse.scan.trip', { tripId: data.tripCode })}</AppText>}
+      {data.weightKg === undefined ? null : <AppText color={colors.text2}>{t('warehouseTask.scan.weight', { weight: format.weight(data.weightKg) })}</AppText>}
+      {data.tripCode === undefined ? null : <AppText color={colors.text2}>{t('warehouseTask.scan.trip', { tripId: data.tripCode })}</AppText>}
       {data.stopNumber === undefined ? null : (
-        <AppText color={colors.text2}>{t('warehouse.scan.stop', { number: data.stopNumber, name: data.stopName ?? String(data.stopNumber) })}</AppText>
+        <AppText color={colors.text2}>{t('warehouseTask.scan.stop', { number: data.stopNumber, name: data.stopName ?? String(data.stopNumber) })}</AppText>
       )}
     </Card>
   )

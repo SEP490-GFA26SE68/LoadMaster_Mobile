@@ -19,7 +19,7 @@ import { status } from './vi/status'
 import { tripException } from './vi/tripException'
 import { verify } from './vi/verify'
 import { warehouse } from './vi/warehouse'
-import { warehouse } from './vi/warehouse'
+import { warehouseTask } from './vi/warehouseTask'
 import { warehouseFinished } from './vi/warehouseFinished'
 import { warehouseLoading } from './vi/warehouseLoading'
 import { warehouseSession } from './vi/warehouseSession'
@@ -58,10 +58,10 @@ export const vi = {
   tripException,
   verify,
   warehouse,
+  warehouseTask,
   warehouseFinished,
   warehouseLoading,
   warehouseSession,
   warehouseStaging,
   warehouseTrips,
-  warehouse,
 } as const

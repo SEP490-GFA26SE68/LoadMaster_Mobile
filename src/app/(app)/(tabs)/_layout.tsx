@@ -1,6 +1,12 @@
 import { Tabs } from 'expo-router'
-import { PackageSearch, Truck, UserRound, Warehouse } from 'lucide-react-native'
-import { ClipboardList, Package, Radio, Truck, UserRound } from 'lucide-react-native'
+import {
+  ClipboardList,
+  Package,
+  PackageSearch,
+  Radio,
+  Truck,
+  UserRound,
+} from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useCan } from '@/features/auth/AuthProvider'
@@ -33,13 +39,10 @@ export default function AppLayout() {
         <Tabs.Screen name="trips" options={{ title: t('nav.trips'), tabBarIcon: ({ color }) => <Truck color={color} size={24} strokeWidth={1.5} /> }} />
       </Tabs.Protected>
       <Tabs.Protected guard={can('warehouse.operate')}>
-        <Tabs.Screen name="warehouse" options={{ title: t('nav.warehouse'), tabBarIcon: ({ color }) => <Warehouse color={color} size={24} strokeWidth={1.5} /> }} />
+        <Tabs.Screen name="warehouse" options={{ title: t('nav.warehouse'), tabBarIcon: ({ color }) => <Package color={color} size={24} strokeWidth={1.5} /> }} />
       </Tabs.Protected>
       <Tabs.Protected guard={can('warehouse.operate') && can('packages.lookup')}>
         <Tabs.Screen name="lookup" options={{ title: t('nav.lookup'), tabBarIcon: ({ color }) => <PackageSearch color={color} size={24} strokeWidth={1.5} /> }} />
-      </Tabs.Protected>
-      <Tabs.Protected guard={can('warehouse.operate')}>
-        <Tabs.Screen name="warehouse" options={{ title: t('nav.warehouse'), tabBarIcon: ({ color }) => <Package color={color} size={24} strokeWidth={1.5} /> }} />
       </Tabs.Protected>
       <Tabs.Protected guard={can('trips.edit')}>
         <Tabs.Screen name="fleet" options={{ title: t('nav.fleet'), tabBarIcon: ({ color }) => <ClipboardList color={color} size={24} strokeWidth={1.5} /> }} />

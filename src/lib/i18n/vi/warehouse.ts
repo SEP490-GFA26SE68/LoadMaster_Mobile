@@ -4,7 +4,6 @@
  */
 /** Màn kho: nhiệm vụ xếp hàng, từng bước xếp, tra cứu kiện bằng QR. */
 export const warehouse = {
-  loading: 'Đang tải chuyến',
   starting: 'Đang bắt đầu soạn hàng',
   exit: 'Thoát màn kho',
   backToList: 'Về danh sách chuyến',
@@ -82,6 +81,7 @@ export const warehouse = {
     description: 'Kiện {id} được báo là không tìm thấy. Điều phối viên sẽ quyết: tìm tiếp, hoặc bỏ kiện khỏi chuyến rồi tối ưu lại. Kho soạn tiếp các kiện khác.',
     confirm: 'Báo thiếu',
     cancel: 'Quay lại',
+  },
   tasks: {
     title: 'Nhiệm vụ kho',
     empty: { title: 'Chưa có chuyến cần xếp', description: 'Chuyến đã duyệt phương án xếp sẽ hiện ở đây.' },
@@ -108,6 +108,9 @@ export const warehouse = {
       z: 'Z thực tế (cm)',
       reason: 'Lý do',
       submit: 'Ghi sai lệch',
+    },
+  },
+
   /** Bước Soạn hàng (FE-6-02, D-82): quét mọi kiện vào khu chờ, không cần thứ tự. */
   staging: {
     step: 'Đã soạn',
@@ -171,7 +174,6 @@ export const warehouse = {
     stop: 'Điểm {number}: {name}',
     weight: '{weight}',
     open: 'Đối chiếu kiện',
-    title: 'Đối chiếu kiện bước {step}',
     description: 'Quét nhãn QR trên kiện đang cầm, hoặc gõ mã in trên nhãn. Bước này cần kiện {id} · {name}.',
     wrongPackage: 'Sai kiện hoặc sai thứ tự: vừa đưa {scanned} ({scannedName}), bước này cần {expected} ({expectedName}). Chưa ghi gì — để kiện này sang bên và đối chiếu đúng kiện.',
     manualRecorded: 'Đã ghi xác nhận tay {id}',

@@ -10,20 +10,10 @@
  *   chưa có ở BE (Q-11): confirmStagingManually, reportStagingShortage, recordSeal, confirmLoadingManually
  *   tên sẽ đổi khi nối BE: confirmStagingByQr → verifyPackage; confirmLoadingByQr → confirmPlacement;
  *   reportDamagedPackage → reportPlacementDeviation
- * Hàm → endpoint backend; mỗi nguồn là một adapter (`warehouse-mock.ts` kho mẫu, `warehouse-http.ts` backend).
- *   fetchTasks         GET  /api/warehouse/tasks
- *   startLoading       POST /api/warehouse/tasks/{tripId}/start
- *   fetchLoading       phiên xếp đang mở (HTTP: bộ nhớ lần start; kho mẫu: GET chuyến)
- *   confirmPlacement   POST /api/warehouse/placements/{id}/confirm
- *   recordDeviation    POST /api/warehouse/placements/{id}/deviation
- *   completeLoading    POST /api/warehouse/tasks/{id}/complete
- *   scanPackage        GET  /api/packages/scan/{qrToken}
  */
 import { createAdapter } from '@/data/adapter'
 import type { ManualConfirmInput, ScanResult, StagingScanResult, Trip, TripLabel } from '@/lib/mock-db'
 
-import type { DeviationInput, LoadingComplete, LoadingSession, PackageLookup, WarehouseCapabilities, WarehouseTask } from './warehouse-model'
-import { httpWarehouseApi } from './warehouse-http'
 import { mockWarehouseApi } from './warehouse-mock'
 import type { VerifyCodeInput, WarehouseCapabilities, WarehouseNotification, WarehouseTrip } from './warehouse-model'
 import type { WarehouseTripRow } from './warehouse-trips'
@@ -35,13 +25,6 @@ import type { WarehouseTripRow } from './warehouse-trips'
  */
 export type WarehouseApi = {
   readonly capabilities: WarehouseCapabilities
-  fetchTasks(): Promise<readonly WarehouseTask[]>
-  startLoading(tripId: string): Promise<LoadingSession>
-  fetchLoading(tripId: string): Promise<LoadingSession>
-  confirmPlacement(tripId: string, placementId: string): Promise<LoadingSession>
-  recordDeviation(tripId: string, placementId: string, input: DeviationInput): Promise<LoadingSession>
-  completeLoading(tripId: string): Promise<LoadingComplete>
-  scanPackage(code: string): Promise<PackageLookup>
   /** Chuyến kho cần thấy: chờ soạn (bản duyệt còn hiệu lực), đang xếp, xếp xong chờ xuất phát, chờ điều phối tối ưu lại. */
   fetchWarehouseTrips(): Promise<WarehouseTripRow[]>
   /** Một chuyến và các revision của nó; chuyến không có (hoặc của công ty khác) là `NOT_FOUND`. */
@@ -75,7 +58,6 @@ export type WarehouseApi = {
   fetchNotifications(): Promise<WarehouseNotification[]>
 }
 
-const adapter = createAdapter<WarehouseApi>('warehouse', { mock: mockWarehouseApi, http: () => httpWarehouseApi() })
 const adapter = createAdapter<WarehouseApi>('warehouse', { mock: mockWarehouseApi })
 
 /** Việc kho làm được với nguồn đang dùng. */
@@ -83,9 +65,6 @@ export function warehouseCapabilities(): WarehouseCapabilities {
   return adapter().capabilities
 }
 
-// GET /api/warehouse/tasks
-export function fetchWarehouseTasks(): Promise<readonly WarehouseTask[]> {
-  return adapter().fetchTasks()
 // chưa có ở BE
 export function fetchWarehouseTrips(): Promise<WarehouseTripRow[]> {
   return adapter().fetchWarehouseTrips()
@@ -96,15 +75,11 @@ export function fetchWarehouseTrip(tripId: string): Promise<WarehouseTrip> {
   return adapter().fetchWarehouseTrip(tripId)
 }
 
-// POST /api/warehouse/tasks/{tripId}/start
-export function startLoading(tripId: string): Promise<LoadingSession> {
 // POST /api/trips/{id}/start-loading
 export function startLoading(tripId: string): Promise<Trip> {
   return adapter().startLoading(tripId)
 }
 
-export function fetchLoading(tripId: string): Promise<LoadingSession> {
-  return adapter().fetchLoading(tripId)
 // POST /api/warehouse/verify-package
 export function confirmStagingByQr(tripId: string, input: VerifyCodeInput): Promise<StagingScanResult<Trip>> {
   return adapter().confirmStagingByQr(tripId, input)
@@ -121,8 +96,6 @@ export function reportStagingShortage(tripId: string, packageInstanceId: string)
 }
 
 // POST /api/warehouse/placements/{id}/confirm
-export function confirmPlacement(tripId: string, placementId: string): Promise<LoadingSession> {
-  return adapter().confirmPlacement(tripId, placementId)
 export function confirmLoadingByQr(tripId: string, input: VerifyCodeInput): Promise<ScanResult<Trip>> {
   return adapter().confirmLoadingByQr(tripId, input)
 }
@@ -133,22 +106,15 @@ export function confirmLoadingManually(tripId: string, input: ManualConfirmInput
 }
 
 // POST /api/warehouse/placements/{id}/deviation
-export function recordDeviation(tripId: string, placementId: string, input: DeviationInput): Promise<LoadingSession> {
-  return adapter().recordDeviation(tripId, placementId, input)
 export function reportDamagedPackage(tripId: string, packageInstanceId: string): Promise<Trip> {
   return adapter().reportDamagedPackage(tripId, packageInstanceId)
 }
 
-// POST /api/warehouse/tasks/{id}/complete
-export function completeLoading(tripId: string): Promise<LoadingComplete> {
 // POST /api/trips/{id}/complete-loading
 export function completeLoading(tripId: string): Promise<Trip> {
   return adapter().completeLoading(tripId)
 }
 
-// GET /api/packages/scan/{qrToken}
-export function scanPackage(code: string): Promise<PackageLookup> {
-  return adapter().scanPackage(code)
 // chưa có ở BE (Q-11)
 export function recordSeal(tripId: string, sealNumber: string): Promise<Trip> {
   return adapter().recordSeal(tripId, sealNumber)

@@ -2,7 +2,44 @@ import type { Dictionary } from '../types'
 import type { warehouse as source } from '../vi/warehouse'
 
 export const warehouse = {
-  loading: 'Loading the trip',
+
+  tasks: {
+    title: 'Warehouse tasks',
+    empty: {
+      title: 'No trips to load',
+      description: 'Trips with an approved loading plan will appear here.',
+    },
+    packages: {
+      one: '{count} package',
+      other: '{count} packages',
+    },
+    start: 'Start loading',
+    resume: 'Continue loading',
+    openLabel: '{action} {tripId}',
+    scan: 'Package lookup',
+  },
+
+  loading: {
+    title: 'Load trip {tripId}',
+    toTasks: 'Back to task list',
+    next: 'Next package',
+    done: 'All packages loaded',
+    position: 'Position {x} · {y} · {z} cm',
+    confirm: 'Confirm loaded',
+    deviate: 'Record deviation',
+    complete: 'Complete loading',
+    completed: 'Trip {tripId} has been loaded.',
+    deviation: {
+      title: 'Position deviation',
+      x: 'Actual X (cm)',
+      y: 'Actual Y (cm)',
+      z: 'Actual Z (cm)',
+      reason: 'Reason',
+      submit: 'Record deviation',
+    },
+  },
+
+
   starting: 'Starting to stage the trip',
   exit: 'Leave the warehouse screen',
   backToList: 'Back to trips',
@@ -73,32 +110,7 @@ export const warehouse = {
     description: 'Package {id} is reported as not found. The dispatcher decides: keep searching, or drop it from the trip and optimize again. Keep staging the other packages.',
     confirm: 'Report missing',
     cancel: 'Go back',
-  tasks: {
-    title: 'Warehouse tasks',
-    empty: { title: 'No trips to load', description: 'Trips with an approved load plan will show up here.' },
-    packages: { one: '{count} package', other: '{count} packages' },
-    start: 'Start loading',
-    resume: 'Resume loading',
-    openLabel: '{action} {tripId}',
-    scan: 'Look up package',
   },
-  loading: {
-    title: 'Loading {tripId}',
-    toTasks: 'Back to warehouse tasks',
-    next: 'Next package',
-    done: 'Every package is loaded',
-    position: 'Position {x} · {y} · {z} cm',
-    confirm: 'Confirm loaded',
-    deviate: 'Record deviation',
-    complete: 'Finish loading',
-    completed: 'Finished loading trip {tripId}.',
-    deviation: {
-      title: 'Position deviation',
-      x: 'Actual X (cm)',
-      y: 'Actual Y (cm)',
-      z: 'Actual Z (cm)',
-      reason: 'Reason',
-      submit: 'Record deviation',
   staging: {
     step: 'Staged',
     progress: 'Staging progress',
@@ -148,23 +160,29 @@ export const warehouse = {
       left: { one: '{count} left out', other: '{count} left out' },
     },
   },
+
   scan: {
-    title: 'Package lookup',
-    hint: 'Scan the label QR or type the package code.',
-    code: 'Package / QR code',
+    title: 'Verify the package for step {step}',
+    hint: 'Scan the QR label or enter the package code.',
+    code: 'Package code / QR',
     submit: 'Look up',
     destination: 'Destination',
     trip: 'Trip {tripId}',
     stop: 'Stop {number}: {name}',
     weight: '{weight}',
     open: 'Verify package',
-    title: 'Verify the package for step {step}',
-    description: 'Scan the QR label on the package in your hands, or type the code printed on the label. This step needs package {id} · {name}.',
-    wrongPackage: 'Wrong package or wrong order: you gave {scanned} ({scannedName}), this step needs {expected} ({expectedName}). Nothing was recorded — set this package aside and verify the right one.',
+    description:
+      'Scan the QR label on the package in your hands, or type the code printed on the label. This step needs package {id} · {name}.',
+    wrongPackage:
+      'Wrong package or wrong order: you gave {scanned} ({scannedName}), this step needs {expected} ({expectedName}). Nothing was recorded — set this package aside and verify the right one.',
     manualRecorded: 'Manual confirmation recorded for {id}',
     manualRecordedDescription: 'It waits for the dispatcher before loading can finish.',
-    recordedByQr: { one: '{count} package verified by its label', other: '{count} packages verified by their labels' },
+    recordedByQr: {
+      one: '{count} package verified by its label',
+      other: '{count} packages verified by their labels',
+    },
   },
+
   confirms: {
     pending: { one: '{count} manual confirmation is waiting for the dispatcher.', other: '{count} manual confirmations are waiting for the dispatcher.' },
     blocked: {

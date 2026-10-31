@@ -5,13 +5,7 @@ const KEYCLOAK = { keycloakUrl: 'http://localhost:8180/', keycloakRealm: 'loadma
 describe('resolveDataConfig', () => {
   test('không khai gì: mọi feature dùng kho mẫu', () => {
     expect(resolveDataConfig({})).toEqual({
-      sources: { auth: 'mock', driver: 'mock', warehouse: 'mock', packages: 'mock' },
-      apiUrl: null,
-      keycloak: null,
-      mode: 'mock',
-    })
-    expect(resolveDataConfig({})).toEqual({
-      sources: { auth: 'mock', driver: 'mock', warehouse: 'mock', monitoring: 'mock', fleet: 'mock' },
+      sources: { auth: 'mock', driver: 'mock', warehouse: 'mock', packages: 'mock', monitoring: 'mock', fleet: 'mock' },
       apiUrl: null,
       keycloak: null,
       mode: 'mock',
@@ -21,8 +15,7 @@ describe('resolveDataConfig', () => {
   test('nối từng feature: feature khai trong danh sách dùng backend, phần còn lại ở kho mẫu', () => {
     const config = resolveDataConfig({ httpFeatures: ' auth ', apiUrl: 'http://10.0.2.2:8080/', ...KEYCLOAK })
     expect(config).toEqual({
-      sources: { auth: 'http', driver: 'mock', warehouse: 'mock', packages: 'mock' },
-      sources: { auth: 'http', driver: 'mock', warehouse: 'mock', monitoring: 'mock', fleet: 'mock' },
+      sources: { auth: 'http', driver: 'mock', warehouse: 'mock', packages: 'mock', monitoring: 'mock', fleet: 'mock' },
       apiUrl: 'http://10.0.2.2:8080',
       keycloak: { issuer: 'http://localhost:8180/realms/loadmaster', clientId: 'loadmaster-mobile' },
       mode: 'mixed',

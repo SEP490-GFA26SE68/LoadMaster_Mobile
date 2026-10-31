@@ -30,7 +30,7 @@ export function MonitoringBoardScreen() {
       title={t('monitoring.board.title')}
       actions={
         can('packages.lookup') ? (
-          <IconButton icon={QrCode} tone="sky" label={t('warehouse.tasks.scan')} onPress={() => router.push('/scan')} />
+          <IconButton icon={QrCode} tone="sky" label={t('warehouseTask.tasks.scan')} onPress={() => router.push('/scan')} />
         ) : undefined
       }>
       {query.isPending ? (

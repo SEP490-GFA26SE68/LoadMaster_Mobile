@@ -79,7 +79,7 @@ describe('nhân viên kho trên app', () => {
     await signInAs(WAREHOUSE_EMAIL)
     const { pathname, tabScreens } = await openApp('/')
 
-    expect(await screen.findByRole('header', { name: 'Chuyến cần xếp' })).toBeOnTheScreen()
+    expect(await screen.findByRole('header', { name: 'Nhiệm vụ kho' })).toBeOnTheScreen()
     expect(pathname()).toBe('/warehouse')
     expect(screen.getByRole('button', { name: tabNamed('Kho') })).toBeOnTheScreen()
     expect(screen.getByRole('button', { name: tabNamed('Tra cứu kiện') })).toBeOnTheScreen()
@@ -102,7 +102,7 @@ describe('nhân viên kho trên app', () => {
     expect(screen.getByLabelText('Mật khẩu').props.value).toBe(SEED_PASSWORD)
     await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập' }))
 
-    expect(await screen.findByRole('header', { name: 'Chuyến cần xếp' })).toBeOnTheScreen()
+    expect(await screen.findByRole('header', { name: 'Nhiệm vụ kho' })).toBeOnTheScreen()
     expect(pathname()).toBe('/warehouse')
   })
 
@@ -127,7 +127,7 @@ describe('nhân viên kho trên app', () => {
     expect(appRoutes()).toEqual(['(tabs)', 'loading/[tripId]'])
 
     await fireEvent.press(backButton(0))
-    expect(await screen.findByRole('header', { name: 'Chuyến cần xếp' })).toBeOnTheScreen()
+    expect(await screen.findByRole('header', { name: 'Nhiệm vụ kho' })).toBeOnTheScreen()
     expect(pathname()).toBe('/warehouse')
     expect(appRoutes()).toEqual(['(tabs)'])
   })
@@ -135,7 +135,7 @@ describe('nhân viên kho trên app', () => {
   test('từ tab Kho mở phiên của một chuyến rồi về: vẫn đúng thanh tab cũ', async () => {
     await signInAs(WAREHOUSE_EMAIL)
     const { pathname, appRoutes } = await openApp('/warehouse')
-    expect(await screen.findByRole('header', { name: 'Chuyến cần xếp' })).toBeOnTheScreen()
+    expect(await screen.findByRole('header', { name: 'Nhiệm vụ kho' })).toBeOnTheScreen()
 
     await act(async () => {
       router.push(loadingPath(STALE_TRIP))
@@ -144,7 +144,7 @@ describe('nhân viên kho trên app', () => {
     expect(pathname()).toBe(`/loading/${STALE_TRIP}`)
 
     await fireEvent.press(backButton(1))
-    expect(await screen.findByRole('header', { name: 'Chuyến cần xếp' })).toBeOnTheScreen()
+    expect(await screen.findByRole('header', { name: 'Nhiệm vụ kho' })).toBeOnTheScreen()
     expect(pathname()).toBe('/warehouse')
     expect(appRoutes()).toEqual(['(tabs)'])
   })
@@ -153,7 +153,7 @@ describe('nhân viên kho trên app', () => {
     await signInAs(WAREHOUSE_EMAIL)
     const { pathname, appRoutes, appScreens } = await openApp(`/trip/${LOADED_TRIP}`)
 
-    expect(await screen.findByRole('header', { name: 'Chuyến cần xếp' })).toBeOnTheScreen()
+    expect(await screen.findByRole('header', { name: 'Nhiệm vụ kho' })).toBeOnTheScreen()
     expect(pathname()).toBe('/warehouse')
     expect(appRoutes()).toEqual(['(tabs)'])
     expect(appScreens()).toContain('loading/[tripId]')
@@ -165,7 +165,7 @@ describe('nhân viên kho trên app', () => {
     await signInAs(WAREHOUSE_EMAIL)
     const { pathname, tabScreens } = await openApp('/trips')
 
-    expect(await screen.findByRole('header', { name: 'Chuyến cần xếp' })).toBeOnTheScreen()
+    expect(await screen.findByRole('header', { name: 'Nhiệm vụ kho' })).toBeOnTheScreen()
     expect(pathname()).toBe('/warehouse')
     expect(tabScreens()).toContain('warehouse')
     expect(tabScreens()).not.toContain('trips')
@@ -216,7 +216,7 @@ describe('điều phối viên trên app', () => {
 
     expect(await screen.findByRole('header', { name: 'Tài khoản' })).toBeOnTheScreen()
     expect(pathname()).toBe('/account')
-    expect(tabScreens()).toEqual(['index', 'account'])
+    expect(tabScreens()).toEqual(['index', 'fleet', 'monitoring', 'account'])
     expect(screen.queryByRole('button', { name: tabNamed('Tra cứu kiện') })).toBeNull()
   })
 })

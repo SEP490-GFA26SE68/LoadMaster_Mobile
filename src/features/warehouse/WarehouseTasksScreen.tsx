@@ -13,8 +13,8 @@ import { useCan } from '@/features/auth/AuthProvider'
 import { dataErrorMessage, useFormat, useT } from '@/lib/i18n'
 import { colors, CONTENT_MAX_WIDTH, space } from '@/theme/tokens'
 
-import type { WarehouseTask } from './warehouse-model'
-import { useStartLoading, useWarehouseTasksQuery } from './useWarehouseQueries'
+import type { WarehouseTask } from './warehouse-task-model'
+import { useStartLoading, useWarehouseTasksQuery } from './useWarehouseTaskQueries'
 
 export function warehousePath(tripId: string) {
   return { pathname: '/warehouse/[tripId]', params: { tripId } } as const
@@ -29,10 +29,10 @@ export function WarehouseTasksScreen() {
 
   return (
     <Screen
-      title={t('warehouse.tasks.title')}
+      title={t('warehouseTask.tasks.title')}
       actions={
         can('packages.lookup') ? (
-          <IconButton icon={QrCode} tone="sky" label={t('warehouse.tasks.scan')} onPress={() => router.push('/scan')} />
+          <IconButton icon={QrCode} tone="sky" label={t('warehouseTask.tasks.scan')} onPress={() => router.push('/scan')} />
         ) : undefined
       }>
       {query.isPending ? (
@@ -48,7 +48,7 @@ export function WarehouseTasksScreen() {
           contentContainerStyle={styles.list}
           refreshing={query.isRefetching}
           onRefresh={() => void query.refetch()}
-          ListEmptyComponent={<EmptyState title={t('warehouse.tasks.empty.title')} description={t('warehouse.tasks.empty.description')} />}
+          ListEmptyComponent={<EmptyState title={t('warehouseTask.tasks.empty.title')} description={t('warehouseTask.tasks.empty.description')} />}
           ListHeaderComponent={query.data.length > 0 ? <AppText color={colors.text2}>{format.date(new Date())}</AppText> : null}
         />
       )}
@@ -61,10 +61,10 @@ function TaskCard({ task }: { task: WarehouseTask }) {
   const format = useFormat()
   const router = useRouter()
   const start = useStartLoading()
-  const action = task.inProgress ? t('warehouse.tasks.resume') : t('warehouse.tasks.start')
+  const action = task.inProgress ? t('warehouseTask.tasks.resume') : t('warehouseTask.tasks.start')
   const facts = [
     ...(task.departureAt === undefined ? [] : [format.date(task.departureAt)]),
-    t('warehouse.tasks.packages', { count: task.packageCount }),
+    t('warehouseTask.tasks.packages', { count: task.packageCount }),
   ]
 
   return (
@@ -80,7 +80,7 @@ function TaskCard({ task }: { task: WarehouseTask }) {
       <Button
         variant="primary"
         loading={start.isPending}
-        accessibilityLabel={t('warehouse.tasks.openLabel', { action, tripId: task.code })}
+        accessibilityLabel={t('warehouseTask.tasks.openLabel', { action, tripId: task.code })}
         onPress={() => {
           if (task.inProgress) {
             router.push(warehousePath(task.id))

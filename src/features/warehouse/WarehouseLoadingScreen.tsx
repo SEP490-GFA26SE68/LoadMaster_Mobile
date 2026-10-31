@@ -15,8 +15,8 @@ import { isApiError } from '@/data/http'
 import { dataErrorMessage, useT } from '@/lib/i18n'
 import { colors, space } from '@/theme/tokens'
 
-import type { LoadingSession } from './warehouse-model'
-import { useCompleteLoading, useConfirmPlacement, useLoadingQuery, useRecordDeviation, useStartLoading, useWarehouseCapabilities } from './useWarehouseQueries'
+import type { LoadingSession } from './warehouse-task-model'
+import { useCompleteLoading, useConfirmPlacement, useLoadingQuery, useRecordDeviation, useStartLoading, useWarehouseCapabilities } from './useWarehouseTaskQueries'
 
 export function WarehouseLoadingScreen({ tripId }: { tripId: string }) {
   const t = useT()
@@ -29,13 +29,13 @@ export function WarehouseLoadingScreen({ tripId }: { tripId: string }) {
 
   const missing = query.isError && isApiError(query.error) && query.error.code === 'LOADING_NOT_STARTED'
   return (
-    <Screen title={t('warehouse.loading.title', { tripId })} leading={<IconButton icon={ArrowLeft} tone="sky" label={t('warehouse.loading.toTasks')} onPress={toTasks} />}>
+    <Screen title={t('warehouseTask.loading.title', { tripId })} leading={<IconButton icon={ArrowLeft} tone="sky" label={t('warehouseTask.loading.toTasks')} onPress={toTasks} />}>
       {query.isPending ? (
         <LoadingState />
       ) : missing ? (
         <View style={styles.pad}>
           <Button loading={start.isPending} onPress={() => void start.mutateAsync(tripId)}>
-            {t('warehouse.tasks.start')}
+            {t('warehouseTask.tasks.start')}
           </Button>
         </View>
       ) : (
@@ -59,35 +59,35 @@ function LoadingBody({ session }: { session: LoadingSession }) {
 
   return (
     <Screen
-      title={t('warehouse.loading.title', { tripId: session.tripCode })}
-      leading={<IconButton icon={ArrowLeft} tone="sky" label={t('warehouse.loading.toTasks')} onPress={() => router.dismissTo('/warehouse')} />}
+      title={t('warehouseTask.loading.title', { tripId: session.tripCode })}
+      leading={<IconButton icon={ArrowLeft} tone="sky" label={t('warehouseTask.loading.toTasks')} onPress={() => router.dismissTo('/warehouse')} />}
       scroll
       footer={
         done ? (
           <Button loading={finish.isPending} onPress={() => void finish.mutateAsync().then(() => router.dismissTo('/warehouse'))}>
-            {t('warehouse.loading.complete')}
+            {t('warehouseTask.loading.complete')}
           </Button>
         ) : (
           <Button loading={confirm.isPending} onPress={() => void confirm.mutateAsync(current.id)}>
-            {t('warehouse.loading.confirm')}
+            {t('warehouseTask.loading.confirm')}
           </Button>
         )
       }>
       {session.vehicleInfo === '' ? null : <AppText color={colors.text2}>{session.vehicleInfo}</AppText>}
       {mutationError === null ? null : <Banner tone="danger">{dataErrorMessage(mutationError, t)}</Banner>}
       {done ? (
-        <Banner tone="success">{t('warehouse.loading.completed', { tripId: session.tripCode })}</Banner>
+        <Banner tone="success">{t('warehouseTask.loading.completed', { tripId: session.tripCode })}</Banner>
       ) : (
         <Card>
-          <AppText variant="label">{t('warehouse.loading.next')}</AppText>
+          <AppText variant="label">{t('warehouseTask.loading.next')}</AppText>
           <AppText variant="heading">{current.packageName}</AppText>
           {current.barcode === undefined ? null : <AppText color={colors.text2}>{current.barcode}</AppText>}
           {current.posX === undefined ? null : (
-            <AppText color={colors.text3}>{t('warehouse.loading.position', { x: current.posX, y: current.posY ?? 0, z: current.posZ ?? 0 })}</AppText>
+            <AppText color={colors.text3}>{t('warehouseTask.loading.position', { x: current.posX, y: current.posY ?? 0, z: current.posZ ?? 0 })}</AppText>
           )}
           {caps.deviation ? (
             <Button variant="secondary" onPress={() => setDeviating((open) => !open)}>
-              {t('warehouse.loading.deviate')}
+              {t('warehouseTask.loading.deviate')}
             </Button>
           ) : null}
           {deviating && caps.deviation ? <DeviationForm placementId={current.id} tripId={session.tripId} onDone={() => setDeviating(false)} /> : null}
@@ -107,11 +107,11 @@ function DeviationForm({ tripId, placementId, onDone }: { tripId: string; placem
 
   return (
     <View style={styles.form}>
-      <AppText variant="label">{t('warehouse.loading.deviation.title')}</AppText>
-      <TextField label={t('warehouse.loading.deviation.x')} keyboardType="number-pad" value={x} onChangeText={setX} />
-      <TextField label={t('warehouse.loading.deviation.y')} keyboardType="number-pad" value={y} onChangeText={setY} />
-      <TextField label={t('warehouse.loading.deviation.z')} keyboardType="number-pad" value={z} onChangeText={setZ} />
-      <TextField label={t('warehouse.loading.deviation.reason')} value={reason} onChangeText={setReason} />
+      <AppText variant="label">{t('warehouseTask.loading.deviation.title')}</AppText>
+      <TextField label={t('warehouseTask.loading.deviation.x')} keyboardType="number-pad" value={x} onChangeText={setX} />
+      <TextField label={t('warehouseTask.loading.deviation.y')} keyboardType="number-pad" value={y} onChangeText={setY} />
+      <TextField label={t('warehouseTask.loading.deviation.z')} keyboardType="number-pad" value={z} onChangeText={setZ} />
+      <TextField label={t('warehouseTask.loading.deviation.reason')} value={reason} onChangeText={setReason} />
       <Button
         variant="secondary"
         loading={deviate.isPending}
@@ -124,7 +124,7 @@ function DeviationForm({ tripId, placementId, onDone }: { tripId: string; placem
             })
             .then(onDone)
         }>
-        {t('warehouse.loading.deviation.submit')}
+        {t('warehouseTask.loading.deviation.submit')}
       </Button>
     </View>
   )

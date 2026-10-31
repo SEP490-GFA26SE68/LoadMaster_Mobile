@@ -3,8 +3,6 @@ import { useMutation, useQuery, useQueryClient, type Query } from '@tanstack/rea
 import { lookupKeys } from '@/features/lookup/useLookupQueries'
 import type { ManualConfirmInput } from '@/lib/mock-db'
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-
 import {
   completeLoading,
   confirmLoadingByQr,
@@ -18,18 +16,11 @@ import {
   recordSeal,
   reportDamagedPackage,
   reportStagingShortage,
-  confirmPlacement,
-  fetchLoading,
-  fetchWarehouseTasks,
-  recordDeviation,
-  scanPackage,
   startLoading,
   warehouseCapabilities,
 } from './warehouse-api'
-import type { DeviationInput, WarehouseCapabilities } from './warehouse-model'
 import type { VerifyCodeInput, WarehouseCapabilities } from './warehouse-model'
 
-const NO_CAPABILITIES: WarehouseCapabilities = { deviation: false, scan: false }
 const NO_CAPABILITIES: WarehouseCapabilities = { manualConfirm: false, shortages: false, seal: false, notifications: false }
 
 /**
@@ -56,20 +47,13 @@ export const warehouseKeys = {
 /** Danh sách chuyến của kho: pha của chuyến đổi ở nơi khác (điều phối duyệt, tài xế xuất phát) nên mỗi lần mở màn đọc lại. */
 export function useWarehouseTrips() {
   return useQuery({ queryKey: warehouseKeys.trips, queryFn: fetchWarehouseTrips, staleTime: 0 })
-  tasks: ['warehouse', 'tasks'] as const,
-  loading: (tripId: string) => ['warehouse', 'loading', tripId] as const,
-  scan: (code: string) => ['warehouse', 'scan', code] as const,
 }
 
-export function useWarehouseTasksQuery() {
-  return useQuery({ queryKey: warehouseKeys.tasks, queryFn: fetchWarehouseTasks })
 /** Một chuyến và các revision của nó — nguồn của phiên soạn → xếp (`warehouseSession`). */
 export function useWarehouseTrip(tripId: string) {
   return useQuery({ queryKey: warehouseKeys.trip(tripId), queryFn: () => fetchWarehouseTrip(tripId), staleTime: 0 })
 }
 
-export function useLoadingQuery(tripId: string) {
-  return useQuery({ queryKey: warehouseKeys.loading(tripId), queryFn: () => fetchLoading(tripId) })
 /** Nhãn QR của chuyến; `tripId` rỗng thì không gọi nguồn. */
 export function useWarehouseLabels(tripId: string) {
   return useQuery({ queryKey: warehouseKeys.labels(tripId), queryFn: () => fetchTripLabels(tripId), enabled: tripId !== '' })
@@ -79,23 +63,8 @@ export function useWarehouseLabels(tripId: string) {
 export function useWarehouseNotifications() {
   const { notifications } = useWarehouseCapabilities()
   return useQuery({ queryKey: warehouseKeys.notifications, queryFn: fetchNotifications, enabled: notifications, staleTime: 0 })
-export function useStartLoading() {
-  const client = useQueryClient()
-  return useMutation({
-    mutationFn: startLoading,
-    onSuccess: (session) => {
-      void client.invalidateQueries({ queryKey: warehouseKeys.all })
-      client.setQueryData(warehouseKeys.loading(session.tripId), session)
-    },
-  })
 }
 
-export function useConfirmPlacement(tripId: string) {
-  const client = useQueryClient()
-  return useMutation({
-    mutationFn: (placementId: string) => confirmPlacement(tripId, placementId),
-    onSuccess: (session) => client.setQueryData(warehouseKeys.loading(tripId), session),
-  })
 /*
  * Lệnh ghi của kho chỉ chờ đúng thứ màn của phiên đang đọc: chuyến đang xếp, và nhãn của chuyến lúc bắt đầu phiên — không có lúc màn còn
  * hiện kiện vừa ghi như chưa ghi. Danh sách chuyến, chuông và kết quả tra cứu kiện (mỗi bước soạn, xếp đổi trạng thái hoặc cờ của kiện)
@@ -114,7 +83,6 @@ type Refresh = {
   readonly labels?: boolean
 }
 
-export function useRecordDeviation(tripId: string) {
 /**
  * Mọi lệnh ghi trên chuyến `tripId` của kho: xong — kể cả lỗi, máy khác có thể vừa ghi trước — thì làm mới chuyến của phiên (và nhãn khi
  * `labels`), phần còn lại của kho trừ nhãn, và mọi kết quả tra cứu kiện. Chỉ chờ phần của phiên: lệnh xong khi màn đã đọc lại chuyến
@@ -123,8 +91,6 @@ export function useRecordDeviation(tripId: string) {
 function useWarehouseMutation<Input, Result>(tripId: string, mutationFn: (input: Input) => Promise<Result>, { labels = false }: Refresh = {}) {
   const client = useQueryClient()
   return useMutation({
-    mutationFn: ({ placementId, input }: { placementId: string; input: DeviationInput }) => recordDeviation(tripId, placementId, input),
-    onSuccess: (session) => client.setQueryData(warehouseKeys.loading(tripId), session),
     mutationFn,
     onSettled: () => {
       const session = Promise.all([
@@ -139,12 +105,6 @@ function useWarehouseMutation<Input, Result>(tripId: string, mutationFn: (input:
   })
 }
 
-export function useCompleteLoading(tripId: string) {
-  const client = useQueryClient()
-  return useMutation({
-    mutationFn: () => completeLoading(tripId),
-    onSuccess: () => void client.invalidateQueries({ queryKey: warehouseKeys.all }),
-  })
 /** Bắt đầu phiên xếp. Kể cả khi bị từ chối (ví dụ máy khác vừa bắt đầu trước), đọc lại để màn theo đúng pha trong kho. */
 export function useStartLoadingMutation(tripId: string) {
   return useWarehouseMutation(tripId, () => startLoading(tripId), { labels: true })
@@ -170,13 +130,6 @@ export function useCompleteLoadingMutation(tripId: string) {
   return useWarehouseMutation(tripId, () => completeLoading(tripId))
 }
 
-export function useScanPackage(code: string) {
-  const trimmed = code.trim()
-  return useQuery({
-    queryKey: warehouseKeys.scan(trimmed),
-    queryFn: () => scanPackage(trimmed),
-    enabled: trimmed !== '',
-  })
 export function useConfirmLoadingByQrMutation(tripId: string) {
   return useWarehouseMutation(tripId, (input: VerifyCodeInput) => confirmLoadingByQr(tripId, input))
 }

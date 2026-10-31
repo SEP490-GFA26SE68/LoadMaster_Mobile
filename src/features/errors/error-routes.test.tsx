@@ -202,7 +202,7 @@ describe('màn không tìm thấy', () => {
     role === 'driver'
       ? { role, path: '/trips', header: 'Chuyến của tôi' }
       : role === 'warehouse'
-        ? { role, path: '/warehouse', header: 'Chuyến cần xếp' }
+        ? { role, path: '/warehouse', header: 'Nhiệm vụ kho' }
         : { role, path: '/account', header: 'Tài khoản' },
   )
 

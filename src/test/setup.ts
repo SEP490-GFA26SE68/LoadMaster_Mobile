@@ -24,8 +24,8 @@ jest.mock('expo-camera', () => jest.requireActual<typeof import('./native-mocks'
 jest.mock('expo-location', () => jest.requireActual<typeof import('./native-mocks')>('./native-mocks').expoLocation)
 jest.mock('expo-router', () => jest.requireActual<typeof import('./native-mocks')>('./native-mocks').expoRouter)
 jest.mock('react-native-webview', () => {
-  const { createElement } = require('react') as typeof import('react')
-  const { View } = require('react-native') as typeof import('react-native')
+  const { createElement } = jest.requireActual<typeof import('react')>('react')
+  const { View } = jest.requireActual<typeof import('react-native')>('react-native')
   const WebView = (props: object) => createElement(View, props)
   return { WebView }
 })

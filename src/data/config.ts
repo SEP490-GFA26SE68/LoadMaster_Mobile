@@ -8,9 +8,7 @@
  * Feature có lớp dữ liệu riêng. Thêm feature mới thì thêm tên vào đây, trong cùng issue với `-api.ts` của nó. `warehouse`: màn kho
  * (soạn, xếp, seal); `packages`: tra cứu kiện của kho kiện.
  */
-export const FEATURES = ['auth', 'driver', 'warehouse', 'packages'] as const
-/** Feature có lớp dữ liệu riêng. Thêm feature mới thì thêm tên vào đây, trong cùng issue với `-api.ts` của nó. */
-export const FEATURES = ['auth', 'driver', 'warehouse', 'monitoring', 'fleet'] as const
+export const FEATURES = ['auth', 'driver', 'warehouse', 'packages', 'monitoring', 'fleet'] as const
 
 export type Feature = (typeof FEATURES)[number]
 
@@ -73,7 +71,6 @@ export function resolveDataConfig(env: DataEnv): DataConfig {
 
   const sourceOfFeature = (feature: Feature): DataSource => (fallback === 'http' || wired.includes(feature) ? 'http' : 'mock')
   // Mỗi feature của `FEATURES` một nguồn: feature mới không phải thêm tay vào đây
-  const sources = Object.fromEntries(FEATURES.map((feature) => [feature, sourceOfFeature(feature)])) as Record<Feature, DataSource>
   const sources = Object.fromEntries(FEATURES.map((feature) => [feature, sourceOfFeature(feature)])) as Record<Feature, DataSource>
   const onHttp = FEATURES.filter((feature) => sources[feature] === 'http')
   const onMock = FEATURES.filter((feature) => sources[feature] === 'mock')
