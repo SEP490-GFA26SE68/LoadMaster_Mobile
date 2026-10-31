@@ -1,4 +1,5 @@
 import { ApiError, createApiClient } from '@/data/http'
+import { encodePolyline } from '@/domain/routing/polyline'
 
 import { httpDriverApi } from './driver-http'
 import type { DriverTripScreen, StopScreen } from './driver-model'
@@ -126,6 +127,43 @@ describe('httpDriverApi', () => {
       ['7001', 'LM-AB12-CD34-EF56', 'Tủ lạnh 180L', 62.5, 1],
       ['7002', '7002', '7002', undefined, 2],
     ])
+    expect(stop.routeMap).toBeUndefined()
+  })
+
+  test('plan active: vẽ polyline Goong, toạ độ điểm hiện tại, bước chỉ dẫn của leg đang đi', async () => {
+    const start = { lat: 10.78, lng: 106.7 }
+    const mid = { lat: 10.85, lng: 106.77 }
+    const end = { lat: 10.95, lng: 106.82 }
+    const { driver, calls } = backend(
+      onTrip({
+        'GET /api/trips/41/route-plans/active': () =>
+          ok({
+            planVersion: 3,
+            legs: [
+              { legSequence: 1, endStopId: 901, polyline: encodePolyline([start, mid]) },
+              {
+                legSequence: 2,
+                endStopId: 902,
+                polyline: encodePolyline([mid, end]),
+                steps: [{ instruction: 'Rẽ phải', maneuver: 'turn-right', distanceMeters: 300, lat: 10.9, lng: 106.8 }],
+              },
+            ],
+          }),
+      }),
+    )
+    const stop = stopOf(await driver.fetchTripScreen('41'))
+    expect(calls.some((call) => call.method === 'GET' && call.path === '/api/trips/41/route-plans/active')).toBe(true)
+    expect(stop.stop).toMatchObject({ lat: end.lat, lng: end.lng })
+    expect(stop.routeMap).toMatchObject({
+      planVersion: 3,
+      depot: { lat: start.lat, lng: start.lng },
+      guidanceSteps: [{ instruction: 'Rẽ phải', maneuver: 'turn-right', distanceMeters: 300, lat: 10.9, lng: 106.8 }],
+    })
+    expect(stop.routeMap?.stops.map(({ number, lat, lng }) => [number, lat, lng])).toEqual([
+      [1, mid.lat, mid.lng],
+      [2, end.lat, end.lng],
+    ])
+    expect(stop.routeMap?.path?.at(-1)).toEqual(end)
   })
 
   test('chuyến không còn trong danh sách đang vận chuyển: không mở màn điểm giao', async () => {
@@ -227,7 +265,7 @@ describe('httpDriverApi', () => {
       arrive: false,
       manualConfirm: false,
       deliveryIssues: false,
-      tripExceptions: false,
+      tripExceptions: true,
       gps: true,
       notifications: false,
       gpsLocalOnly: false,
@@ -237,7 +275,6 @@ describe('httpDriverApi', () => {
       () => driver.arriveAtStop('41', STOP_KEY),
       () => driver.confirmUnloadManually('41', { stop: STOP_KEY, itemId: '7001', reason: 'LABEL_DAMAGED', note: undefined }),
       () => driver.reportDeliveryIssue('41', { stop: STOP_KEY, itemId: '7001', kind: 'damaged', note: undefined }),
-      () => driver.reportTripException('41', { type: 'TRAFFIC', description: 'Kẹt xe', delayMinutes: 20 }),
       () => driver.fetchNotifications(),
     ]) {
       expect((await failure(run)).code).toBe('NOT_SUPPORTED')

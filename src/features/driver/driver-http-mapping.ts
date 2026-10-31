@@ -1,6 +1,7 @@
+import { decodePolyline, pathFromEncodedPolylines } from '@/domain/routing/polyline'
 import { TRIP_STATUSES, type TripStatus } from '@/types/trip'
 
-import type { DriverTripRow, DriverTripStop, StopItem, StopScreen, VerifyVia } from './driver-model'
+import type { DriverRouteMap, DriverTripRow, DriverTripStop, StopItem, StopScreen, VerifyVia } from './driver-model'
 
 /*
  * Dữ liệu backend trả cho tài xế (`/api/driver/**`) và cách đổi sang dạng màn cần (`driver-model.ts`). Kiểu DTO không ra khỏi lớp
@@ -33,6 +34,28 @@ export type CurrentStopDto = {
   readonly stopName: string | null
   readonly address: string | null
   readonly packages: readonly StopPackageDto[] | null
+}
+
+/** `GET /api/trips/{id}/route-plans/active` — DRIVER được đọc. */
+export type RouteGuidanceStepDto = {
+  readonly instruction?: string | null
+  readonly maneuver?: string | null
+  readonly distanceMeters?: number | null
+  readonly durationSeconds?: number | null
+  readonly lat?: number | null
+  readonly lng?: number | null
+}
+
+export type RouteLegDto = {
+  readonly legSequence: number
+  readonly endStopId?: number | null
+  readonly polyline?: string | null
+  readonly steps?: readonly RouteGuidanceStepDto[] | null
+}
+
+export type RoutePlanDetailDto = {
+  readonly planVersion?: number | null
+  readonly legs?: readonly RouteLegDto[] | null
 }
 
 /** `POST /api/driver/stops/{id}/complete` */
@@ -119,12 +142,47 @@ function itemsOf(dto: CurrentStopDto, unloaded: UnloadedItems): StopItem[] {
   })
 }
 
+/** Bản đồ từ plan active: polyline Goong, mốc điểm = điểm cuối từng leg, kho = điểm đầu tuyến. */
+export function routeMapOf(plan: RoutePlanDetailDto | null | undefined, current: { readonly number: number; readonly name: string }): DriverRouteMap | undefined {
+  const ordered = [...(plan?.legs ?? [])].sort((left, right) => left.legSequence - right.legSequence)
+  if (ordered.length === 0) return undefined
+  const path = pathFromEncodedPolylines(ordered.map((leg) => leg.polyline))
+  const stops = ordered.flatMap((leg) => {
+    const segment = decodePolyline(leg.polyline ?? '')
+    const last = segment[segment.length - 1]
+    if (last === undefined) return []
+    const currentStop = leg.legSequence === current.number
+    return [{
+      id: String(leg.endStopId ?? leg.legSequence),
+      number: leg.legSequence,
+      name: currentStop ? current.name : '',
+      lat: last.lat,
+      lng: last.lng,
+    }]
+  })
+  const origin = path[0] ?? stops[0]
+  if (origin === undefined) return undefined
+  const here = ordered.find((leg) => leg.legSequence === current.number)
+  return {
+    depot: { name: '', lat: origin.lat, lng: origin.lng },
+    stops,
+    ...(path.length > 1 ? { path } : {}),
+    ...(plan?.planVersion !== undefined && plan.planVersion !== null ? { planVersion: plan.planVersion } : {}),
+    ...(here?.steps?.length ? { guidanceSteps: here.steps } : {}),
+  }
+}
+
 /**
  * Màn điểm giao từ điểm hiện tại của backend. Backend chưa có bước "Đã đến" nên điểm hiện tại luôn dỡ được; chưa trả kiện nào đã dỡ nên
  * adapter đưa vào những kiện nó đã ghi (`unloaded`); chỉ biết điểm hiện tại nên các điểm khác của dải tiến độ chỉ có số và đã xong
- * hay chưa (điểm hoàn tất theo thứ tự).
+ * hay chưa (điểm hoàn tất theo thứ tự). Toạ độ lấy từ plan active khi có.
  */
-export function stopScreenOf(dto: CurrentStopDto, tripStopCount: number, unloaded: UnloadedItems): StopScreen {
+export function stopScreenOf(
+  dto: CurrentStopDto,
+  tripStopCount: number,
+  unloaded: UnloadedItems,
+  plan: RoutePlanDetailDto | null = null,
+): StopScreen {
   const number = dto.stopSequence
   const name = dto.stopName ?? ''
   const items = itemsOf(dto, unloaded)
@@ -142,9 +200,21 @@ export function stopScreenOf(dto: CurrentStopDto, tripStopCount: number, unloade
       timing: undefined,
     }
   })
+  const routeMap = routeMapOf(plan, { number, name })
+  const here = routeMap?.stops.find((stop) => stop.number === number)
   return {
     mode: 'delivering',
-    stop: { number, ref: String(dto.stopId), name, address: dto.address ?? '', phone: undefined, contactName: undefined, kind: 'DELIVERY' },
+    stop: {
+      number,
+      ref: String(dto.stopId),
+      name,
+      address: dto.address ?? '',
+      phone: undefined,
+      contactName: undefined,
+      kind: 'DELIVERY',
+      lat: here?.lat,
+      lng: here?.lng,
+    },
     stops,
     stopCount,
     arrived: true,
@@ -163,5 +233,6 @@ export function stopScreenOf(dto: CurrentStopDto, tripStopCount: number, unloade
     names: Object.fromEntries(items.map((item) => [item.id, item.name])),
     hasPickupStops: false,
     refreshMs: null,
+    routeMap,
   }
 }

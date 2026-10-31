@@ -26,8 +26,9 @@ một câu nói rõ (`features/auth/landing.ts`).
 
 **Trạng thái dữ liệu:** mặc định app chạy trên **kho dữ liệu mẫu trong máy** (cùng logic và seed với bản web). Kho mẫu không thay
 backend: bản web và máy khác không thấy gì trong đó. Mỗi feature nối backend riêng, khi backend có phần đó (mục 5). Đã nối được:
-đăng nhập (`auth`, Keycloak của backend — mục 6) và màn tài xế (`driver`, phần backend đã có; việc backend chưa có thì màn ẩn nút).
-Màn kho (`warehouse`) và Tra cứu kiện (`packages`) mới chạy trên kho mẫu: chưa có adapter `http`. Cách chạy với backend: README.
+đăng nhập (`auth`, Keycloak), tài xế (`driver`), kho (`warehouse`, gồm tra cứu QR), giám sát (`monitoring`), danh sách chuyến
+công ty (`fleet` — `GET /api/trips`, quyền điều phối). Việc bàn giấy (gói cước, hoá đơn, công ty, webhook thanh toán, Brevo)
+không nối trên app. Cách chạy với backend: README.
 
 Luật chung, giữ từ bản web:
 
@@ -53,6 +54,7 @@ expo-auth-session           — đăng nhập Keycloak (PKCE); CHỈ import tron
 expo-camera                 — quét mã QR trên nhãn kiện
 react-native-svg            — hình 2D của màn kho (sơ đồ thùng nhìn từ trên, hình hướng đặt)
 expo-location               — vị trí xe khi tài xế bật GPS
+react-native-webview        — bản đồ tuyến MapLibre + nền Goong (cùng URL style với web); có trong Expo Go
 jest-expo + @testing-library/react-native v14 — test
 ```
 
@@ -86,8 +88,10 @@ pnpm dlx expo-doctor      # kiểm cấu hình và version các gói
   ("manifest 'build.ninja' still dirty").
 - Thư mục `android/`, `ios/` không có trong repo: chúng được sinh ra khi build (Continuous Native Generation). Không tạo hay sửa
   tay — cấu hình native đặt ở `app.json` và config plugin.
-- Expo Go chỉ chạy được module native nó có sẵn. Thêm thư viện có code native (bản đồ, GPS chạy nền, thông báo đẩy…) thì app cần
-  **development build** (`eas build --profile development`), và phải ghi điều đó vào issue của việc thêm thư viện.
+- Expo Go chỉ chạy được module native nó có sẵn. Thêm thư viện có code native (bản đồ native, GPS chạy nền, thông báo đẩy…) thì app cần
+  **development build** (`eas build --profile development`), và phải ghi điều đó vào issue của việc thêm thư viện. Bản đồ tuyến của tài
+  xế dùng `react-native-webview` + MapLibre GL (nền Goong `tiles.goong.io`, khoá `EXPO_PUBLIC_GOONG_MAPTILES_KEY`) — **không** dùng
+  `@maplibre/maplibre-react-native` (không có trong Expo Go) và không dùng Google Maps.
 - Build và phát hành dùng EAS (`pnpm dlx eas-cli@latest <lệnh>`): build iOS không cần máy Mac.
 
 ### Xuất file APK
@@ -128,11 +132,9 @@ src/
     bell/              chuông theo vai trò (`NotificationBell`) và màn thông báo `NotificationsScreen` của tài xế và kho
     driver/            màn của tài xế: chuyến của tôi, một chuyến (điểm giao, dỡ, hoàn tất, sự cố, GPS), tổng kết;
                        adapter driver-mock.ts (kho mẫu) và driver-http.ts (backend)
-    warehouse/         màn của nhân viên kho: danh sách chuyến (`WarehouseTripsScreen`, `trips/`) và phiên soạn → xếp một chuyến
-                       (`LoadingSessionScreen` chọn bước: `staging/` soạn hàng, `loading/` xếp, `finished/` xếp xong + số seal);
-                       adapter warehouse-mock.ts; ← chép từ web: `warehouse-trips.ts`, `loading-session.ts`, `describe-step.ts`
-    lookup/            Tra cứu kiện: quét hoặc gõ mã, thẻ kiện, báo đã tìm thấy kiện; adapter lookup-mock.ts
-    errors/            màn lỗi chung `RouteErrorScreen` (là `ErrorBoundary` của route) và màn không tìm thấy `NotFoundScreen`
+    warehouse/         nhiệm vụ xếp hàng, từng bước xếp, tra cứu kiện QR
+    monitoring/        bảng giám sát đội xe, một chuyến (vị trí, sự cố, tuyến thay thế)
+    fleet/             danh sách chuyến của công ty (điều phối viên; lập chuyến ở web)
     notifications/     ← chép từ web: sự kiện nào báo cho ai
     viewer3d/          ← chép từ web: phần thuần (kiện theo điểm giao, thứ tự dỡ) — không có Three.js
   components/          component dùng từ hai feature trở lên: AppText, Button, IconButton, TextField, Screen, Card, Chip,

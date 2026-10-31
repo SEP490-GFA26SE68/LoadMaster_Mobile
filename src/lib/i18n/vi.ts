@@ -6,9 +6,11 @@ import { common } from './vi/common'
 import { dataErrors } from './vi/dataErrors'
 import { driver } from './vi/driver'
 import { errors } from './vi/errors'
+import { fleet } from './vi/fleet'
 import { issues } from './vi/issues'
 import { language } from './vi/language'
 import { lookup } from './vi/lookup'
+import { monitoring } from './vi/monitoring'
 import { nav } from './vi/nav'
 import { notifications } from './vi/notifications'
 import { packageLookup } from './vi/packageLookup'
@@ -16,6 +18,7 @@ import { roles } from './vi/roles'
 import { status } from './vi/status'
 import { tripException } from './vi/tripException'
 import { verify } from './vi/verify'
+import { warehouse } from './vi/warehouse'
 import { warehouse } from './vi/warehouse'
 import { warehouseFinished } from './vi/warehouseFinished'
 import { warehouseLoading } from './vi/warehouseLoading'
@@ -42,8 +45,10 @@ export const vi = {
   dataErrors,
   driver,
   errors,
+  fleet,
   issues,
   language,
+  monitoring,
   lookup,
   nav,
   notifications,
@@ -58,4 +63,5 @@ export const vi = {
   warehouseSession,
   warehouseStaging,
   warehouseTrips,
+  warehouse,
 } as const

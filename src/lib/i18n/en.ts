@@ -6,9 +6,11 @@ import { common } from './en/common'
 import { dataErrors } from './en/dataErrors'
 import { driver } from './en/driver'
 import { errors } from './en/errors'
+import { fleet } from './en/fleet'
 import { issues } from './en/issues'
 import { language } from './en/language'
 import { lookup } from './en/lookup'
+import { monitoring } from './en/monitoring'
 import { nav } from './en/nav'
 import { notifications } from './en/notifications'
 import { packageLookup } from './en/packageLookup'
@@ -22,6 +24,7 @@ import { warehouseLoading } from './en/warehouseLoading'
 import { warehouseSession } from './en/warehouseSession'
 import { warehouseStaging } from './en/warehouseStaging'
 import { warehouseTrips } from './en/warehouseTrips'
+import { warehouse } from './en/warehouse'
 import type { Dictionary } from './types'
 import type { vi } from './vi'
 
@@ -33,9 +36,11 @@ export const en = {
   common,
   dataErrors,
   driver,
+  fleet,
   errors,
   issues,
   language,
+  monitoring,
   lookup,
   nav,
   notifications,
@@ -44,6 +49,7 @@ export const en = {
   status,
   tripException,
   verify,
+  warehouse,
   warehouse,
   warehouseFinished,
   warehouseLoading,

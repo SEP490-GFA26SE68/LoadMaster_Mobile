@@ -5,5 +5,8 @@ export const nav = {
   warehouse: 'Kho',
   /** Tab tra cứu kiện của nhân viên kho. */
   lookup: 'Tra cứu kiện',
+  warehouse: 'Kho',
+  fleet: 'Chuyến',
+  monitoring: 'Giám sát',
   account: 'Tài khoản',
 } as const

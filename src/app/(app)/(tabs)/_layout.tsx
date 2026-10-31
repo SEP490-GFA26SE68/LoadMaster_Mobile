@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router'
 import { PackageSearch, Truck, UserRound, Warehouse } from 'lucide-react-native'
+import { ClipboardList, Package, Radio, Truck, UserRound } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useCan } from '@/features/auth/AuthProvider'
@@ -11,6 +12,7 @@ import { colors, space, TOUCH, type as scale } from '@/theme/tokens'
  * và không mở được route. Tài xế: Chuyến của tôi · Tài khoản; nhân viên kho: Kho · Tra cứu kiện · Tài khoản. Tra cứu kiện còn đòi
  * `warehouse.operate` vì điều phối viên cũng có `packages.lookup` mà chưa có màn nào trên app. Màn mới thêm một `Tabs.Screen` ở đây,
  * trong issue của màn đó.
+ * và không mở được route. Tài xế: chuyến của tôi; kho: nhiệm vụ xếp; điều phối: chuyến công ty + giám sát; quản lý: giám sát.
  */
 export default function AppLayout() {
   const t = useT()
@@ -35,6 +37,15 @@ export default function AppLayout() {
       </Tabs.Protected>
       <Tabs.Protected guard={can('warehouse.operate') && can('packages.lookup')}>
         <Tabs.Screen name="lookup" options={{ title: t('nav.lookup'), tabBarIcon: ({ color }) => <PackageSearch color={color} size={24} strokeWidth={1.5} /> }} />
+      </Tabs.Protected>
+      <Tabs.Protected guard={can('warehouse.operate')}>
+        <Tabs.Screen name="warehouse" options={{ title: t('nav.warehouse'), tabBarIcon: ({ color }) => <Package color={color} size={24} strokeWidth={1.5} /> }} />
+      </Tabs.Protected>
+      <Tabs.Protected guard={can('trips.edit')}>
+        <Tabs.Screen name="fleet" options={{ title: t('nav.fleet'), tabBarIcon: ({ color }) => <ClipboardList color={color} size={24} strokeWidth={1.5} /> }} />
+      </Tabs.Protected>
+      <Tabs.Protected guard={can('monitoring.view')}>
+        <Tabs.Screen name="monitoring" options={{ title: t('nav.monitoring'), tabBarIcon: ({ color }) => <Radio color={color} size={24} strokeWidth={1.5} /> }} />
       </Tabs.Protected>
       <Tabs.Screen name="account" options={{ title: t('nav.account'), tabBarIcon: ({ color }) => <UserRound color={color} size={24} strokeWidth={1.5} /> }} />
     </Tabs>
