@@ -165,7 +165,8 @@ src/
   types/               ← chép từ web
   providers/           Providers.tsx: mọi provider của app
   polyfills.ts         nạp đầu tiên ở src/app/_layout.tsx
-  test/                setup.ts (giả module native), render.tsx (vẽ màn trong đủ provider), native-mocks.ts (camera, vị trí,
+  test/                global-setup.js (cố định múi giờ test `Asia/Ho_Chi_Minh`, như bản web: máy CI chạy UTC), setup.ts (giả module
+                       native), render.tsx (vẽ màn trong đủ provider), native-mocks.ts (camera, vị trí,
                        router giả), driver-flow.tsx (chuyến mẫu của tài xế), warehouse-flow.tsx (chuyến mẫu và phiên của kho),
                        office-flow.tsx (tài khoản mẫu của điều phối viên, quản lý; vẽ màn sau khi đăng nhập);
                        ← chép từ web: trip-flow.ts (đưa chuyến qua các bước bằng hàm của kho), mock-db-samples.ts (chuyến nhỏ dựng tay)
