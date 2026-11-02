@@ -208,15 +208,15 @@ describe('tài xế trên app', () => {
 })
 
 describe('điều phối viên trên app', () => {
-  test('có quyền tra cứu kiện nhưng app chưa có màn cho vai trò này: không có tab Tra cứu kiện, liên kết tới tab mở Tài khoản', async () => {
+  test('có quyền tra cứu kiện nhưng tra cứu kiện của vai trò này ở bản web: không có tab Tra cứu kiện, liên kết tới tab mở Chuyến hàng', async () => {
     const dispatcher = DEMO_ACCOUNTS.find((item) => item.role === 'dispatcher')
     if (dispatcher === undefined) throw new Error('seed không có tài khoản dùng thử của điều phối viên')
     await signInAs(dispatcher.email)
     const { pathname, tabScreens } = await openApp('/lookup')
 
-    expect(await screen.findByRole('header', { name: 'Tài khoản' })).toBeOnTheScreen()
-    expect(pathname()).toBe('/account')
-    expect(tabScreens()).toEqual(['index', 'account'])
+    expect(await screen.findByRole('header', { name: 'Chuyến hàng' })).toBeOnTheScreen()
+    expect(pathname()).toBe('/trip-list')
+    expect(tabScreens()).toEqual(['index', 'trip-list', 'monitoring', 'account'])
     expect(screen.queryByRole('button', { name: tabNamed('Tra cứu kiện') })).toBeNull()
   })
 })

@@ -18,8 +18,12 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
 - Nhân viên kho, đủ luồng trên kho mẫu: tab **Kho** — chuyến theo nhóm (đang xếp, chờ soạn, xếp xong — chờ xuất phát, chờ điều phối
   tối ưu lại); phiên một chuyến — soạn hàng (đối chiếu từng kiện, báo thiếu), xếp theo thứ tự của phương án (thẻ chỉ dẫn, sơ đồ thùng
   2D nhìn từ trên, hướng đặt, báo kiện hỏng), xếp xong và số seal; tab **Tra cứu kiện** (quét hoặc gõ mã, báo đã tìm thấy kiện);
-  chuông và màn thông báo. Chưa có: khung 3D (bước xếp dùng sơ đồ 2D), nối backend cho kho; xác nhận tay chờ điều phối viên duyệt ở
-  bản web.
+  chuông và màn thông báo. Chưa có: khung 3D (bước xếp dùng sơ đồ 2D), nối backend cho kho.
+- Điều phối viên và quản lý công ty, trên kho mẫu: tab **Chuyến hàng** (danh sách theo ngày, tab trạng thái, tìm bỏ dấu; chi tiết
+  chuyến chỉ đọc, điều phối viên duyệt xác nhận tay và quyết kiện báo thiếu); tab **Giám sát** (chuyến đang chạy, vị trí và giờ đến
+  bằng chữ, sự cố cấp chuyến, tìm tuyến khác, duyệt / từ chối nhận hàng dọc đường; quản lý gia hạn sự cố đã chuyển lên); tab **Tổng
+  quan** của quản lý (số liệu theo kỳ, đội xe, chuyến gần đây); chuông của hai vai trò. Tài xế tạo được yêu cầu nhận hàng dọc đường
+  (tờ "Thêm" ở màn điểm giao). Chưa có: bản đồ, khung 3D, nối backend cho các màn này.
 - Nối backend: đăng nhập (Keycloak + `GET /api/users/me`) và năm endpoint của tài xế (danh sách chuyến, điểm hiện tại, dỡ kiện, hoàn
   tất điểm, vị trí). Việc backend chưa có (xuất phát, đã đến, xác nhận tay, sự cố, thông báo) thì app ẩn nút khi chạy với backend.
 - Ngày 16/10 đã chạy bản debug trên máy ảo Android 16: với kho mẫu — đăng nhập tài xế, xuất phát, đã đến điểm, dỡ kiện bằng gõ mã; với
@@ -27,7 +31,7 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
   thật (đăng nhập trọn vòng, năm endpoint của tài xế), chưa kiểm camera QR, GPS thật, điện thoại thật và iOS; hai màn lỗi và toàn bộ
   màn kho thêm sau ngày đó chưa chạy trên máy.
 
-Kiểm thử: 264 test (Jest, 37 suite), lint và kiểm kiểu sạch; đóng gói Android (`expo export`) chạy được.
+Kiểm thử: 369 test (Jest, 52 suite), lint và kiểm kiểu sạch; đóng gói Android (`expo export`) chạy được.
 
 ## Chạy
 

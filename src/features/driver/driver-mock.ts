@@ -134,6 +134,7 @@ export function mockDriverApi(): DriverApi {
       manualConfirm: true,
       deliveryIssues: true,
       tripExceptions: true,
+      pickups: true,
       gps: true,
       notifications: true,
       gpsLocalOnly: true,
@@ -164,6 +165,11 @@ export function mockDriverApi(): DriverApi {
     async reportTripException(tripId, input) {
       const { id } = await db().reportTripException(tripId, input)
       return { id }
+    },
+    async createPickupRequest(tripId, input) {
+      const request = await db().createPickupRequest(tripId, input)
+      const trip = await db().getTrip(tripId)
+      return { request, stops: trip.stops.map(({ id, name }) => ({ id, name })) }
     },
     async setDriverGps(tripId, enabled) {
       await db().setDriverGps(tripId, enabled)

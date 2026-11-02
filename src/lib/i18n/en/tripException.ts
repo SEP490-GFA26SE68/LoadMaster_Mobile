@@ -2,7 +2,6 @@ import type { Dictionary } from '../types'
 import type { tripException as source } from '../vi/tripException'
 
 export const tripException = {
-  open: 'Incident on the road',
   title: 'Report an incident of trip {id}',
   description: 'The simulated vehicle stands still for exactly the expected delay; arrival times are recalculated from the vehicle position.',
   type: 'Incident type',

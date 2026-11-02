@@ -27,7 +27,9 @@ một câu nói rõ (`features/auth/landing.ts`).
 **Trạng thái dữ liệu:** mặc định app chạy trên **kho dữ liệu mẫu trong máy** (cùng logic và seed với bản web). Kho mẫu không thay
 backend: bản web và máy khác không thấy gì trong đó. Mỗi feature nối backend riêng, khi backend có phần đó (mục 5). Đã nối được:
 đăng nhập (`auth`, Keycloak của backend — mục 6) và màn tài xế (`driver`, phần backend đã có; việc backend chưa có thì màn ẩn nút).
-Màn kho (`warehouse`) và Tra cứu kiện (`packages`) mới chạy trên kho mẫu: chưa có adapter `http`. Cách chạy với backend: README.
+Màn kho (`warehouse`), Tra cứu kiện (`packages`) và các màn của điều phối viên, quản lý (`trips`, `monitoring`, `dashboard`) mới chạy
+trên kho mẫu: chưa có adapter `http`. Riêng việc tài xế tạo yêu cầu nhận hàng dọc đường: `driver-http.ts` từ chối `NOT_SUPPORTED`, màn
+ẩn mục đó. Cách chạy với backend: README.
 
 Luật chung, giữ từ bản web:
 
@@ -120,14 +122,24 @@ src/
     +native-intent.tsx địa chỉ Keycloak trả phiên về (`loadmaster://auth`) không mở màn nào
     +not-found.tsx     địa chỉ không khớp route nào: màn "Không có màn này", nút về màn chính
     (app)/_layout.tsx  Stack: thanh tab `(tabs)` và các màn mở chồng có lối quay lại (`trip/[tripId]` của tài xế, `loading/[tripId]`
-                       — phiên soạn → xếp của kho, `notifications`), sau quyền; export `ErrorBoundary` cho cả nhóm (`sign-in.tsx`,
-                       `+not-found.tsx` cũng export)
-    (app)/(tabs)/      thanh tab đáy; mỗi tab nằm sau quyền của nó (tài xế: Chuyến của tôi; kho: Kho, Tra cứu kiện; ai cũng có Tài khoản)
+                       — phiên soạn → xếp của kho, `trip-detail/[tripId]` và `live/[tripId]` của điều phối viên, quản lý,
+                       `notifications`), sau quyền; export `ErrorBoundary` cho cả nhóm (`sign-in.tsx`, `+not-found.tsx` cũng export)
+    (app)/(tabs)/      thanh tab đáy; mỗi tab nằm sau `hasTab` (mục 6): tài xế Chuyến của tôi; kho Kho, Tra cứu kiện; quản lý Tổng
+                       quan, Chuyến hàng, Giám sát; điều phối viên Chuyến hàng, Giám sát; ai cũng có Tài khoản
   features/<tên>/      màn, component, hook, <tên>-api.ts của một feature
     auth/              đăng nhập (kho mẫu, Keycloak), phiên, quyền, màn Tài khoản
-    bell/              chuông theo vai trò (`NotificationBell`) và màn thông báo `NotificationsScreen` của tài xế và kho
-    driver/            màn của tài xế: chuyến của tôi, một chuyến (điểm giao, dỡ, hoàn tất, sự cố, GPS), tổng kết;
-                       adapter driver-mock.ts (kho mẫu) và driver-http.ts (backend)
+    bell/              chuông theo vai trò (`NotificationBell`) và màn thông báo `NotificationsScreen` của tài xế, kho, điều phối
+                       viên, quản lý (dòng của văn phòng: `office-rows.ts`)
+    driver/            màn của tài xế: chuyến của tôi, một chuyến (điểm giao, dỡ, hoàn tất, sự cố, GPS, tờ "Thêm" — sự cố trên
+                       đường, nhận hàng dọc đường), tổng kết; adapter driver-mock.ts (kho mẫu) và driver-http.ts (backend)
+    trips/             Chuyến hàng (điều phối viên, quản lý): danh sách theo ngày chạy (`list/`), chi tiết chuyến chỉ đọc (`detail/`:
+                       tiến trình, điểm giao, hàng, yêu cầu giao, xe, duyệt xác nhận tay, kiện báo thiếu); adapter trips-mock.ts
+    manager/           Tổng quan của quản lý (`overview/`: kỳ, ô số liệu kèm nguồn, chuyến theo trạng thái, đội xe, chuyến gần đây);
+                       adapter dashboard-mock.ts
+    monitoring/        Giám sát (danh sách chuyến đang chạy, tab sự cố cần xử lý của quản lý) và Giám sát chuyến (vị trí bằng chữ,
+                       điểm giao, sự cố: báo, chuyển quản lý, tìm tuyến khác, xử lý, gia hạn); adapter monitoring-mock.ts. Chưa có
+                       bản đồ — chờ đợt bản đồ native
+    pickups/           nhận hàng dọc đường: form tạo (tài xế, điều phối viên), mười luật, thẻ yêu cầu, duyệt / từ chối
     warehouse/         màn của nhân viên kho: danh sách chuyến (`WarehouseTripsScreen`, `trips/`) và phiên soạn → xếp một chuyến
                        (`LoadingSessionScreen` chọn bước: `staging/` soạn hàng, `loading/` xếp, `finished/` xếp xong + số seal);
                        adapter warehouse-mock.ts; ← chép từ web: `warehouse-trips.ts`, `loading-session.ts`, `describe-step.ts`
@@ -136,7 +148,9 @@ src/
     notifications/     ← chép từ web: sự kiện nào báo cho ai
     viewer3d/          ← chép từ web: phần thuần (kiện theo điểm giao, thứ tự dỡ) — không có Three.js
   components/          component dùng từ hai feature trở lên: AppText, Button, IconButton, TextField, Screen, Card, Chip,
-                       ChoiceGroup, Sheet, Banner, StateView, LanguageSwitch, TripStatus, StopDot
+                       ChoiceGroup, FilterChips (hàng tab / công tắc lọc cuộn ngang), Sheet, Banner, StateView, LanguageSwitch,
+                       TripStatus, StopDot
+    map/               ← chép từ web: phần thuần của ô chọn toạ độ (`coordinates.ts`, `place-search.ts`)
     verify/            đối chiếu kiện ba mức của tài xế và kho (mục 7): `PackageVerifySheet`, `QrScanner`, `ManualConfirmForm`,
                        `CandidatePicker`
   data/                lớp dữ liệu (mục 5): config.ts, adapter.ts, mock-db.ts, http/
@@ -151,8 +165,10 @@ src/
   types/               ← chép từ web
   providers/           Providers.tsx: mọi provider của app
   polyfills.ts         nạp đầu tiên ở src/app/_layout.tsx
-  test/                setup.ts (giả module native), render.tsx (vẽ màn trong đủ provider), native-mocks.ts (camera, vị trí,
-                       router giả), driver-flow.tsx (chuyến mẫu của tài xế), warehouse-flow.tsx (chuyến mẫu và phiên của kho);
+  test/                global-setup.js (cố định múi giờ test `Asia/Ho_Chi_Minh`, như bản web: máy CI chạy UTC), setup.ts (giả module
+                       native), render.tsx (vẽ màn trong đủ provider), native-mocks.ts (camera, vị trí,
+                       router giả), driver-flow.tsx (chuyến mẫu của tài xế), warehouse-flow.tsx (chuyến mẫu và phiên của kho),
+                       office-flow.tsx (tài khoản mẫu của điều phối viên, quản lý; vẽ màn sau khi đăng nhập);
                        ← chép từ web: trip-flow.ts (đưa chuyến qua các bước bằng hàm của kho), mock-db-samples.ts (chuyến nhỏ dựng tay)
   web-mirror.json      danh sách file chép từ web và dấu nội dung của chúng
 scripts/
@@ -176,8 +192,14 @@ hai lần. Bản web là nguồn chuẩn.
   lưu ý, hướng đặt), của viewer 3D và chuông,
   `lib/stops.ts`, `lib/calendar-date.ts`, `lib/isometric.ts` + `lib/tokens.ts` (phép chiếu đẳng cự của hình hướng đặt; ngoài trình
   duyệt `readToken` trả chuỗi rỗng), `lib/i18n/types.ts`, `lib/i18n/hardcoded-strings.ts` (bộ dò chữ viết cứng của cổng i18n, mục 8),
-  các nhánh từ điển `dataErrors`, `issues`, `language`, `lookup`, `roles`, `status`, `warehouse`, và hai file test dùng chung
-  `test/trip-flow.ts`, `test/mock-db-samples.ts`.
+  phần thuần của màn chuyến và số liệu của điều phối viên, quản lý (`features/trips/`: dòng danh sách chuyến, tab trạng thái, "cần bạn
+  xử lý", điểm giao và hàng, lý do lỗi thời, tiến trình; `features/manager/`: số liệu bảng điều khiển, kỳ), của giám sát
+  (`features/monitoring/monitoring-view.ts` — nó import kiểu từ `./monitoring-api` của mobile, nên `monitoring-api.ts` phải giữ bốn kiểu
+  `LiveMonitoring`, `MonitoringBoard`, `MonitoringStop`, `MonitoringTrip`), của nhận hàng dọc đường (`features/pickups/`: câu của mười
+  luật, tên điểm, màu trạng thái), `lib/list-filter.ts` (tìm bỏ dấu), `components/map/coordinates.ts` + `place-search.ts` (phần thuần của
+  ô chọn toạ độ: chữ → toạ độ, tìm địa danh mẫu; bản đồ của web không chép),
+  các nhánh từ điển `dataErrors`, `issues`, `language`, `lookup`, `manager`, `monitoring`, `pickups`, `roles`, `status`, `trips`,
+  `warehouse`, và hai file test dùng chung `test/trip-flow.ts`, `test/mock-db-samples.ts`.
 - Hàm chép từ web mà dựng đường dẫn của web thì không dùng: `loadingSessionPath` (`warehouse-trips.ts`) ra `/kho?chuyen=`; app mở
   phiên bằng `loadingPath` của `features/warehouse/session-routes.ts`.
 - **Không sửa các file đó ở mobile.** Cần đổi thì sửa ở bản web (qua quy trình của web), rồi chạy `pnpm sync:web`.
@@ -226,6 +248,10 @@ màn / component  →  hook Query của feature  →  features/<tên>/<tên>-api
    lúc bắt đầu phiên) đã đọc lại — màn không có lúc còn hiện kiện vừa ghi như chưa ghi. Phần còn lại của `['warehouse']` (danh sách
    chuyến, chuông) và cả `['packages']` làm mới không chờ, sau mọi lần ghi: người xếp không phải đợi chúng giữa hai lần quét. Nhãn không
    đọc lại sau từng bước (không đổi trong phiên xếp).
+   Màn của điều phối viên và quản lý đọc dưới ba gốc (`OFFICE_QUERY_ROOTS` ở `src/data/query-roots.ts`): `['trips', …]` (danh sách, chi
+   tiết chuyến, việc chờ duyệt), `['monitoring', …]` (giám sát, sự cố, nhận hàng dọc đường, thông báo của hai vai trò), `['dashboard', …]`
+   (số liệu). Một lệnh ghi ở màn này đổi thứ màn kia đang hiện, nên lệnh ghi của hai vai trò **chờ** khoá của chính màn đang hiện (cả
+   khi lỗi) và làm mới **không chờ** các gốc còn lại.
 10. Không thêm store phía client cho dữ liệu nghiệp vụ. Không lưu dữ liệu nghiệp vụ vào `expo-secure-store`.
 11. **Hợp đồng nói nguồn làm được gì** (`capabilities`: `DriverCapabilities`, `WarehouseCapabilities`, `LookupCapabilities`;
     màn đọc qua hook `use…Capabilities`). Việc nguồn chưa làm được (backend chưa có
@@ -250,12 +276,18 @@ liệu. Backend lệch với hợp đồng của app thì ghi vào issue và h�
   state của màn, log hay cache Query.
 - Ma trận quyền chép từ web (`features/auth/permissions.ts`): hỏi quyền bằng `useCan()`. Tab và route làm việc nằm sau quyền
   (`Tabs.Protected` / `Stack.Protected`); backend vẫn kiểm lại ở máy chủ.
-- Sau khi đăng nhập mở màn của vai trò (`landingOf`: tài xế `/trips`, nhân viên kho `/warehouse`, vai trò khác `/account`). Màn đó
-  phải là màn vai trò mở được.
-- Quyền của từng route: `trip/[tripId]` sau `driver.operate`; tab Kho và phiên `loading/[tripId]` sau `warehouse.operate`; tab Tra cứu
-  kiện sau `warehouse.operate` **và** `packages.lookup` (điều phối viên cũng có `packages.lookup` mà chưa có màn trên app);
-  `notifications` sau `driver.operate` hoặc `warehouse.operate`. Liên kết sâu tới route vai trò không mở được thì về màn chính của vai
-  trò (`warehouse-routes.test.tsx`).
+- **Tab theo vai trò** (`features/auth/landing.ts`, như `NAV_ITEMS` của web): `ROLE_TABS` là phạm vi app của từng vai trò, theo thứ tự
+  trên thanh, màn chính đứng đầu — tài xế Chuyến của tôi `/trips`; nhân viên kho Kho `/warehouse` · Tra cứu kiện `/lookup`; quản lý công
+  ty Tổng quan `/overview` · Chuyến hàng `/trip-list` · Giám sát `/monitoring`; điều phối viên Chuyến hàng · Giám sát; ai cũng có Tài
+  khoản. `hasTab` đòi cả hai: tab nằm trong `ROLE_TABS` của vai trò **và** vai trò có quyền của màn (`TAB_PERMISSION`). Có quyền mà màn
+  của vai trò đó ở web thì không có tab: điều phối viên có `dashboard.view`, `packages.lookup` nhưng bảng điều khiển và tra cứu kiện của
+  họ ở web. Màn mới thêm tên vào `WORK_TABS` / `ROLE_TABS` và một dòng ở `(tabs)/_layout.tsx`.
+- Sau khi đăng nhập mở màn chính của vai trò (`landingOf`: tab làm việc đầu tiên; vai trò không có tab làm việc nào — quản trị công ty,
+  ba vai trò nền tảng — mở `/account`, kèm câu `scopeNote`). Màn đó phải là màn vai trò mở được (`landing.test.ts`).
+- Quyền của từng route chồng: `trip/[tripId]` sau `driver.operate`; phiên `loading/[tripId]` sau `warehouse.operate`;
+  `trip-detail/[tripId]` (chi tiết chuyến của điều phối viên, quản lý) sau `trips.view`; `live/[tripId]` (giám sát một chuyến đang
+  chạy) sau `monitoring.view`; `notifications` sau `driver.operate`, `warehouse.operate` hoặc `trips.view`. Liên kết sâu tới route vai
+  trò không mở được thì về màn chính của vai trò (`warehouse-routes.test.tsx`, `error-routes.test.tsx`).
 - Mọi lối ra khỏi phiên soạn → xếp (nút thoát, "Về danh sách chuyến") đi qua `useLeaveSession` — `router.dismissTo('/warehouse')`,
   không `router.back()`: phiên mở từ thông báo hay liên kết sâu vẫn về đúng danh sách chuyến của kho.
 - Danh sách tài khoản dùng thử chỉ hiện khi feature `auth` chạy trên kho mẫu.

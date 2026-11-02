@@ -15,6 +15,5 @@ export const account = {
   },
   scope: {
     webOnly: 'Your role works in the web app. This app only has your account.',
-    notYet: 'This version has no work screens for your role yet.',
   },
 } satisfies Dictionary<typeof source>
