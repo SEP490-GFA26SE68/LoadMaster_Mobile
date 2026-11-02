@@ -34,6 +34,19 @@ const MIRRORED_FILES = [
   'features/notifications/notifications.ts',
   // Màn kho: nhóm chuyến của danh sách kho, phiên soạn → xếp theo bản duyệt, số liệu hướng dẫn đặt từng kiện
   ...['warehouse-trips', 'loading-session', 'describe-step'].map((name) => `features/warehouse/${name}.ts`),
+  // Điều phối viên, quản lý: dòng của danh sách chuyến, tab trạng thái, "cần bạn xử lý"; điểm giao và hàng, lý do lỗi thời, tiến trình
+  // của chi tiết chuyến
+  ...['trip-list', 'trip-summary', 'trip-packages', 'trip-detail', 'trip-progress', 'trip-dates'].map((name) => `features/trips/${name}.ts`),
+  // Số liệu chính của bảng điều khiển (quản lý công ty)
+  ...['dashboard-summary', 'dashboard-period', 'trip-facts'].map((name) => `features/manager/${name}.ts`),
+  // Giám sát: tóm tắt chuyến đang chạy (điểm kế tiếp, mức hạn xấu nhất, sự cố), bộ lọc, sự cố đã chuyển quản lý
+  'features/monitoring/monitoring-view.ts',
+  // Nhận hàng dọc đường: câu của mười luật, tên điểm trong câu, màu trạng thái yêu cầu
+  ...['pickup-rule-text', 'pickup-stops', 'pickup-look'].map((name) => `features/pickups/${name}.ts`),
+  // Tìm bỏ dấu, so chữ, khoảng ngày của danh sách
+  'lib/list-filter.ts',
+  // Chữ của hai ô vĩ độ / kinh độ → toạ độ, tìm địa danh mẫu — phần thuần của ô chọn toạ độ (bản web có thêm bản đồ)
+  ...['coordinates', 'place-search'].map((name) => `components/map/${name}.ts`),
   // Phép chiếu đẳng cự cho hình vẽ tĩnh (hướng đặt kiện ở màn kho) và token nó đọc — ngoài trình duyệt `readToken` trả chuỗi rỗng
   'lib/isometric.ts',
   'lib/tokens.ts',
@@ -42,7 +55,7 @@ const MIRRORED_FILES = [
   // Ngày lịch `YYYY-MM-DD` (ngày chạy) → giữa trưa giờ máy, để ngày hiện đúng ở mọi múi giờ
   'lib/calendar-date.ts',
   'lib/i18n/types.ts',
-  ...['dataErrors', 'issues', 'language', 'lookup', 'roles', 'status', 'warehouse'].flatMap((branch) => [
+  ...['dataErrors', 'issues', 'language', 'lookup', 'manager', 'monitoring', 'pickups', 'roles', 'status', 'trips', 'warehouse'].flatMap((branch) => [
     `lib/i18n/vi/${branch}.ts`,
     `lib/i18n/en/${branch}.ts`,
   ]),

@@ -13,8 +13,9 @@ export { RouteErrorScreen as ErrorBoundary } from '@/features/errors/RouteErrorS
 
 /**
  * Nhóm đã đăng nhập: thanh tab đáy (`(tabs)`) và các màn mở chồng lên nó, có lối quay lại — một chuyến của tài xế, phiên soạn → xếp một
- * chuyến của nhân viên kho, thông báo (của cả hai vai trò). Màn làm việc nằm sau quyền của nó (`Stack.Protected`): vai trò thiếu quyền
- * không mở được route. Màn chồng mới thêm một `Stack.Screen` ở đây.
+ * chuyến của nhân viên kho, chi tiết một chuyến và giám sát một chuyến đang chạy của điều phối viên và quản lý công ty, thông báo (của cả
+ * bốn vai trò). Màn làm việc nằm sau quyền của nó (`Stack.Protected`): vai trò thiếu quyền không mở được route. Màn chồng mới thêm một
+ * `Stack.Screen` ở đây.
  */
 export default function AppLayout() {
   const can = useCan()
@@ -27,7 +28,13 @@ export default function AppLayout() {
       <Stack.Protected guard={can('warehouse.operate')}>
         <Stack.Screen name="loading/[tripId]" />
       </Stack.Protected>
-      <Stack.Protected guard={can('driver.operate') || can('warehouse.operate')}>
+      <Stack.Protected guard={can('trips.view')}>
+        <Stack.Screen name="trip-detail/[tripId]" />
+      </Stack.Protected>
+      <Stack.Protected guard={can('monitoring.view')}>
+        <Stack.Screen name="live/[tripId]" />
+      </Stack.Protected>
+      <Stack.Protected guard={can('driver.operate') || can('warehouse.operate') || can('trips.view')}>
         <Stack.Screen name="notifications" />
       </Stack.Protected>
     </Stack>

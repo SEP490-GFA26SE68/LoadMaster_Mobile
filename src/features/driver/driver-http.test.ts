@@ -228,6 +228,7 @@ describe('httpDriverApi', () => {
       manualConfirm: false,
       deliveryIssues: false,
       tripExceptions: false,
+      pickups: false,
       gps: true,
       notifications: false,
       gpsLocalOnly: false,
@@ -238,6 +239,12 @@ describe('httpDriverApi', () => {
       () => driver.confirmUnloadManually('41', { stop: STOP_KEY, itemId: '7001', reason: 'LABEL_DAMAGED', note: undefined }),
       () => driver.reportDeliveryIssue('41', { stop: STOP_KEY, itemId: '7001', kind: 'damaged', note: undefined }),
       () => driver.reportTripException('41', { type: 'TRAFFIC', description: 'Kẹt xe', delayMinutes: 20 }),
+      () =>
+        driver.createPickupRequest('41', {
+          pickup: { name: 'Xưởng may', address: 'Thuận An', lat: 10.93, lng: 106.71 },
+          delivery: { name: 'Kho Sóng Thần', address: 'Dĩ An', lat: 10.89, lng: 106.75 },
+          packages: [{ packageCode: 'HG-1', lengthCm: 40, widthCm: 30, heightCm: 30, weightKg: 8, handlingClass: 'STANDARD' }],
+        }),
       () => driver.fetchNotifications(),
     ]) {
       expect((await failure(run)).code).toBe('NOT_SUPPORTED')

@@ -11,6 +11,7 @@ import { Screen } from '@/components/Screen'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateView'
 import { useAuth, useCan } from '@/features/auth/AuthProvider'
 import { useDriverCapabilities, useNotificationsQuery } from '@/features/driver/useDriverQueries'
+import { useMonitoringCapabilities, useOfficeNotificationsQuery } from '@/features/monitoring/useMonitoringQueries'
 import { NOTIFICATION_WINDOW_DAYS } from '@/features/notifications/notifications'
 import { useWarehouseCapabilities, useWarehouseNotifications } from '@/features/warehouse/useWarehouseQueries'
 import type { Formatter } from '@/lib/format'
@@ -19,18 +20,32 @@ import { colors, radius, shadow, space } from '@/theme/tokens'
 
 import { driverRow, warehouseRow, type BellRow } from './bell-rows'
 import { markNotificationsRead, useReadNotifications } from './notification-read'
+import { officeRow } from './office-rows'
 
 /**
  * Màn Thông báo (chuông của web mở thành menu; điện thoại dùng một màn riêng), theo vai trò người đọc: tài xế đọc việc của chuyến mình,
- * nhân viên kho đọc việc của kho — sự kiện trong `NOTIFICATION_WINDOW_DAYS` ngày gần nhất, mới nhất trước. Dòng chưa đọc có nhãn "Chưa
- * đọc" bằng chữ. Thông báo về một chuyến mở chuyến đó ở màn của vai trò; mở là đã đọc. Nút "Đánh dấu đã đọc" đọc hết một lần. Vai trò
- * không có thông báo, hoặc nguồn dữ liệu của vai trò chưa có, thì màn nói không hỗ trợ.
+ * nhân viên kho đọc việc của kho, điều phối viên và quản lý công ty đọc việc của văn phòng — sự kiện trong `NOTIFICATION_WINDOW_DAYS` ngày
+ * gần nhất, mới nhất trước. Dòng chưa đọc có nhãn "Chưa đọc" bằng chữ. Thông báo về một chuyến mở chuyến đó ở màn của vai trò (với văn
+ * phòng: Chi tiết chuyến, hoặc màn giám sát chuyến khi việc phải làm nằm ở đó); mở là đã đọc. Nút "Đánh dấu đã đọc" đọc hết một lần. Vai
+ * trò không có thông báo, hoặc nguồn dữ liệu của vai trò chưa có, thì màn nói không hỗ trợ.
  */
 export function NotificationsScreen() {
   const can = useCan()
   if (can('driver.operate')) return <DriverNotifications />
   if (can('warehouse.operate')) return <WarehouseNotifications />
+  if (can('trips.view')) return <OfficeNotifications />
   return <NotificationsUnsupported />
+}
+
+function OfficeNotifications() {
+  const can = useCan()
+  const { notifications } = useMonitoringCapabilities()
+  const query = useOfficeNotificationsQuery()
+  return notifications ? (
+    <NotificationList query={query} describe={(entry, t, format) => officeRow(entry, t, format, can)} />
+  ) : (
+    <NotificationsUnsupported />
+  )
 }
 
 function DriverNotifications() {
@@ -162,7 +177,7 @@ function NotificationRow({ row, unread, onOpen }: { row: BellRow; unread: boolea
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityHint={t('notifications.openTrip', { id: open.tripId })}
+      accessibilityHint={open.hint ?? t('notifications.openTrip', { id: open.tripId })}
       onPress={() => onOpen(open.href)}
       style={({ pressed }) => [styles.row, styles.pressable, pressed && styles.pressed]}>
       <View style={styles.flexColumn}>{body}</View>

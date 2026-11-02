@@ -6,9 +6,11 @@
 
 /**
  * Feature có lớp dữ liệu riêng. Thêm feature mới thì thêm tên vào đây, trong cùng issue với `-api.ts` của nó. `warehouse`: màn kho
- * (soạn, xếp, seal); `packages`: tra cứu kiện của kho kiện.
+ * (soạn, xếp, seal); `packages`: tra cứu kiện của kho kiện; `trips`: chuyến của điều phối viên và quản lý (danh sách, chi tiết, duyệt
+ * xác nhận tay và kiện báo thiếu); `monitoring`: giám sát chuyến đang chạy, sự cố cấp chuyến, nhận hàng dọc đường và thông báo của
+ * hai vai trò đó; `dashboard`: số liệu chính của quản lý.
  */
-export const FEATURES = ['auth', 'driver', 'warehouse', 'packages'] as const
+export const FEATURES = ['auth', 'driver', 'warehouse', 'packages', 'trips', 'monitoring', 'dashboard'] as const
 
 export type Feature = (typeof FEATURES)[number]
 

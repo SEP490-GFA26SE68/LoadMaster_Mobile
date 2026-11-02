@@ -4,9 +4,10 @@ import { warehouse as warehouseScreen } from './warehouse'
 /**
  * Chuông và màn Thông báo (`features/bell/`), theo vai trò người đọc: tài xế đọc sự kiện về chuyến của chính mình; nhân viên kho đọc
  * quyết định của điều phối viên với kiện mình báo thiếu và chuyến bị huỷ lúc đang xếp; cả hai đọc xác nhận tay của mình bị từ chối và
- * trả lời yêu cầu hỗ trợ của mình. Câu của tài xế (`driver`) theo nhánh `notifications` của web; `params` là nhãn tham số nhật ký của
- * web. Chuông web hiện nhãn hành động của nhật ký cho việc khác, nên câu còn lại là câu của mobile — trừ câu và nhãn chuông kho lấy thẳng
- * từ nhánh `warehouse`, `lookup` chép từ web (màn phiên xếp, màn Tra cứu kiện): web đổi câu thì chuông đổi theo, không chép tay.
+ * trả lời yêu cầu hỗ trợ của mình. Điều phối viên và quản lý công ty đọc việc của văn phòng (`office`). Câu của tài xế (`driver`) theo
+ * nhánh `notifications` của web; `params` là nhãn tham số nhật ký của web. Chuông web hiện nhãn hành động của nhật ký cho việc khác, nên
+ * câu còn lại là câu của mobile — trừ câu và nhãn chuông kho lấy thẳng từ nhánh `warehouse`, `lookup` chép từ web (màn phiên xếp, màn Tra
+ * cứu kiện): web đổi câu thì chuông đổi theo, không chép tay.
  */
 export const notifications = {
   label: 'Thông báo',
@@ -73,4 +74,84 @@ export const notifications = {
     lateStops: 'Điểm trễ hạn dự kiến',
   },
   detail: '{label}: {value}',
+  /**
+   * Chuông của điều phối viên và quản lý công ty: câu là nhãn hành động của nhật ký (như chuông của web), chi tiết là người làm rồi các
+   * tham số có nhãn — nhãn theo nhãn tham số nhật ký của web, trừ mã in trên nhãn kiện (như `params.packageCode`).
+   */
+  office: {
+    actions: {
+      revision: {
+        approved: 'Duyệt phương án',
+      },
+      loading: {
+        completed: 'Xếp xong',
+        shortageReported: 'Kho báo thiếu kiện khi soạn hàng',
+        shortageDropped: 'Bỏ kiện thiếu khỏi chuyến',
+        damaged: 'Kho báo kiện hỏng khi xếp',
+      },
+      package: {
+        found: 'Kho tìm thấy lại kiện',
+      },
+      delivery: {
+        issue: 'Báo sự cố giao hàng',
+        etaRisk: 'Nguy cơ trễ hạn giao',
+        completed: 'Hoàn thành chuyến',
+      },
+      trip: {
+        cancelled: 'Huỷ chuyến',
+      },
+      manualConfirm: {
+        requested: 'Gửi xác nhận tay chờ duyệt',
+      },
+      exception: {
+        reported: 'Báo sự cố chuyến',
+        escalated: 'Chuyển sự cố cho quản lý',
+        deadlineRenegotiated: 'Liên hệ khách, nhập hạn mới',
+      },
+      pickup: {
+        requested: 'Gửi yêu cầu nhận hàng dọc đường',
+      },
+    },
+    params: {
+      actor: 'Người làm',
+      reason: 'Lý do',
+      note: 'Ghi chú',
+      revisionId: 'Phương án',
+      sourceRevisionId: 'Duyệt từ',
+      edits: 'Kiện chỉnh tay',
+      loaded: 'Đã lên xe',
+      returned: 'Hoàn trả',
+      damaged: 'Hỏng, bỏ lại kho',
+      supporting: 'Kiện tựa lên trong phương án',
+      requirementId: 'Yêu cầu giao',
+      packageInstanceId: 'Kiện',
+      packageCode: lookupScreen.fields.senderCode,
+      stopNumber: 'Điểm giao',
+      kind: 'Loại sự cố',
+      stops: 'Số điểm giao',
+      issues: 'Sự cố',
+      count: 'Số kiện',
+      flag: 'Cờ',
+      lateStops: 'Điểm trễ hạn dự kiến',
+      verifyContext: 'Bước',
+      manualReason: 'Lý do xác nhận tay',
+      requestedBy: 'Người gửi',
+      deadlineStatus: 'Mức hạn',
+      eta: 'Dự kiến đến',
+      deadline: 'Hạn giao',
+      exceptionId: 'Sự cố',
+      exceptionType: 'Loại sự cố',
+      delayMinutes: 'Dự kiến chậm (phút)',
+      escalation: 'Lý do chuyển',
+      pickupId: 'Yêu cầu nhận',
+      failedRules: 'Luật không đạt',
+      driverId: 'Tài xế',
+    },
+    escalations: { NO_ROUTE: 'Không có tuyến khả thi', TIMEOUT: 'Quá 30 phút chưa xử lý' },
+    verifyContexts: { STAGING: 'Soạn hàng', LOADING: 'Xếp hàng', UNLOADING: 'Dỡ hàng', PICKUP: 'Nhận hàng dọc đường' },
+    system: 'Hệ thống',
+    deletedUser: 'Tài khoản đã xoá ({id})',
+    package: 'Kiện {id}',
+    openLive: 'Mở giám sát chuyến {id}',
+  },
 } as const

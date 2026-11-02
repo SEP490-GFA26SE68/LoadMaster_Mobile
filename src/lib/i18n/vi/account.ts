@@ -14,6 +14,5 @@ export const account = {
   /** Vai trò chưa có màn làm việc trên app. */
   scope: {
     webOnly: 'Vai trò của bạn làm việc trên bản web. App chỉ có phần tài khoản.',
-    notYet: 'Bản này chưa có màn làm việc cho vai trò của bạn.',
   },
 } as const

@@ -102,7 +102,7 @@ describe('màn lỗi chung', () => {
 
   test('màn chính ném lỗi không mã: hiện màn lỗi với câu chung, ghi nhật ký; "Thử lại" vẽ lại màn khi hết lỗi', async () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
-    await signInAs(emailOf('dispatcher'))
+    await signInAs(emailOf('companyAdmin'))
     mockAccountFailure = new TypeError("Cannot read properties of undefined (reading 'fullName')")
     const { pathname } = await openApp('/')
 
@@ -165,7 +165,7 @@ describe('màn lỗi chung', () => {
 
   test('chính màn chính lỗi mãi: "Về màn chính" thôi hiện khi chỉ mở lại màn đó; "Đăng xuất" đưa người dùng ra, xoá phiên', async () => {
     jest.spyOn(console, 'warn').mockImplementation(() => {})
-    await signInAs(emailOf('dispatcher'))
+    await signInAs(emailOf('companyAdmin'))
     mockAccountFailure = new Error('màn tài khoản vỡ')
     const { pathname } = await openApp('/')
     expect(await screen.findByRole('header', { name: 'Không hiện được màn này' })).toBeOnTheScreen()
@@ -197,14 +197,14 @@ describe('màn lỗi chung', () => {
 })
 
 describe('màn không tìm thấy', () => {
-  // Tài xế mở tab Chuyến, nhân viên kho tab Kho; mọi vai trò khác chỉ có tab Tài khoản
-  const HOMES = ROLES.map((role) =>
-    role === 'driver'
-      ? { role, path: '/trips', header: 'Chuyến của tôi' }
-      : role === 'warehouse'
-        ? { role, path: '/warehouse', header: 'Chuyến cần xếp' }
-        : { role, path: '/account', header: 'Tài khoản' },
-  )
+  // Màn chính là tab làm việc đầu tiên của vai trò; vai trò không có màn làm việc trên app chỉ có tab Tài khoản
+  const MAIN_SCREENS: Partial<Record<Role, { readonly path: string; readonly header: string }>> = {
+    driver: { path: '/trips', header: 'Chuyến của tôi' },
+    warehouse: { path: '/warehouse', header: 'Chuyến cần xếp' },
+    manager: { path: '/overview', header: 'Tổng quan' },
+    dispatcher: { path: '/trip-list', header: 'Chuyến hàng' },
+  }
+  const HOMES = ROLES.map((role) => ({ role, ...(MAIN_SCREENS[role] ?? { path: '/account', header: 'Tài khoản' }) }))
 
   test('chưa đăng nhập: địa chỉ lạ hiện "Không có màn này", "Về màn chính" mở màn đăng nhập', async () => {
     const { pathname } = await openApp('/khong-co-man-nay')

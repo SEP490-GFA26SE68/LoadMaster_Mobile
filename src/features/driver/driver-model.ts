@@ -28,6 +28,8 @@ export type DriverCapabilities = {
   readonly deliveryIssues: boolean
   /** Báo sự cố trên đường (tắc đường, hỏng xe…) cho cả chuyến. */
   readonly tripExceptions: boolean
+  /** Gửi yêu cầu nhận hàng dọc đường; kho kiểm mười luật ngay khi lưu. */
+  readonly pickups: boolean
   /** Gửi vị trí điện thoại làm vị trí xe. */
   readonly gps: boolean
   /** Chuông thông báo. */

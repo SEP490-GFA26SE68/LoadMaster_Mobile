@@ -5,5 +5,11 @@ export const nav = {
   warehouse: 'Kho',
   /** Tab tra cứu kiện của nhân viên kho. */
   lookup: 'Tra cứu kiện',
+  /** Tab của quản lý công ty: số liệu chính của bảng điều khiển (mục "Bảng điều khiển" của bản web; tên ngắn cho vừa thanh tab). */
+  overview: 'Tổng quan',
+  /** Tab chuyến của điều phối viên và quản lý công ty (mục "Chuyến hàng" của bản web). */
+  tripList: 'Chuyến hàng',
+  /** Tab giám sát chuyến đang chạy của điều phối viên và quản lý công ty. */
+  monitoring: 'Giám sát',
   account: 'Tài khoản',
 } as const
