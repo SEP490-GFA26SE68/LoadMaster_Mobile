@@ -1,15 +1,14 @@
 import { getMockDb } from '@/data/mock-db'
 import type { MockDb } from '@/lib/mock-db'
 
-import type { PasswordAuth } from './auth-adapter'
+import type { AuthAdapter } from './auth-adapter'
 
 /** Nhường một nhịp cho giao diện vẽ trạng thái đang tải: lần gọi kho đầu tiên dựng seed ngay trên luồng JS. */
 const nextTick = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
 
 /** Đăng nhập giả lập trên kho mẫu: kho giữ phiên như server; chuỗi cất lại là mã người dùng. */
-export function createMockAuth(db: () => MockDb = getMockDb): PasswordAuth {
+export function createMockAuth(db: () => MockDb = getMockDb): AuthAdapter {
   return {
-    kind: 'password',
     async signIn(email, password) {
       await nextTick()
       const user = await db().authenticate(email, password)
@@ -24,6 +23,9 @@ export function createMockAuth(db: () => MockDb = getMockDb): PasswordAuth {
       await db().signOut()
     },
     async accessToken() {
+      return null
+    },
+    async renewAccessToken() {
       return null
     },
     // Kho mẫu không có backend phía sau: không feature nào được dùng backend khi đăng nhập giả lập (`data/config.ts`)

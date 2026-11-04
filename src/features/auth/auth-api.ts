@@ -1,7 +1,8 @@
 /**
  * Hàm → endpoint backend; mỗi nguồn là một adapter (`auth-mock.ts` kho mẫu, `keycloak-auth.ts` backend).
- *   đăng nhập, làm mới token, đăng xuất   Keycloak của backend: /realms/{realm}/protocol/openid-connect/{auth,token,logout}
- *   readProfile                           GET /api/users/me
+ *   đăng nhập, làm mới token   POST /realms/{realm}/protocol/openid-connect/token (Keycloak của backend)
+ *   đăng xuất                  POST /realms/{realm}/protocol/openid-connect/logout
+ *   readProfile                GET  /api/users/me
  */
 import { createAdapter } from '@/data/adapter'
 import { dataConfig, FEATURES } from '@/data/config'

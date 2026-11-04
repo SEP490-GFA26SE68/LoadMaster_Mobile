@@ -7,13 +7,16 @@ export { ApiError, isApiError } from './api-error'
 
 type AuthLink = {
   readonly accessToken: () => Promise<string | null>
+  /** Backend trả 401 cho token này: token mới để gọi lại một lần. */
+  readonly renewAccessToken: (rejected: string) => Promise<string | null>
   readonly onUnauthenticated: () => void
   /** Mã người đang đăng nhập (đăng nhập bằng backend: mã người dùng của backend); `null` khi chưa đăng nhập. */
   readonly userId: () => string | null
 }
 
-let link: AuthLink = { accessToken: async () => null, onUnauthenticated: () => {}, userId: () => null }
+let link: AuthLink = { accessToken: async () => null, renewAccessToken: async () => null, onUnauthenticated: () => {}, userId: () => null }
 let client: ApiClient | undefined
+let publicClient: ApiClient | undefined
 
 /**
  * `AuthProvider` nối phiên đăng nhập vào client: token cho mỗi lượt gọi, việc phải làm khi backend báo phiên đã hết, và người đang
@@ -34,7 +37,15 @@ export function api(): ApiClient {
   client ??= createApiClient({
     baseUrl: dataConfig.apiUrl,
     accessToken: () => link.accessToken(),
+    renewAccessToken: (rejected) => link.renewAccessToken(rejected),
     onUnauthenticated: () => link.onUnauthenticated(),
   })
   return client
+}
+
+/** Client cho endpoint mở của backend (quên mật khẩu): không gửi token, kể cả khi đang có phiên. */
+export function publicApi(): ApiClient {
+  if (dataConfig.apiUrl === null) throw new ApiError('HTTP_NOT_WIRED')
+  publicClient ??= createApiClient({ baseUrl: dataConfig.apiUrl, accessToken: async () => null })
+  return publicClient
 }

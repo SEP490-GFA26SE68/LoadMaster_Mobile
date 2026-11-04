@@ -6,9 +6,12 @@ import type { DriverTripScreen, StopScreen } from './driver-model'
 type Call = { method: string; path: string; query: Record<string, string>; body: unknown }
 type Reply = { status: number; body?: unknown }
 
-/** Phong bì của backend: lỗi nghiệp vụ hiện không kèm mã. */
+/** Phong bì của backend: lỗi có handler riêng (và mọi lỗi trước khi backend gắn mã) không kèm mã; lỗi `AppException` kèm tên `ErrorCode`. */
 const ok = (data: unknown): Reply => ({ status: 200, body: { success: true, code: null, message: 'ok', data, errors: null } })
-const fail = (status: number): Reply => ({ status, body: { success: false, code: null, message: 'thông điệp thô', data: null, errors: null } })
+const fail = (status: number, code: string | null = null): Reply => ({
+  status,
+  body: { success: false, code, message: 'thông điệp thô', data: null, errors: null },
+})
 
 const TRIP = {
   tripId: 41,
@@ -134,9 +137,15 @@ describe('httpDriverApi', () => {
     expect(error).toMatchObject({ code: 'TRIP_NOT_IN_TRANSIT', params: { tripId: '99' } })
   })
 
-  test('chuyến đang vận chuyển không còn điểm chưa hoàn tất: màn không có điểm giao', async () => {
-    const { driver } = backend(onTrip({ 'GET /api/driver/trips/41/current-stop': () => fail(404) }))
+  test.each([null, 'NO_PENDING_DELIVERY_STOP'])('chuyến đang vận chuyển không còn điểm chưa hoàn tất (404, mã %s): màn không có điểm giao', async (code) => {
+    const { driver } = backend(onTrip({ 'GET /api/driver/trips/41/current-stop': () => fail(404, code) }))
     expect(await driver.fetchTripScreen('41')).toEqual({ kind: 'noStops', trip: { id: '41', code: 'TRIP-0041', name: undefined } })
+  })
+
+  test('chuyến vừa bị xoá ở máy chủ (404 TRIP_NOT_FOUND): như chuyến không còn chạy, không phải màn không có điểm giao', async () => {
+    const { driver } = backend(onTrip({ 'GET /api/driver/trips/41/current-stop': () => fail(404, 'TRIP_NOT_FOUND') }))
+    const error = await failure(() => driver.fetchTripScreen('41'))
+    expect(error).toMatchObject({ code: 'TRIP_NOT_IN_TRANSIT', params: { tripId: 'TRIP-0041' } })
   })
 
   test('dỡ kiện: khớp mã trên nhãn không phân biệt hoa thường, ghi bằng mã kiện, màn thấy kiện đã dỡ', async () => {
@@ -181,6 +190,24 @@ describe('httpDriverApi', () => {
     expect(stop.items[1]).toMatchObject({ unloaded: false })
   })
 
+  test('lỗi kèm mã nghiệp vụ khác cùng mã HTTP: giữ mã của backend, không đoán thành dỡ trùng, sai điểm hay điểm chưa xong', async () => {
+    const { driver } = backend(
+      onTrip({
+        'POST /api/driver/packages/7001/unload': () => fail(409, 'SOMETHING_NEW'),
+        'POST /api/driver/packages/7002/unload': () => fail(400, 'VALIDATION_ERROR'),
+        'POST /api/driver/stops/902/complete': () => fail(400, 'VALIDATION_ERROR'),
+      }),
+    )
+    await driver.fetchTripScreen('41')
+    const conflict = await failure(() => driver.confirmUnload('41', { stop: STOP_KEY, method: 'QR', code: 'LM-AB12-CD34-EF56' }))
+    expect(conflict).toMatchObject({ code: 'SOMETHING_NEW', status: 409 })
+    const invalid = await failure(() => driver.confirmUnload('41', { stop: STOP_KEY, method: 'CODE', code: '7002' }))
+    expect(invalid).toMatchObject({ code: 'VALIDATION_ERROR', status: 400 })
+    expect(await failure(() => driver.completeStop('41', STOP_KEY))).toMatchObject({ code: 'VALIDATION_ERROR', status: 400 })
+    // Kiện chưa được ghi dỡ: lỗi 409 kèm mã khác không phải "đã dỡ từ trước"
+    expect(stopOf(await driver.fetchTripScreen('41')).items[0]).toMatchObject({ unloaded: false })
+  })
+
   test('hoàn tất điểm: backend chưa cho (400) thì nói tên điểm; điểm cuối xong thì chuyến mở màn tổng kết', async () => {
     let tripDone = false
     let refused = true
@@ -218,6 +245,21 @@ describe('httpDriverApi', () => {
     running = false
     const error = await failure(() => driver.postLocation('41', { lat: 10.95, lng: 106.82 }))
     expect(error).toMatchObject({ code: 'TRIP_NOT_IN_TRANSIT', params: { tripId: 'TRIP-0041' } })
+  })
+
+  test.each([
+    [400, 'GPS_TRIP_NOT_IN_TRANSIT'],
+    [404, 'TRIP_NOT_FOUND'],
+  ])('gửi vị trí bị từ chối kèm mã (%i %s): cùng câu chuyến không còn chạy', async (status, code) => {
+    const { driver } = backend(onTrip({ 'POST /api/driver/location': () => fail(status, code) }))
+    await driver.fetchMyTrips()
+    const error = await failure(() => driver.postLocation('41', { lat: 10.95, lng: 106.82 }))
+    expect(error).toMatchObject({ code: 'TRIP_NOT_IN_TRANSIT', status, params: { tripId: 'TRIP-0041' } })
+  })
+
+  test('gửi vị trí bị từ chối kèm mã khác (400 VALIDATION_ERROR): giữ mã của backend', async () => {
+    const { driver } = backend(onTrip({ 'POST /api/driver/location': () => fail(400, 'VALIDATION_ERROR') }))
+    expect(await failure(() => driver.postLocation('41', { lat: 91, lng: 106.82 }))).toMatchObject({ code: 'VALIDATION_ERROR' })
   })
 
   test('việc backend chưa có: tắt ở capabilities, gọi tới là NOT_SUPPORTED', async () => {
