@@ -1,4 +1,4 @@
-import { ApiError, isApiError } from './api-error'
+import { ApiError, codeOfStatus, isApiError } from './api-error'
 
 /**
  * Nơi duy nhất của app gọi `fetch` tới backend LoadMaster (dùng chung với bản web). Mỗi lượt gọi: gắn token của phiên, giới hạn thời
@@ -9,6 +9,8 @@ export type ApiClientOptions = {
   readonly baseUrl: string
   /** Token truy cập của phiên hiện tại; `null` khi chưa đăng nhập. */
   readonly accessToken: () => Promise<string | null>
+  /** Backend trả 401 cho token `rejected`: token mới để gọi lại đúng một lần. Vắng thì 401 là phiên đã hết ngay. */
+  readonly renewAccessToken?: (rejected: string) => Promise<string | null>
   /** Backend trả 401: phiên đã hết — nơi giữ phiên đăng xuất người dùng. */
   readonly onUnauthenticated?: () => void
   readonly fetch?: typeof fetch
@@ -44,12 +46,6 @@ function urlOf(baseUrl: string, path: string, query: RequestOptions['query']): s
   return `${baseUrl}${path.startsWith('/') ? path : `/${path}`}${search === '' ? '' : `?${search}`}`
 }
 
-function codeOfStatus(status: number): string {
-  if (status === 401) return 'UNAUTHENTICATED'
-  if (status === 403) return 'UNAUTHORIZED'
-  return 'SERVER_ERROR'
-}
-
 async function readJson(response: Response): Promise<unknown> {
   const text = await response.text()
   if (text.trim() === '') return null
@@ -60,25 +56,33 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
-export function createApiClient({ baseUrl, accessToken, onUnauthenticated, fetch: fetchImpl = fetch, timeoutMs = DEFAULT_TIMEOUT_MS }: ApiClientOptions): ApiClient {
-  async function request<T>(method: string, path: string, { query, body }: RequestOptions = {}): Promise<T> {
-    let token: string | null
+export function createApiClient({
+  baseUrl,
+  accessToken,
+  renewAccessToken,
+  onUnauthenticated,
+  fetch: fetchImpl = fetch,
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+}: ApiClientOptions): ApiClient {
+  async function tokenFrom(read: () => Promise<string | null>): Promise<string | null> {
     try {
-      token = await accessToken()
+      return await read()
     } catch (error) {
       // Máy chủ định danh không gia hạn phiên nữa: như backend trả 401. Endpoint mở (không đòi token) sẽ không bao giờ báo điều đó.
       if (isApiError(error) && error.code === 'UNAUTHENTICATED') onUnauthenticated?.()
       throw error
     }
+  }
+
+  async function send(method: string, url: string, body: unknown, token: string | null): Promise<Response> {
     const headers: Record<string, string> = { Accept: 'application/json' }
     if (body !== undefined) headers['Content-Type'] = 'application/json'
     if (token !== null) headers.Authorization = `Bearer ${token}`
 
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
-    let response: Response
     try {
-      response = await fetchImpl(urlOf(baseUrl, path, query), {
+      return await fetchImpl(url, {
         method,
         headers,
         signal: controller.signal,
@@ -88,6 +92,18 @@ export function createApiClient({ baseUrl, accessToken, onUnauthenticated, fetch
       throw new ApiError(controller.signal.aborted ? 'TIMEOUT' : 'NETWORK_ERROR')
     } finally {
       clearTimeout(timer)
+    }
+  }
+
+  async function request<T>(method: string, path: string, { query, body }: RequestOptions = {}): Promise<T> {
+    const url = urlOf(baseUrl, path, query)
+    const token = await tokenFrom(accessToken)
+    let response = await send(method, url, body, token)
+    // Backend không nhận token (vừa hết hạn, hoặc phiên vừa được làm mới ở nơi khác): làm mới một lần rồi gọi lại; lần sau vẫn 401 mới
+    // là phiên đã hết
+    if (response.status === 401 && token !== null && renewAccessToken !== undefined) {
+      const renewed = await tokenFrom(() => renewAccessToken(token))
+      if (renewed !== null && renewed !== token) response = await send(method, url, body, renewed)
     }
 
     const payload = await readJson(response)

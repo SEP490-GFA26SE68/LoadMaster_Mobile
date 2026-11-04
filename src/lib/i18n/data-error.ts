@@ -1,16 +1,25 @@
-import { isApiError } from '@/data/http/api-error'
+import { codeOfStatus, isApiError } from '@/data/http/api-error'
 import { isMockDbError } from '@/lib/mock-db/errors'
 
 import type { TFunction } from './types'
 import { vi } from './vi'
 
-type Coded = { readonly code: string; readonly params: Readonly<Record<string, unknown>> }
+type Coded = {
+  readonly code: string
+  readonly params: Readonly<Record<string, unknown>>
+  /** Mã HTTP của phản hồi lỗi; 0 khi không có phản hồi nào (kho mẫu, mất mạng, adapter tự từ chối). */
+  readonly status: number
+}
 
 function coded(error: unknown): Coded | null {
-  if (isMockDbError(error)) return { code: error.code, params: error.params }
-  if (isApiError(error)) return { code: error.code, params: error.params }
+  if (isMockDbError(error)) return { code: error.code, params: error.params, status: 0 }
+  if (isApiError(error)) return { code: error.code, params: error.params, status: error.status }
   return null
 }
+
+const BRANCHES = ['apiErrors', 'backendErrors', 'dataErrors'] as const
+
+const branchOf = (code: string) => BRANCHES.find((name) => code in vi[name]) ?? null
 
 const reported = new WeakSet<object>()
 
@@ -31,7 +40,8 @@ function reportUnexpected(error: unknown): void {
  * Câu cho lỗi của một lượt gọi dữ liệu, dù nguồn là kho mẫu (`MockDbError`) hay backend (`ApiError`): cả hai mang **mã + tham số**, màn
  * không cần biết lỗi đến từ đâu. Thứ tự tìm câu: `apiErrors.<mã>` (lỗi mạng, phiên, máy chủ) → `backendErrors.<mã>` (mã nghiệp vụ chỉ
  * nguồn backend có) → `dataErrors.<mã>` (mã nghiệp vụ, trùng tên giữa kho mẫu và backend) → câu chung. Mã backend chưa có câu thì hiện
- * câu chung, không hiện thông điệp thô của máy chủ.
+ * câu của mã HTTP đó như khi phản hồi không kèm mã (`codeOfStatus` của client: 401, 403, còn lại là lỗi máy chủ), không hiện thông điệp
+ * thô của máy chủ.
  */
 export function dataErrorMessage(error: unknown, t: TFunction): string {
   const known = coded(error)
@@ -39,12 +49,17 @@ export function dataErrorMessage(error: unknown, t: TFunction): string {
     reportUnexpected(error)
     return t('dataErrors.UNKNOWN')
   }
-  const branch = (['apiErrors', 'backendErrors', 'dataErrors'] as const).find((name) => known.code in vi[name]) ?? null
+  let code = known.code
+  let branch = branchOf(code)
+  if (branch === null && known.status > 0) {
+    code = codeOfStatus(known.status)
+    branch = branchOf(code)
+  }
   if (branch === null) return t('dataErrors.UNKNOWN')
   const params = Object.fromEntries(
     Object.entries(known.params).map(([name, value]) => [name, Array.isArray(value) ? value.join(', ') : String(value)]),
   )
   // Tham số của từng mã trùng placeholder của câu cùng mã; TFunction không suy được từ mã động.
   const translate = t as unknown as (key: string, values: Record<string, string>) => string
-  return translate(`${branch}.${known.code}`, params)
+  return translate(`${branch}.${code}`, params)
 }

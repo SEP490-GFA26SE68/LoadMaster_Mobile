@@ -30,3 +30,10 @@ export class ApiError extends Error {
 export function isApiError(error: unknown): error is ApiError {
   return error instanceof ApiError
 }
+
+/** Mã của một phản hồi lỗi không kèm mã nghiệp vụ, theo mã HTTP: client đặt mã này khi phong bì không có `code`. */
+export function codeOfStatus(status: number): TransportErrorCode {
+  if (status === 401) return 'UNAUTHENTICATED'
+  if (status === 403) return 'UNAUTHORIZED'
+  return 'SERVER_ERROR'
+}
