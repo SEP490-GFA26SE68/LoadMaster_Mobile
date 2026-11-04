@@ -51,7 +51,6 @@ react-hook-form + zod v4    — mọi form
 lucide-react-native         — icon, không dùng bộ khác (nét 1,5; cỡ 20 / 24)
 expo-secure-store           — phiên đăng nhập, ngôn ngữ (không lưu dữ liệu nghiệp vụ)
 expo-crypto                 — polyfill crypto.getRandomValues cho logic chép từ web
-expo-auth-session           — đăng nhập Keycloak (PKCE); CHỈ import trong features/auth/keycloak-oauth.ts
 expo-camera                 — quét mã QR trên nhãn kiện
 react-native-svg            — hình 2D của màn kho (sơ đồ thùng nhìn từ trên, hình hướng đặt)
 expo-location               — vị trí xe khi tài xế bật GPS
@@ -119,7 +118,6 @@ cd android && ./gradlew assembleRelease          # → android/app/build/outputs
 src/
   app/                 route của Expo Router — MỎNG: mỗi file chỉ export màn lấy từ features/
     _layout.tsx        provider + hai nhóm route theo phiên (sign-in | (app))
-    +native-intent.tsx địa chỉ Keycloak trả phiên về (`loadmaster://auth`) không mở màn nào
     +not-found.tsx     địa chỉ không khớp route nào: màn "Không có màn này", nút về màn chính
     (app)/_layout.tsx  Stack: thanh tab `(tabs)` và các màn mở chồng có lối quay lại (`trip/[tripId]` của tài xế, `loading/[tripId]`
                        — phiên soạn → xếp của kho, `trip-detail/[tripId]` và `live/[tripId]` của điều phối viên, quản lý,
@@ -233,7 +231,8 @@ màn / component  →  hook Query của feature  →  features/<tên>/<tên>-api
    `HTTP_NOT_WIRED`, **không** âm thầm dùng kho mẫu. Feature mới: thêm tên vào `FEATURES`.
 5. **Mọi lỗi mang mã + tham số**: `MockDbError` (kho mẫu) và `ApiError` (backend) hiện bằng cùng một hàm `dataErrorMessage(error, t)`.
    Mã nghiệp vụ trùng tên giữa hai nguồn dùng chung câu ở nhánh `dataErrors`; lỗi mạng / phiên / máy chủ ở nhánh `apiErrors`.
-   Không hiện thông điệp thô của máy chủ.
+   Không hiện thông điệp thô của máy chủ. Mã backend app chưa có câu hiện câu của mã HTTP như phản hồi không kèm mã (`codeOfStatus` của
+   `api-error.ts`, dùng chung với client), không về câu chung.
 6. **Chỉ `src/data/http/api-client.ts` gọi `fetch`.** Nó gắn token của phiên, giới hạn thời gian, mở phong bì
    `{ success, code, message, data, errors }` của backend và báo cho `AuthProvider` khi backend trả 401.
 7. **Lọc theo công ty và kiểm quyền là việc của nguồn dữ liệu** (kho mẫu làm như server; backend làm thật). Màn không tự lọc theo
@@ -257,9 +256,10 @@ màn / component  →  hook Query của feature  →  features/<tên>/<tên>-api
     màn đọc qua hook `use…Capabilities`). Việc nguồn chưa làm được (backend chưa có
     endpoint, vai trò chưa có quyền ở backend) thì màn **ẩn** nút — không nút giả; gọi tới vẫn là lỗi `NOT_SUPPORTED`, không âm thầm bỏ
     qua. Backend thêm endpoint: viết hàm ở adapter `http` rồi bật cờ, màn không đổi.
-12. Backend chưa gắn mã vào lỗi nghiệp vụ (về tay là `SERVER_ERROR` kèm mã HTTP). Adapter `http` đổi lỗi **chưa có mã** sang mã của
-    app theo từng lệnh (409 lúc dỡ = kiện đã dỡ…) bằng `uncoded(error, status)`, câu ở nhánh `backendErrors`; lỗi đã có mã đi thẳng.
-    Backend gắn mã rồi thì bỏ phép đổi đó.
+12. Backend gắn tên `ErrorCode` vào lỗi `AppException`; lỗi có handler riêng (dỡ trùng, sai điểm, điểm chưa xong…) — và mọi lỗi của
+    backend trước bản đó — về tay là `SERVER_ERROR` kèm mã HTTP. Adapter `http` đổi lỗi sang mã của app theo từng lệnh, **nhận cả hai
+    dạng**: `refused(error, status, mã?)` khớp mã HTTP khi không kèm mã hoặc kèm đúng mã đó (400 lúc gửi vị trí, không mã hoặc
+    `GPS_TRIP_NOT_IN_TRANSIT` = chuyến không còn chạy), câu ở nhánh `backendErrors`; lỗi kèm mã khác đi thẳng.
 13. Endpoint cần mã người dùng (backend hiện nhận mã tài xế ở tham số) đọc `currentUserId()` của `src/data/http`, nối với
     `backendUserId()` của adapter đăng nhập — **không** đọc từ state React: query của màn con chạy trước effect của `AuthProvider`.
 14. Điều màn cần mà backend chưa trả (kiện nào của điểm đã dỡ, chuyến vừa giao xong) thì adapter `http` giữ trong bộ nhớ của lần mở
@@ -270,8 +270,8 @@ liệu. Backend lệch với hợp đồng của app thì ghi vào issue và h�
 
 ## 6. Đăng nhập và phân quyền
 
-- `features/auth/auth-adapter.ts` là hợp đồng đăng nhập, hai kiểu: `password` (app có form — kho mẫu) và `redirect` (mở trang đăng
-  nhập của máy chủ định danh — Keycloak của backend). Màn đăng nhập vẽ theo `kind`; phần còn lại của app chỉ biết `useAuth()`.
+- `features/auth/auth-adapter.ts` là hợp đồng đăng nhập: `signIn(email, mật khẩu)` — form email và mật khẩu **ngay trong app** cho cả
+  kho mẫu lẫn Keycloak của backend, không mở trình duyệt. Phần còn lại của app chỉ biết `useAuth()`.
 - Phiên cất trong kho khoá của máy (`expo-secure-store`) dưới dạng một chuỗi do adapter quyết định. Token không bao giờ nằm trong
   state của màn, log hay cache Query.
 - Ma trận quyền chép từ web (`features/auth/permissions.ts`): hỏi quyền bằng `useCan()`. Tab và route làm việc nằm sau quyền
@@ -291,21 +291,36 @@ liệu. Backend lệch với hợp đồng của app thì ghi vào issue và h�
 - Mọi lối ra khỏi phiên soạn → xếp (nút thoát, "Về danh sách chuyến") đi qua `useLeaveSession` — `router.dismissTo('/warehouse')`,
   không `router.back()`: phiên mở từ thông báo hay liên kết sâu vẫn về đúng danh sách chuyến của kho.
 - Danh sách tài khoản dùng thử chỉ hiện khi feature `auth` chạy trên kho mẫu.
-- Khoá cất phiên (`SESSION_KEY`), `backendUserId()` và mã `SIGN_IN_CANCELLED` khai ở `auth-adapter.ts`.
+- Khoá cất phiên (`SESSION_KEY`), `backendUserId()`, `renewAccessToken()` và mã `PASSWORD_CHANGE_REQUIRED` khai ở `auth-adapter.ts`.
 
 ### Đăng nhập bằng Keycloak (`auth` dùng backend)
 
-- `keycloak-oauth.ts` là nơi duy nhất nói chuyện với Keycloak: Authorization Code + PKCE S256, scope `openid offline_access`, luôn
-  hỏi lại mật khẩu (`prompt=login`; iOS còn dùng phiên trình duyệt riêng). Keycloak trả về `loadmaster://auth` (`AUTH_REDIRECT_PATH`);
-  `app/+native-intent.tsx` không để router mở màn nào cho địa chỉ đó. Mỗi lệnh tới Keycloak tối đa 15 giây.
+- `keycloak-oauth.ts` là nơi duy nhất nói chuyện với Keycloak, bằng `fetch` tới hai endpoint chuẩn dựng từ `issuer`
+  (`…/protocol/openid-connect/token`, `…/logout`), form-urlencoded, mỗi lệnh tối đa 15 giây. Đăng nhập là password grant (`scope=openid`;
+  client `loadmaster-mobile` phải bật Direct access grants). `invalid_grant` đổi theo `error_description`: "Invalid user credentials" →
+  `INVALID_CREDENTIALS` (cả khi bị khoá tạm vì gõ sai nhiều lần — một câu "sai email hoặc mật khẩu"), "Account disabled" →
+  `ACCOUNT_SUSPENDED`, "Account is not fully set up" → `PASSWORD_CHANGE_REQUIRED` (mật khẩu tạm: màn mời đặt mật khẩu mới); 5xx →
+  `SERVER_ERROR`, mất mạng → `NETWORK_ERROR` / `TIMEOUT`, lý do khác → `SIGN_IN_FAILED`. Làm mới bị từ chối (400 / 401) → `UNAUTHENTICATED`.
 - `keycloak-auth.ts` giữ phiên, không import thư viện Expo nào (test bằng client giả). Token chỉ nằm trong bộ nhớ; chuỗi cất là
   `{ v: 1, refreshToken, profile }`. Token còn dưới 20 giây thì làm mới; các lượt gọi cùng lúc chung một lần làm mới; refresh token mới
-  được cất lại. Keycloak không nhận refresh token nữa → `UNAUTHENTICATED`, app đăng xuất; không tới được Keycloak → lỗi mạng, giữ phiên.
+  được cất lại. Backend trả 401 thì `api-client` gọi `renewAccessToken` (chung lần làm mới đang chạy) rồi gọi lại **một** lần; vẫn 401 thì
+  đăng xuất. Keycloak không nhận refresh token nữa → `UNAUTHENTICATED`, app đăng xuất; không tới được Keycloak → lỗi mạng, giữ phiên.
   Mở app lúc mất sóng thì vào bằng hồ sơ đã cất.
 - Hồ sơ `GET /api/users/me` đổi sang người dùng của app bằng `backend-user.ts` (chép từ web). Vai trò app chưa biết: `ROLE_UNKNOWN`;
   tài khoản bị khoá: `ACCOUNT_SUSPENDED`; backend trả 401 cho token vừa cấp: `SIGN_IN_REJECTED` (địa chỉ Keycloak của app khác địa chỉ
-  backend tin, hoặc client thiếu audience `loadmaster-api`). Bị từ chối thì phiên vừa mở ở Keycloak được đóng luôn.
-- Đóng trang đăng nhập không phải lỗi: `signIn` ném `SIGN_IN_CANCELLED`, màn không báo gì.
+  backend tin, hoặc client thiếu audience `loadmaster-api`); 404 (tài khoản Keycloak chưa gắn người dùng nào, kèm `USER_NOT_FOUND` hoặc
+  không): `PROFILE_NOT_FOUND`. Bị từ
+  chối thì phiên vừa mở ở Keycloak được đóng luôn (logout) — không để lại phiên Keycloak không dùng được; mở lại phiên đã cất mà gặp
+  `SIGN_IN_REJECTED` / `PROFILE_NOT_FOUND` / vai trò không dùng được thì cũng vậy.
+- **Đặt lại mật khẩu** (`password-reset-api.ts` → `password-reset-http.ts`, endpoint mở `/api/auth/password-reset/request|verify|reset`
+  qua `publicApi()` — không gửi token): chỉ có khi `auth` dùng backend (kho mẫu `supported: false`, màn không có nút "Quên mật khẩu?").
+  Ba bước ngay trong màn đăng nhập (`ForgotPasswordFlow`, không route riêng): email → mã 6 số → mật khẩu mới (ít nhất 8 ký tự, nhập hai
+  lần); xong về form với email đã điền và câu báo đã đặt. Máy chủ kèm mã thì giữ mã để nói đúng lý do (`OTP_RESEND_COOLDOWN`,
+  `OTP_REQUEST_LIMIT_EXCEEDED`, `OTP_EXPIRED`, `OTP_INCORRECT`, `OTP_ATTEMPTS_EXCEEDED`); 400 / 429 không kèm mã hoặc kèm mã lạ là mã chung
+  của bước: `RESET_REQUEST_REFUSED`, `RESET_CODE_INVALID`. Bước đặt mật khẩu bị từ chối (`RESET_TOKEN_INVALID`, `USER_NOT_FOUND`, 400
+  không mã) là `RESET_SESSION_EXPIRED` (về bước email kèm lý do). "Gửi lại mã" mờ kèm số giây trong 60 giây sau lần gửi.
+  Nút "Đặt mật khẩu mới" hiện khi đăng nhập gặp `PASSWORD_CHANGE_REQUIRED`; vừa đặt lại mà máy chủ vẫn đòi thì chỉ báo liên hệ quản trị,
+  không mời làm lại vòng đó. Nút quay lại của Android lùi về bước email, rồi về form. Không gọi `/request` vào backend thật trong test.
 - Đăng xuất quên phiên **ngay** (trước `await` đầu tiên, để lượt làm mới đang chạy không cất lại phiên), rồi gọi endpoint logout của
   Keycloak bằng refresh token. Không dùng endpoint thu hồi token: thu hồi refresh token cắt phiên của client đó trên mọi máy.
 - `auth` dùng backend mà feature khác còn ở kho mẫu: kho mẫu mở phiên của tài khoản dùng thử **cùng vai trò** — mã và công ty của
