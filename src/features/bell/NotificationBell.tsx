@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native'
 import { IconButton } from '@/components/IconButton'
 import { useAuth, useCan } from '@/features/auth/AuthProvider'
 import { useDriverCapabilities, useNotificationsQuery } from '@/features/driver/useDriverQueries'
+import { useMonitoringCapabilities, useOfficeNotificationsQuery } from '@/features/monitoring/useMonitoringQueries'
 import { useWarehouseCapabilities, useWarehouseNotifications } from '@/features/warehouse/useWarehouseQueries'
 import { useT } from '@/lib/i18n'
 import { colors, palette } from '@/theme/tokens'
@@ -12,15 +13,23 @@ import { colors, palette } from '@/theme/tokens'
 import { useReadNotifications } from './notification-read'
 
 /**
- * Chuông ở dải trời của màn kho và màn tài xế (như chuông 56 px của web ở hai màn đó): mở màn Thông báo. Tài xế (`driver.operate`) đếm
- * thông báo về chuyến của mình, nhân viên kho (`warehouse.operate`) đếm thông báo của kho. Có thông báo chưa đọc thì một chấm hổ phách ở
- * góc — chỉ để nhìn, tên đọc của nút nói số chưa đọc. Vai trò khác, hoặc nguồn dữ liệu của vai trò chưa có thông báo, thì không có chuông.
+ * Chuông ở dải trời (như chuông của web): mở màn Thông báo. Tài xế (`driver.operate`) đếm thông báo về chuyến của mình, nhân viên kho
+ * (`warehouse.operate`) đếm thông báo của kho, điều phối viên và quản lý công ty (`trips.view`) đếm thông báo của văn phòng. Có thông báo
+ * chưa đọc thì một chấm hổ phách ở góc — chỉ để nhìn, tên đọc của nút nói số chưa đọc. Vai trò khác, hoặc nguồn dữ liệu của vai trò chưa
+ * có thông báo, thì không có chuông.
  */
 export function NotificationBell() {
   const can = useCan()
   if (can('driver.operate')) return <DriverBell />
   if (can('warehouse.operate')) return <WarehouseBell />
+  if (can('trips.view')) return <OfficeBell />
   return null
+}
+
+function OfficeBell() {
+  const { notifications } = useMonitoringCapabilities()
+  const query = useOfficeNotificationsQuery()
+  return notifications ? <BellButton entries={query.data} /> : null
 }
 
 function DriverBell() {

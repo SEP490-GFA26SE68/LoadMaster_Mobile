@@ -142,6 +142,7 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       manualConfirm: false,
       deliveryIssues: false,
       tripExceptions: true,
+      pickups: false,
       gps: true,
       notifications: false,
       gpsLocalOnly: false,
@@ -224,6 +225,7 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       })
       return { id: result.id ?? 'EXC-0' }
     },
+    createPickupRequest: unsupported,
     fetchNotifications: unsupported,
   }
 }

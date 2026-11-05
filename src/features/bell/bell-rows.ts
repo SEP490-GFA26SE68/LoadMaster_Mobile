@@ -8,8 +8,8 @@ import type { TFunction } from '@/lib/i18n'
 
 /**
  * Một dòng của màn Thông báo, đã dịch theo vai trò người đọc: câu nói việc gì xảy ra, đối tượng (chuyến hoặc yêu cầu hỗ trợ), chi tiết
- * người đọc cần (việc phải làm khi câu chưa nói, lý do…). `open` là chuyến mở được từ dòng và route mở nó ở màn của vai trò; vắng thì
- * dòng không bấm được.
+ * người đọc cần (việc phải làm khi câu chưa nói, lý do…). `open` là chuyến mở được từ dòng và route mở nó ở màn của vai trò — `hint` nói
+ * dòng mở gì khi đó không phải màn của chuyến ("Mở giám sát chuyến …"); vắng thì dòng không bấm được.
  */
 export type BellRow = {
   readonly id: string
@@ -18,7 +18,7 @@ export type BellRow = {
   readonly sentence: string
   readonly target: string
   readonly details: readonly string[]
-  readonly open: { readonly tripId: string; readonly href: Href } | undefined
+  readonly open: { readonly tripId: string; readonly href: Href; readonly hint?: string } | undefined
 }
 
 /** Route của phiên soạn → xếp một chuyến ở màn kho (`app/(app)/loading/[tripId]`), như `operationHrefs` của web mở `/kho?chuyen=`. */

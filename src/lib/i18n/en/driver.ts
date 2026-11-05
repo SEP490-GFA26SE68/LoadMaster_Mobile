@@ -224,6 +224,12 @@ export const driver = {
     },
     openSettings: 'Open Settings',
   },
+  more: {
+    open: 'More',
+    title: 'More actions',
+    description: 'Things you rarely need while the vehicle is on the road.',
+    close: 'Close',
+  },
   tripSummary: {
     title: 'Trip summary',
     heading: 'Trip {tripId} is delivered',

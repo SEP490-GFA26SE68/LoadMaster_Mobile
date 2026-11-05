@@ -1,8 +1,11 @@
 import { useLocalSearchParams } from 'expo-router'
 
-import { MonitoringTripScreen } from '@/features/monitoring/MonitoringTripScreen'
+import { LiveTripScreen } from '@/features/monitoring/LiveTripScreen'
 
+/**
+ * Liên kết cũ `/monitoring/[tripId]` mở cùng màn giám sát một chuyến với `/live/[tripId]`.
+ */
 export default function MonitoringTripRoute() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>()
-  return <MonitoringTripScreen key={tripId} tripId={tripId} />
+  return <LiveTripScreen key={tripId} tripId={tripId} />
 }

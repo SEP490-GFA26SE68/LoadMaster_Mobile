@@ -104,6 +104,7 @@ export function createKeycloakOAuth({ issuer, clientId }: KeycloakConfig, fetchI
   const endpoints = endpointsOf(issuer)
   // Router không mở màn nào cho địa chỉ này (`app/+native-intent.tsx`)
   const redirectUri = makeRedirectUri({ scheme: 'loadmaster', path: AUTH_REDIRECT_PATH })
+  console.log('[Keycloak] redirectUri:', redirectUri)
 
   return {
     async authorize() {

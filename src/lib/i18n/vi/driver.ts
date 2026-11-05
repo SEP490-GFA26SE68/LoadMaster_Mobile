@@ -237,6 +237,13 @@ export const driver = {
     },
     openSettings: 'Mở Cài đặt',
   },
+  /** Tờ "Thêm" của màn điểm giao: việc ít dùng khi xe đang chạy (như `StopMoreActions` của web). */
+  more: {
+    open: 'Thêm',
+    title: 'Thêm thao tác',
+    description: 'Những việc ít dùng khi xe đang trên đường.',
+    close: 'Đóng',
+  },
   /** Màn tổng kết khi giao xong điểm cuối. */
   tripSummary: {
     title: 'Tổng kết chuyến',

@@ -2,44 +2,7 @@ import type { Dictionary } from '../types'
 import type { warehouse as source } from '../vi/warehouse'
 
 export const warehouse = {
-
-  tasks: {
-    title: 'Warehouse tasks',
-    empty: {
-      title: 'No trips to load',
-      description: 'Trips with an approved loading plan will appear here.',
-    },
-    packages: {
-      one: '{count} package',
-      other: '{count} packages',
-    },
-    start: 'Start loading',
-    resume: 'Continue loading',
-    openLabel: '{action} {tripId}',
-    scan: 'Package lookup',
-  },
-
-  loading: {
-    title: 'Load trip {tripId}',
-    toTasks: 'Back to task list',
-    next: 'Next package',
-    done: 'All packages loaded',
-    position: 'Position {x} · {y} · {z} cm',
-    confirm: 'Confirm loaded',
-    deviate: 'Record deviation',
-    complete: 'Complete loading',
-    completed: 'Trip {tripId} has been loaded.',
-    deviation: {
-      title: 'Position deviation',
-      x: 'Actual X (cm)',
-      y: 'Actual Y (cm)',
-      z: 'Actual Z (cm)',
-      reason: 'Reason',
-      submit: 'Record deviation',
-    },
-  },
-
-
+  loading: 'Loading the trip',
   starting: 'Starting to stage the trip',
   exit: 'Leave the warehouse screen',
   backToList: 'Back to trips',
@@ -160,29 +123,15 @@ export const warehouse = {
       left: { one: '{count} left out', other: '{count} left out' },
     },
   },
-
   scan: {
-    title: 'Verify the package for step {step}',
-    hint: 'Scan the QR label or enter the package code.',
-    code: 'Package code / QR',
-    submit: 'Look up',
-    destination: 'Destination',
-    trip: 'Trip {tripId}',
-    stop: 'Stop {number}: {name}',
-    weight: '{weight}',
     open: 'Verify package',
-    description:
-      'Scan the QR label on the package in your hands, or type the code printed on the label. This step needs package {id} · {name}.',
-    wrongPackage:
-      'Wrong package or wrong order: you gave {scanned} ({scannedName}), this step needs {expected} ({expectedName}). Nothing was recorded — set this package aside and verify the right one.',
+    title: 'Verify the package for step {step}',
+    description: 'Scan the QR label on the package in your hands, or type the code printed on the label. This step needs package {id} · {name}.',
+    wrongPackage: 'Wrong package or wrong order: you gave {scanned} ({scannedName}), this step needs {expected} ({expectedName}). Nothing was recorded — set this package aside and verify the right one.',
     manualRecorded: 'Manual confirmation recorded for {id}',
     manualRecordedDescription: 'It waits for the dispatcher before loading can finish.',
-    recordedByQr: {
-      one: '{count} package verified by its label',
-      other: '{count} packages verified by their labels',
-    },
+    recordedByQr: { one: '{count} package verified by its label', other: '{count} packages verified by their labels' },
   },
-
   confirms: {
     pending: { one: '{count} manual confirmation is waiting for the dispatcher.', other: '{count} manual confirmations are waiting for the dispatcher.' },
     blocked: {

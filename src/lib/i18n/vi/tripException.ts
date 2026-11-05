@@ -1,9 +1,9 @@
 /**
- * Tờ "Sự cố trên đường" của tài xế (`features/driver/TripExceptionSheet.tsx`): sự cố của cả xe kèm số phút dự kiến chậm — khác "Báo sự
- * cố" của từng kiện. Câu theo bản web (nhánh `monitoring.reportDialog`); tên loại sự cố ở `common.tripExceptionTypes`.
+ * Tờ "Báo sự cố" của một chuyến đang chạy (`features/driver/TripExceptionSheet.tsx`): sự cố của cả xe kèm số phút dự kiến chậm — khác
+ * "Báo sự cố" của từng kiện. Tài xế mở từ tờ "Thêm" của màn điểm giao, điều phối viên từ màn giám sát một chuyến. Câu theo bản web
+ * (nhánh `monitoring.reportDialog`); tên loại sự cố ở `common.tripExceptionTypes`.
  */
 export const tripException = {
-  open: 'Sự cố trên đường',
   title: 'Báo sự cố chuyến {id}',
   description: 'Xe mô phỏng dừng thêm đúng số phút dự kiến chậm; giờ đến các điểm tính lại theo vị trí xe.',
   type: 'Loại sự cố',

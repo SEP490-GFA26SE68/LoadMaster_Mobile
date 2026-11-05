@@ -6,9 +6,12 @@
  *   completeStop          POST /api/driver/stops/{id}/complete
  *   postLocation          POST /api/driver/location
  *   reportTripException   POST /api/driver/trips/{id}/exceptions
+ *   createPickupRequest   POST /api/trips/{id}/pickup-requests (tài xế chưa có quyền ở BE)
  *   chưa có ở BE: startDelivery, arriveAtStop, confirmUnloadManually, reportDeliveryIssue, setDriverGps, fetchNotifications
  */
 import { createAdapter } from '@/data/adapter'
+import type { PickupRequestResult } from '@/features/pickups/pickup-model'
+import type { PickupRequestInput } from '@/lib/mock-db'
 
 import type {
   DeliveryIssueRequest,
@@ -41,6 +44,7 @@ export type DriverApi = {
   reportDeliveryIssue(tripId: string, input: DeliveryIssueRequest): Promise<void>
   completeStop(tripId: string, stop: StopKey): Promise<void>
   reportTripException(tripId: string, input: TripExceptionRequest): Promise<{ readonly id: string }>
+  createPickupRequest(tripId: string, input: PickupRequestInput): Promise<PickupRequestResult>
   setDriverGps(tripId: string, enabled: boolean): Promise<void>
   postLocation(tripId: string, location: LocationRequest): Promise<{ readonly recordedAt: string }>
   fetchNotifications(): Promise<DriverNotification[]>
@@ -93,9 +97,14 @@ export function completeStop(tripId: string, stop: StopKey): Promise<void> {
   return adapter().completeStop(tripId, stop)
 }
 
-// POST /api/trips/{id}/exceptions
+// POST /api/driver/trips/{id}/exceptions
 export function reportTripException(tripId: string, input: TripExceptionRequest): Promise<{ readonly id: string }> {
   return adapter().reportTripException(tripId, input)
+}
+
+// POST /api/trips/{id}/pickup-requests
+export function createPickupRequest(tripId: string, input: PickupRequestInput): Promise<PickupRequestResult> {
+  return adapter().createPickupRequest(tripId, input)
 }
 
 // chưa có ở BE

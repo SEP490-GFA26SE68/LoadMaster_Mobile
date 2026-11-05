@@ -1,3 +1,3 @@
-import { WarehouseTasksScreen } from '@/features/warehouse/WarehouseTasksScreen'
+import { WarehouseTripsScreen } from '@/features/warehouse/WarehouseTripsScreen'
 
-export default WarehouseTasksScreen
+export default WarehouseTripsScreen

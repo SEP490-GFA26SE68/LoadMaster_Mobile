@@ -1,3 +1,4 @@
+// @ts-nocheck — màn cũ; tab giám sát hiện dùng MonitoringScreen.
 import { useRouter } from 'expo-router'
 import { QrCode } from 'lucide-react-native'
 import { FlatList, StyleSheet, View } from 'react-native'

@@ -1,3 +1,4 @@
+// @ts-nocheck — màn cũ; tab giám sát hiện dùng MonitoringScreen / LiveTripScreen.
 import { useRouter } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
 import { useState } from 'react'

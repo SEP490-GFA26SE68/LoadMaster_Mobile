@@ -1,8 +1,5 @@
 import { api, type ApiClient } from '@/data/http'
 
-import type { MonitoringApi } from './monitoring-api'
-import type { BoardTrip, LiveStop, MonitoringDetail, MonitoringLocation, RerouteProposal, TripExceptionRow } from './monitoring-model'
-
 type LocationDto = { readonly lat: number | null; readonly lng: number | null; readonly recordedAt: string | null }
 
 type ExceptionDto = {
@@ -49,6 +46,63 @@ type ProposalDto = {
   readonly isMockResult: boolean | null
 }
 
+type MonitoringLocation = { readonly lat: number; readonly lng: number; readonly recordedAt?: string }
+
+type TripExceptionRow = {
+  readonly id: string
+  readonly type: string
+  readonly description: string
+  readonly delayMinutes: number
+  readonly status: string
+  readonly reportedAt?: string
+}
+
+type LiveStop = { readonly id: string; readonly number: number; readonly eta?: string; readonly deadlineStatus?: string }
+
+type MonitoringDetail = {
+  readonly tripId: string
+  readonly location: MonitoringLocation | null
+  readonly stops: readonly LiveStop[]
+  readonly exceptions: readonly TripExceptionRow[]
+  readonly refreshMs: number | null
+  readonly isMockResult: boolean
+}
+
+type BoardTrip = {
+  readonly tripId: string
+  readonly name: string
+  readonly vehicleName: string
+  readonly driverName: string
+  readonly location: MonitoringLocation | null
+  readonly exceptionCount: number
+  readonly refreshMs: number | null
+}
+
+type RerouteOption = {
+  readonly index: number
+  readonly route: string
+  readonly distanceKm: number
+  readonly durationMinutes: number
+  readonly eta?: string
+}
+
+type RerouteProposal = {
+  readonly tripId: string
+  readonly stopNumber?: number
+  readonly isMockResult: boolean
+  readonly options: readonly RerouteOption[]
+}
+
+type HeadMonitoringApi = {
+  readonly capabilities: { readonly resolve: boolean; readonly escalate: boolean; readonly reroute: boolean }
+  fetchBoard(): Promise<BoardTrip[]>
+  fetchTrip(tripId: string): Promise<MonitoringDetail>
+  resolveException(tripId: string, exceptionId: string, input?: { readonly note?: string }): Promise<void>
+  escalateException(tripId: string, exceptionId: string): Promise<void>
+  proposeReroute(tripId: string): Promise<RerouteProposal>
+  confirmReroute(tripId: string, routeIndex: number): Promise<void>
+}
+
 type HttpDeps = { readonly client?: () => ApiClient }
 
 function locationOf(dto: LocationDto | null): MonitoringLocation | null {
@@ -87,7 +141,8 @@ function detailOf(dto: FleetDto): MonitoringDetail {
   }
 }
 
-export function httpMonitoringApi({ client = api }: HttpDeps = {}): MonitoringApi {
+/** Adapter HTTP cũ của bảng giám sát (hợp đồng trước khi màn điều phối/quản lý thay `MonitoringApi`). */
+export function httpMonitoringApi({ client = api }: HttpDeps = {}): HeadMonitoringApi {
   return {
     capabilities: { resolve: true, escalate: true, reroute: true },
 
@@ -136,7 +191,7 @@ export function httpMonitoringApi({ client = api }: HttpDeps = {}): MonitoringAp
         stopNumber: dto.stopNumber ?? undefined,
         isMockResult: dto.isMockResult === true,
         options: (dto.options ?? []).map(
-          (option): RerouteProposal['options'][number] => ({
+          (option): RerouteOption => ({
             index: option.index ?? 0,
             route: option.route ?? '',
             distanceKm: option.distanceKm ?? 0,

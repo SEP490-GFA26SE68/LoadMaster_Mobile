@@ -5,7 +5,8 @@ export const nav = {
   trips: 'My trips',
   warehouse: 'Warehouse',
   lookup: 'Package lookup',
-  fleet: 'Trips',
+  overview: 'Overview',
+  tripList: 'Trips',
   monitoring: 'Monitoring',
   account: 'Account',
 } satisfies Dictionary<typeof source>

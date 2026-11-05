@@ -52,11 +52,32 @@ describe('việc phụ ở điểm giao', () => {
     expect(screen.queryByRole('button', { name: /Google/ })).toBeNull()
   })
 
+  test('xe chưa rời kho: không có nút Thêm — hai việc trong tờ chỉ có khi xe đang chạy', async () => {
+    await renderTrip()
+    expect(await screen.findByRole('button', { name: 'Xuất phát' })).toBeOnTheScreen()
+    expect(screen.queryByRole('button', { name: 'Thêm' })).toBeNull()
+  })
+
+  test('nút Thêm mở một tờ có đúng hai việc; Đóng thì tờ đóng, chưa ghi gì', async () => {
+    await departLoadedTrip({ arrive: false })
+    await renderTrip()
+    await fireEvent.press(await screen.findByRole('button', { name: 'Thêm' }))
+    expect(await screen.findByRole('header', { name: 'Thêm thao tác' })).toBeOnTheScreen()
+    expect(screen.getByRole('button', { name: 'Sự cố trên đường' })).toBeOnTheScreen()
+    expect(screen.getByRole('button', { name: 'Nhận hàng dọc đường' })).toBeOnTheScreen()
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Đóng' }))
+    expect(screen.queryByRole('header', { name: 'Thêm thao tác' })).toBeNull()
+    expect(await getMockDb().listPickupRequests(LOADED_TRIP)).toEqual([])
+  })
+
   test('sự cố trên đường: kiểm từng ô, báo xong có câu xác nhận kèm mã sự cố', async () => {
     await departLoadedTrip({ arrive: false })
     await renderTrip()
+    await fireEvent.press(await screen.findByRole('button', { name: 'Thêm' }))
     await fireEvent.press(await screen.findByRole('button', { name: 'Sự cố trên đường' }))
     expect(await screen.findByRole('header', { name: `Báo sự cố chuyến ${LOADED_TRIP}` })).toBeOnTheScreen()
+    expect(screen.queryByRole('header', { name: 'Thêm thao tác' })).toBeNull()
 
     await fireEvent.press(screen.getByRole('button', { name: 'Báo sự cố' }))
     expect(await screen.findByText('Chọn loại sự cố.')).toBeOnTheScreen()
@@ -68,6 +89,50 @@ describe('việc phụ ở điểm giao', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Báo sự cố' }))
     expect(await screen.findByText(/^Đã báo sự cố EXC-\d+\.$/)).toBeOnTheScreen()
     expect(screen.queryByRole('header', { name: `Báo sự cố chuyến ${LOADED_TRIP}` })).toBeNull()
+  })
+
+  test('nhận hàng dọc đường: kiểm từng ô, gửi xong tờ chuyển sang mười luật thay vì đóng', async () => {
+    await departLoadedTrip({ arrive: false })
+    await renderTrip()
+    await fireEvent.press(await screen.findByRole('button', { name: 'Thêm' }))
+    await fireEvent.press(await screen.findByRole('button', { name: 'Nhận hàng dọc đường' }))
+    expect(await screen.findByRole('header', { name: `Nhận hàng dọc đường — chuyến ${LOADED_TRIP}` })).toBeOnTheScreen()
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
+    expect((await screen.findAllByText('Cần nhập.')).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Cần chọn toạ độ.')).toHaveLength(2)
+    expect(await getMockDb().listPickupRequests(LOADED_TRIP)).toEqual([])
+
+    const [pickupName, deliveryName] = screen.getAllByLabelText('Tên điểm')
+    const [pickupAddress, deliveryAddress] = screen.getAllByLabelText('Địa chỉ')
+    const [pickupLat, deliveryLat] = screen.getAllByLabelText('Vĩ độ')
+    const [pickupLng, deliveryLng] = screen.getAllByLabelText('Kinh độ')
+    await fireEvent.changeText(pickupName!, 'Kho Bình Thọ')
+    await fireEvent.changeText(pickupAddress!, '12 Đặng Văn Bi, Thủ Đức')
+    await fireEvent.changeText(pickupLat!, '10,8452')
+    await fireEvent.changeText(pickupLng!, '106,7601')
+    await fireEvent.changeText(deliveryName!, 'Siêu thị An Phú')
+    await fireEvent.changeText(deliveryAddress!, '3 Mai Chí Thọ, Thủ Đức')
+    await fireEvent.changeText(deliveryLat!, '10.8010')
+    await fireEvent.changeText(deliveryLng!, '106.7415')
+    await fireEvent.changeText(screen.getByLabelText('Mã của bên gửi'), 'BG-0001')
+    await fireEvent.changeText(screen.getByLabelText('Dài (cm)'), '40')
+    await fireEvent.changeText(screen.getByLabelText('Rộng (cm)'), '30')
+    await fireEvent.changeText(screen.getByLabelText('Cao (cm)'), '30')
+    await fireEvent.changeText(screen.getByLabelText('Khối lượng (kg)'), '8,5')
+    await fireEvent.press(screen.getByRole('button', { name: 'Gửi yêu cầu' }))
+
+    expect(await screen.findByText(/^Đã gửi yêu cầu PKR-\d+\.$/)).toBeOnTheScreen()
+    const [request] = await getMockDb().listPickupRequests(LOADED_TRIP)
+    expect(request).toMatchObject({ pickup: { name: 'Kho Bình Thọ', lat: 10.8452, lng: 106.7601 }, packages: [{ packageCode: 'BG-0001', weightKg: 8.5 }] })
+    const id = request?.id
+    expect(screen.getByRole('header', { name: `Yêu cầu ${id}` })).toBeOnTheScreen()
+    expect(screen.getByText(`Đã gửi yêu cầu ${id}.`)).toBeOnTheScreen()
+    expect(screen.getAllByLabelText(/^\d+\. .+, (Đạt|Không đạt)\. /)).toHaveLength(10)
+    expect(screen.getByLabelText(/^1\. Điểm nhận gần tuyến, Đạt\. /)).toBeOnTheScreen()
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Đóng' }))
+    expect(screen.queryByRole('header', { name: `Yêu cầu ${id}` })).toBeNull()
   })
 
   test('bật GPS thật: gửi vị trí của điện thoại; tắt thì vị trí xe về mô phỏng', async () => {

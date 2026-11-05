@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router'
-import { ArrowLeft, ScanLine, TrafficCone, TriangleAlert } from 'lucide-react-native'
+import { ArrowLeft, ScanLine, TriangleAlert } from 'lucide-react-native'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 
@@ -9,7 +9,6 @@ import { IconButton } from '@/components/IconButton'
 import { Screen } from '@/components/Screen'
 import { StopDot } from '@/components/StopDot'
 import { PackageVerifySheet } from '@/components/verify/PackageVerifySheet'
-import { useCan } from '@/features/auth/AuthProvider'
 import { NotificationBell } from '@/features/bell/NotificationBell'
 import { useT } from '@/lib/i18n'
 import { stopColor } from '@/lib/stops'
@@ -23,9 +22,9 @@ import { StopContactCard } from './StopContactCard'
 import { footerStep, StopFooter } from './StopFooter'
 import { DeliveryItemRow, PickupItemRow } from './StopItemRows'
 import { StopList } from './StopList'
+import { StopMoreActions } from './StopMoreActions'
 import { StopNotices } from './StopNotices'
 import { StopProgress } from './StopProgress'
-import { TripExceptionSheet } from './TripExceptionSheet'
 import { useDriverCapabilities } from './useDriverQueries'
 import { useStopActions } from './useStopActions'
 import { useUnloadVerify } from './useUnloadVerify'
@@ -39,22 +38,19 @@ const closed = (turn: SheetTurn): SheetTurn => ({ ...turn, open: false })
 /**
  * Màn tài xế tại điểm giao (như `DeliveryStopView` của web) — điện thoại, một tay, ngoài trời. Dải trời: lối về danh sách chuyến, số điểm có
  * màu điểm giao kèm số, chuông; dưới là dải tiến độ theo điểm (chỉ để nhìn). Vùng cuộn: thông báo, công tắc GPS thật, danh sách điểm (khi
- * chuyến có điểm nhận dọc đường), thẻ liên hệ kèm giờ đến và hạn giao, tiến độ dỡ, các nút phụ (đối chiếu kiện, báo sự cố, sự cố trên
- * đường), danh sách kiện. Chân màn: đúng một nút chính theo bước (`StopFooter`). Nút của việc mà nguồn dữ liệu chưa làm được thì không hiện.
+ * chuyến có điểm nhận dọc đường), thẻ liên hệ kèm giờ đến và hạn giao, tiến độ dỡ, các nút phụ (đối chiếu kiện, báo sự cố, "Thêm" — sự cố
+ * trên đường và nhận hàng dọc đường), danh sách kiện. Chân màn: đúng một nút chính theo bước (`StopFooter`). Nút của việc mà nguồn dữ liệu chưa làm được thì không hiện.
  */
 export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen }) {
   const t = useT()
   const router = useRouter()
-  const can = useCan()
   const capabilities = useDriverCapabilities()
   const actions = useStopActions(trip.id, screen)
   const verify = useUnloadVerify(trip.id, screen)
   const [issue, setIssue] = useState(CLOSED)
-  const [exception, setException] = useState(CLOSED)
   const { stop, mode, arrived, items, pickupItems } = screen
   const pickupStop = stop.kind === 'PICKUP'
   const delivering = mode === 'delivering'
-  const canReportException = delivering && capabilities.tripExceptions && can('exceptions.report')
   // Không có nút chính và không có câu báo (xem trước): không vẽ chân màn trống
   const footerShown = footerStep(screen, capabilities) !== null || actions.flash !== null
 
@@ -89,11 +85,11 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
             {t('driver.issue.report')}
           </Button>
         ) : null}
-        {canReportException ? (
-          <Button variant="secondary" icon={TrafficCone} onPress={() => setException(opened)}>
-            {t('tripException.open')}
-          </Button>
-        ) : null}
+        <StopMoreActions
+          trip={trip}
+          delivering={delivering}
+          onExceptionReported={(id) => actions.show({ tone: 'success', message: t('tripException.reported', { id }) })}
+        />
       </View>
 
       {items.length > 0 ? (
@@ -151,19 +147,6 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
         pending={actions.reporting}
         onSubmit={actions.reportIssue}
       />
-      {canReportException ? (
-        <TripExceptionSheet
-          key={`exception-${exception.key}`}
-          open={exception.open}
-          onClose={() => setException(closed)}
-          tripId={trip.id}
-          tripCode={trip.code}
-          onReported={(id) => {
-            setException(closed)
-            actions.show({ tone: 'success', message: t('tripException.reported', { id }) })
-          }}
-        />
-      ) : null}
     </Screen>
   )
 }

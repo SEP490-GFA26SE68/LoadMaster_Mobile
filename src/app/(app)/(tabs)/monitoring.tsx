@@ -1,3 +1,3 @@
-import { MonitoringBoardScreen } from '@/features/monitoring/MonitoringBoardScreen'
+import { MonitoringScreen } from '@/features/monitoring/MonitoringScreen'
 
-export default MonitoringBoardScreen
+export default MonitoringScreen
