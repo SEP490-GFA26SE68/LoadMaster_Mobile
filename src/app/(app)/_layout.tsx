@@ -27,12 +27,15 @@ export default function AppLayout() {
       </Stack.Protected>
       <Stack.Protected guard={can('warehouse.operate')}>
         <Stack.Screen name="loading/[tripId]" />
+        <Stack.Screen name="warehouse/[tripId]" />
+        <Stack.Screen name="scan" />
       </Stack.Protected>
       <Stack.Protected guard={can('trips.view')}>
         <Stack.Screen name="trip-detail/[tripId]" />
       </Stack.Protected>
       <Stack.Protected guard={can('monitoring.view')}>
         <Stack.Screen name="live/[tripId]" />
+        <Stack.Screen name="monitoring/[tripId]" />
       </Stack.Protected>
       <Stack.Protected guard={can('driver.operate') || can('warehouse.operate') || can('trips.view')}>
         <Stack.Screen name="notifications" />
