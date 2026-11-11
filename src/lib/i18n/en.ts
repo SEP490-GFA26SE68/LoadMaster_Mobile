@@ -7,7 +7,6 @@ import { companyTrips } from './en/companyTrips'
 import { dataErrors } from './en/dataErrors'
 import { driver } from './en/driver'
 import { errors } from './en/errors'
-import { fleet } from './en/fleet'
 import { issues } from './en/issues'
 import { language } from './en/language'
 import { liveTrip } from './en/liveTrip'
@@ -46,7 +45,6 @@ export const en = {
   dataErrors,
   driver,
   errors,
-  fleet,
   issues,
   language,
   liveTrip,

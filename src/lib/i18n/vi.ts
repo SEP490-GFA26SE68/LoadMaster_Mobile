@@ -7,7 +7,6 @@ import { companyTrips } from './vi/companyTrips'
 import { dataErrors } from './vi/dataErrors'
 import { driver } from './vi/driver'
 import { errors } from './vi/errors'
-import { fleet } from './vi/fleet'
 import { issues } from './vi/issues'
 import { language } from './vi/language'
 import { liveTrip } from './vi/liveTrip'
@@ -56,7 +55,6 @@ export const vi = {
   dataErrors,
   driver,
   errors,
-  fleet,
   issues,
   language,
   liveTrip,
