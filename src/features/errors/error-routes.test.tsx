@@ -201,7 +201,7 @@ describe('màn không tìm thấy', () => {
   const MAIN_SCREENS: Partial<Record<Role, { readonly path: string; readonly header: string }>> = {
     driver: { path: '/trips', header: 'Chuyến của tôi' },
     warehouse: { path: '/warehouse', header: 'Chuyến cần xếp' },
-    manager: { path: '/overview', header: 'Tổng quan' },
+    companyManager: { path: '/overview', header: 'Tổng quan' },
     dispatcher: { path: '/trip-list', header: 'Chuyến hàng' },
   }
   const HOMES = ROLES.map((role) => ({ role, ...(MAIN_SCREENS[role] ?? { path: '/account', header: 'Tài khoản' }) }))

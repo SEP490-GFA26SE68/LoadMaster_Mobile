@@ -11,7 +11,7 @@ import { useFormat, useT, type TFunction } from '@/lib/i18n'
 import { colors, radius, space } from '@/theme/tokens'
 import type { TripSubStatus } from '@/types/trip'
 
-import type { DashboardTripRow } from '../dashboard-summary'
+import type { DashboardTripView } from '../dashboard-summary'
 
 /** Số chuyến hiện trong thẻ, như bảng của web. */
 export const RECENT_TRIP_LIMIT = 10
@@ -19,9 +19,10 @@ export const RECENT_TRIP_LIMIT = 10
 /**
  * "Chuyến trong kỳ" (bảng của web thành danh sách thẻ trên điện thoại): tối đa mười chuyến có ngày chạy gần nhất — tên, mã, trạng thái và
  * dòng phụ, ngày chạy, xe, số kiện, lấp đầy của bản duyệt, khối lượng đã giao ("—" khi chưa có số). Chạm một chuyến mở Chi tiết chuyến.
- * Cột "Phương án" của web (mở Planner) không có: mobile không có Planner.
+ * Cột "Phương án" của web (mở Planner) không có: mobile không có Planner. Máy chủ không trả dòng phụ, số kiện, khối lượng đã giao: thẻ bỏ
+ * hẳn phần đó, không vẽ 0.
  */
-export function RecentTripsCard({ trips }: { trips: readonly DashboardTripRow[] }) {
+export function RecentTripsCard({ trips }: { trips: readonly DashboardTripView[] }) {
   const t = useT()
   return (
     <Card>
@@ -41,24 +42,28 @@ export function RecentTripsCard({ trips }: { trips: readonly DashboardTripRow[] 
   )
 }
 
-function RecentTrip({ trip }: { trip: DashboardTripRow }) {
+function RecentTrip({ trip }: { trip: DashboardTripView }) {
   const t = useT()
   const format = useFormat()
   const router = useRouter()
   const noValue = t('manager.noValue')
+  const { packageCount, deliveredWeightKg } = trip
   const facts = [
     { key: 'date', label: t('manager.recent.date'), value: format.date(calendarDate(trip.scheduledDate)) },
-    { key: 'packages', label: t('manager.recent.packages'), value: format.integer(trip.packageCount) },
+    ...(packageCount === undefined ? [] : [{ key: 'packages', label: t('manager.recent.packages'), value: format.integer(packageCount) }]),
     { key: 'volume', label: t('manager.recent.volume'), value: trip.volumePercent === null ? noValue : format.percent(trip.volumePercent) },
-    { key: 'delivered', label: t('manager.recent.delivered'), value: trip.deliveredWeightKg > 0 ? format.weight(trip.deliveredWeightKg) : noValue },
+    ...(deliveredWeightKg === undefined
+      ? []
+      : [{ key: 'delivered', label: t('manager.recent.delivered'), value: deliveredWeightKg > 0 ? format.weight(deliveredWeightKg) : noValue }]),
   ]
-  // Xe không còn trong kho thì là mã xe, như danh sách chuyến
-  const vehicle = trip.vehicleName === '' ? trip.vehicleId : trip.vehicleName
+  // Kho mẫu ghi mã xe khi xe không còn trong kho (`dashboard-summary.ts`); máy chủ không trả xe thì "—"
+  const vehicle = trip.vehicleName === '' ? noValue : trip.vehicleName
+  const sub = trip.sub ?? null
   const spoken = [
     trip.name,
     trip.id,
     t(`status.${trip.status}`),
-    ...(trip.sub === null ? [] : [subLabel(trip.sub, t)]),
+    ...(sub === null ? [] : [subLabel(sub, t)]),
     `${t('manager.recent.vehicle')}: ${vehicle}`,
     ...facts.map((fact) => `${fact.label}: ${fact.value}`),
   ].join(', ')
@@ -76,7 +81,7 @@ function RecentTrip({ trip }: { trip: DashboardTripRow }) {
         </AppText>
         <View style={styles.chips}>
           <TripStatusChip status={trip.status} />
-          {trip.sub === null ? null : <TripSubStatusTag sub={trip.sub} />}
+          {sub === null ? null : <TripSubStatusTag sub={sub} />}
         </View>
         <AppText color={colors.text2}>{vehicle}</AppText>
         <View style={styles.facts}>

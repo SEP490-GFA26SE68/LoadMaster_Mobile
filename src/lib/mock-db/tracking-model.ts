@@ -38,6 +38,17 @@ export type EtaRiskAlert = {
   deadline: string
 }
 
+/** Geometry một RouteLeg (canonical package route) — BE monitoring trả kèm để vẽ map. */
+export type RouteLegGeometry = {
+  legId: number
+  legSequence: number
+  startStopId?: number | null
+  endStopId?: number | null
+  distanceMeters?: number
+  durationSeconds?: number
+  polyline?: string | null
+}
+
 /** Giám sát một chuyến: vị trí mới nhất, ETA trực tiếp của các điểm chưa hoàn tất và các cảnh báo nguy cơ trễ đã phát. */
 export type TripMonitoring = {
   tripId: string
@@ -51,10 +62,14 @@ export type TripMonitoring = {
   exceptions: TripException[]
   /** Tuyến thay thế điều phối viên chọn gần nhất, nếu có. */
   reroute?: TripReroute
+  /** Id RoutePlan đang active (BE). */
+  activeRoutePlanId?: number | null
+  /** Polyline từng leg — nguồn chính để vẽ đường chạy trên map. */
+  routeLegs?: RouteLegGeometry[]
   /** Số ms **thật** tới điểm vị trí kế tiếp (ít nhất 1 giây); `null` khi chuyến không còn chạy — màn không cần làm mới nữa. */
   refreshMs: number | null
-  /** Vị trí mô phỏng và ETA đều là kết quả mock (công thức D-76). */
-  isMockResult: true
+  /** `true` khi vị trí/ETA từ mock; `false` khi từ BE (GPS + Goong). */
+  isMockResult: boolean
 }
 
 /** Phần kho giữ cho mỗi chuyến đã xuất phát. */

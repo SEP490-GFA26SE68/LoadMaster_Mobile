@@ -39,5 +39,5 @@ export const common = {
   /** Cờ kiện (`PackageFlag`). */
   packageFlags: { NOT_FOUND: 'Không tìm thấy', DAMAGED: 'Hư hỏng' },
   /** Loại vật cản trong thùng (`ObstacleType`; nhánh `viewer.obstacles.types` của web): vật cản gần kiện đang xếp. */
-  obstacleTypes: { WHEEL_ARCH: 'Hốc bánh xe', COOLING_UNIT: 'Dàn lạnh', PARTITION: 'Vách ngăn', RESERVED_ZONE: 'Vùng dành riêng' },
+  obstacleTypes: { WHEEL_ARCH: 'Hốc bánh xe', COOLING_UNIT: 'Dàn lạnh', PARTITION: 'Vách ngăn', RESERVED_ZONE: 'Vùng dành riêng', OTHER: 'Vật cản khác' },
 } as const
