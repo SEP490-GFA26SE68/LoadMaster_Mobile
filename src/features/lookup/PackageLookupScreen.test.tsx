@@ -203,7 +203,7 @@ describe('tab Tra cứu kiện — gõ mã', () => {
   })
 
   test('nguồn chưa gỡ cờ được: kiện mang cờ chỉ có câu giải thích, không có nút xác nhận', async () => {
-    jest.spyOn(lookupApi, 'lookupCapabilities').mockReturnValue({ reportFound: false })
+    jest.spyOn(lookupApi, 'lookupCapabilities').mockReturnValue({ available: true, reportFound: false })
     await renderWarehouseScreen(<PackageLookupScreen />)
     await lookUp('BV-VIN-2609-05')
     expect(await screen.findByText(FLAG_NOTE)).toBeOnTheScreen()

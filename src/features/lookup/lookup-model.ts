@@ -49,6 +49,6 @@ export type LookupActions = {
  * Việc nhân viên kho làm được trên một kiện tìm thấy. In lại nhãn (app không in), mở kiện ở Kho kiện, mở chuyến và gỡ cờ của điều phối
  * viên không có trên điện thoại. Nguồn chưa làm được việc gỡ cờ thì không có gì.
  */
-export function lookupActions(pkg: Pick<Package, 'flags'>, capabilities: LookupCapabilities): LookupActions {
+export function lookupActions(pkg: Pick<Package, 'flags'>, capabilities: Pick<LookupCapabilities, 'reportFound'>): LookupActions {
   return { confirmFound: capabilities.reportFound && pkg.flags.includes('NOT_FOUND') }
 }

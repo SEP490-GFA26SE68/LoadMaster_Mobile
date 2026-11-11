@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { lookupCapabilities, lookupPackages, reportPackageFound, scanPackage, type LookupCapabilities } from './lookup-api'
 
-const NO_CAPABILITIES: LookupCapabilities = { reportFound: false }
+const NO_CAPABILITIES: LookupCapabilities = { available: false, reportFound: false }
 
 /**
  * Việc tra cứu kiện làm được với nguồn đang dùng. Nguồn chưa nối (`HTTP_NOT_WIRED`) thì không có việc nào — lỗi đó vẫn hiện ở truy vấn
