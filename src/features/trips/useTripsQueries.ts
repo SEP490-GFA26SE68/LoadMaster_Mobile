@@ -18,7 +18,7 @@ import {
 import type { TripsCapabilities } from './trips-model'
 
 /** Nguồn dữ liệu chưa sẵn (cấu hình sai, backend chưa nối): màn ẩn mọi thẻ của việc nguồn chưa làm được. */
-const NO_CAPABILITIES: TripsCapabilities = { manualConfirms: false, shortages: false, requirements: false }
+const NO_CAPABILITIES: TripsCapabilities = { manualConfirms: false, shortages: false, requirements: false, planStatus: false }
 
 export function useTripsCapabilities(): TripsCapabilities {
   try {
@@ -117,6 +117,6 @@ export function useRejectManualConfirm(tripId: string) {
 
 /** Quyết một kiện kho báo thiếu: tìm tiếp, hoặc bỏ kiện khỏi chuyến. */
 export function useResolveShortage(tripId: string) {
-  return useTripMutation(tripId, ({ packageInstanceId, decision }: { packageInstanceId: string; decision: ShortageDecision }) =>
-    resolveStagingShortage(tripId, packageInstanceId, decision))
+  return useTripMutation(tripId, ({ shortageId, decision }: { shortageId: string; decision: ShortageDecision }) =>
+    resolveStagingShortage(tripId, shortageId, decision))
 }

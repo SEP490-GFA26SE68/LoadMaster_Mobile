@@ -21,7 +21,7 @@ import {
 } from './warehouse-api'
 import type { VerifyCodeInput, WarehouseCapabilities } from './warehouse-model'
 
-const NO_CAPABILITIES: WarehouseCapabilities = { manualConfirm: false, shortages: false, seal: false, notifications: false }
+const NO_CAPABILITIES: WarehouseCapabilities = { backend: false, manualConfirm: false, shortages: false, seal: false, notifications: false }
 
 /**
  * Việc kho làm được với nguồn đang dùng: màn chỉ vẽ nút của việc nguồn làm được. Nguồn chưa nối (`HTTP_NOT_WIRED`) thì không có việc

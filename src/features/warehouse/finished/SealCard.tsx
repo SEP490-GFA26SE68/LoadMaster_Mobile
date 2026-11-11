@@ -6,12 +6,11 @@ import { Banner } from '@/components/Banner'
 import { Button } from '@/components/Button'
 import { Card } from '@/components/Card'
 import { useFormat, useT } from '@/lib/i18n'
-import type { LoadingProgress } from '@/lib/mock-db'
 import { colors, space } from '@/theme/tokens'
 
 type SealCardProps = {
-  /** Số seal đã ghi (`trip.loading.seal`); vắng là chưa ghi. */
-  readonly seal: LoadingProgress['seal']
+  /** Số seal đã ghi (`trip.loading.seal`, hoặc của phiên máy chủ); vắng là chưa ghi. `at` là `null` khi máy chủ không trả giờ ghi. */
+  readonly seal: { readonly number: string; readonly at: string | null } | undefined
   /** Chuyến còn ở kho: còn ghi / đổi được. */
   readonly editable: boolean
   /** Câu lỗi của lần ghi khi tờ nhập đã đóng (xe vừa rời kho). */
@@ -39,7 +38,7 @@ export function SealCard({ seal, editable, failure, onChange }: SealCardProps) {
       {seal !== undefined ? (
         // Đọc ngay khi vừa ghi xong: tờ nhập đóng lại, câu này là kết quả của lần ghi (app không có toast)
         <AppText variant="label" accessibilityLiveRegion="polite" style={styles.code}>
-          {t('warehouse.seal.recorded', { number: seal.number, time: format.time(seal.at) })}
+          {seal.at === null ? t('warehouse.list.seal', { number: seal.number }) : t('warehouse.seal.recorded', { number: seal.number, time: format.time(seal.at) })}
         </AppText>
       ) : editable ? (
         <>

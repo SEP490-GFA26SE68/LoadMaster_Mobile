@@ -120,7 +120,7 @@ describe('bước Soạn hàng', () => {
   })
 
   test('nguồn dữ liệu không nhận báo thiếu: dòng kiện không có nút báo thiếu', async () => {
-    jest.spyOn(warehouseApi, 'warehouseCapabilities').mockReturnValue({ manualConfirm: false, shortages: false, seal: false, notifications: false })
+    jest.spyOn(warehouseApi, 'warehouseCapabilities').mockReturnValue({ backend: false, manualConfirm: false, shortages: false, seal: false, notifications: false })
     await renderSession(READY_TRIP)
 
     expect(screen.getByRole('header', { name: 'Kiện chưa soạn (132)' })).toBeOnTheScreen()

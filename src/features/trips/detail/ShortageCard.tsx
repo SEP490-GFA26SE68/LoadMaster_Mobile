@@ -36,19 +36,19 @@ export function ShortageCard({ tripId, enabled }: { tripId: string; enabled: boo
   function handleKeep(row: ShortageRow) {
     setNotice(null)
     resolve.mutate(
-      { packageInstanceId: row.packageInstanceId, decision: 'KEEP_SEARCHING' },
+      { shortageId: row.id, decision: 'KEEP_SEARCHING' },
       {
-        onSuccess: () => setNotice({ tone: 'success', rowId: row.packageInstanceId, text: t('trips.shortages.kept', { id: row.packageInstanceId }) }),
-        onError: (error) => setNotice({ tone: 'danger', rowId: row.packageInstanceId, text: dataErrorMessage(error, t) }),
+        onSuccess: () => setNotice({ tone: 'success', rowId: row.id, text: t('trips.shortages.kept', { id: row.packageInstanceId }) }),
+        onError: (error) => setNotice({ tone: 'danger', rowId: row.id, text: dataErrorMessage(error, t) }),
       },
     )
   }
 
   async function handleDrop(row: ShortageRow): Promise<string | null> {
     try {
-      await resolve.mutateAsync({ packageInstanceId: row.packageInstanceId, decision: 'DROP' })
+      await resolve.mutateAsync({ shortageId: row.id, decision: 'DROP' })
       const text = `${t('trips.shortages.dropped', { id: row.packageInstanceId })} ${t('trips.shortages.droppedDescription')}`
-      setNotice({ tone: 'success', rowId: row.packageInstanceId, text })
+      setNotice({ tone: 'success', rowId: row.id, text })
       return null
     } catch (error) {
       return dataErrorMessage(error, t)
@@ -62,24 +62,24 @@ export function ShortageCard({ tripId, enabled }: { tripId: string; enabled: boo
       description={t('trips.shortages.description')}
       readOnly={canDecide ? null : t('trips.shortages.readOnly')}
       notice={notice}
-      rowIds={rows.map((row) => row.packageInstanceId)}
+      rowIds={rows.map((row) => row.id)}
       onDismiss={() => setNotice(null)}
       loadError={loadError}>
       {rows.map((row) => {
         const id = row.packageInstanceId
         const code = row.packageCode === id ? null : row.packageCode
-        const stop = t('common.stop', { number: row.stopNumber })
+        const stop = row.stopNumber === undefined ? null : t('common.stop', { number: row.stopNumber })
         const reportedBy = t('trips.shortages.reportedBy', {
           name: row.reporterName ?? t('trips.shortages.unknownReporter'),
           time: format.time(row.at),
           date: format.dayMonth(row.at),
         })
-        const keeping = resolve.isPending && resolve.variables?.packageInstanceId === id && resolve.variables.decision === 'KEEP_SEARCHING'
+        const keeping = resolve.isPending && resolve.variables?.shortageId === row.id && resolve.variables.decision === 'KEEP_SEARCHING'
         return (
           <DecisionRow
-            key={id}
-            label={[`${id} ${row.packageName}`, ...(code ? [code] : []), stop, reportedBy].join(', ')}
-            error={rowError(notice, id)}
+            key={row.id}
+            label={[`${id} ${row.packageName}`, ...(code ? [code] : []), ...(stop ? [stop] : []), reportedBy].join(', ')}
+            error={rowError(notice, row.id)}
             onDismissError={() => setNotice(null)}
             actions={
               canDecide ? (
@@ -118,7 +118,7 @@ export function ShortageCard({ tripId, enabled }: { tripId: string; enabled: boo
                 {code}
               </AppText>
             ) : null}
-            <AppText color={colors.text2}>{stop}</AppText>
+            {stop ? <AppText color={colors.text2}>{stop}</AppText> : null}
             <AppText color={colors.text2} style={styles.number}>
               {reportedBy}
             </AppText>
@@ -127,7 +127,7 @@ export function ShortageCard({ tripId, enabled }: { tripId: string; enabled: boo
       })}
       {canDecide ? (
         <DropSheet
-          key={dropping?.packageInstanceId ?? 'closed'}
+          key={dropping?.id ?? 'closed'}
           row={dropping}
           pending={resolve.isPending}
           onClose={() => setDropping(null)}

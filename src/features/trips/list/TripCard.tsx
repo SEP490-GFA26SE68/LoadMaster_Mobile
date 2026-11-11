@@ -31,11 +31,14 @@ export function TripCard({ row }: { row: TripRow }) {
   const format = useFormat()
   const router = useRouter()
   const subs = [row.sub, row.extraSub].filter((sub): sub is TripSubStatus => sub !== null)
-  const route = row.stopCount === 0 ? null : t('trips.list.routeLine', { stops: t('trips.list.stopsShort', { count: row.stopCount }), route: row.route })
-  const date = format.date(calendarDate(row.scheduledDate))
+  const stops = t('trips.list.stopsShort', { count: row.stopCount })
+  // Máy chủ không trả tên các điểm: chỉ còn số điểm
+  const route = row.stopCount === 0 ? null : row.route === '' ? stops : t('trips.list.routeLine', { stops, route: row.route })
+  // Chuyến của máy chủ chưa có giờ xuất phát thì chưa có ngày chạy
+  const date = row.scheduledDate === '' ? t('officeServer.trips.noDeparture') : format.date(calendarDate(row.scheduledDate))
   const packages = format.integer(row.packageCount)
-  // Xe không còn trong kho thì là mã xe, như bản web
-  const vehicle = row.vehicleName === '' ? row.vehicleId : row.vehicleName
+  // Xe không còn trong kho thì là mã xe, như bản web; chuyến của máy chủ chưa gán xe thì nói vậy
+  const vehicle = row.vehicleName !== '' ? row.vehicleName : row.vehicleId !== '' ? row.vehicleId : t('officeServer.trips.noVehicle')
   const fact = (label: string, value: string) => t('trips.list.chip', { label, value })
   const spoken = [
     row.id,

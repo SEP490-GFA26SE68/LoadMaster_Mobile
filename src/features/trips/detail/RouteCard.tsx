@@ -12,7 +12,7 @@ import { colors, palette, radius, space } from '@/theme/tokens'
 
 import { routeProgress, type RouteProgress } from '../trip-detail'
 import { stopRows } from '../trip-summary'
-import type { TripDetail } from '../trips-model'
+import type { FullTripDetail } from '../trips-model'
 import { durationLabel, stopStates } from './route-view'
 import { StopItem } from './StopItem'
 
@@ -23,7 +23,7 @@ import { StopItem } from './StopItem'
  * kho: đầu thẻ là số tổng hợp của việc giao (điểm đã giao, kiện đã dỡ, sự cố, giờ xuất phát), mỗi điểm có trạng thái giao; giờ đến tính
  * từ vị trí xe nằm ở màn Giám sát chuyến. Không bản đồ, không nút tối ưu tuyến (màn chỉ đọc).
  */
-export function RouteCard({ detail }: { detail: TripDetail }) {
+export function RouteCard({ detail }: { detail: FullTripDetail }) {
   const t = useT()
   const can = useCan()
   const { trip, eta } = detail

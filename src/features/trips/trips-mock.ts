@@ -66,6 +66,7 @@ async function fetchTripDetail(tripId: string): Promise<TripDetail> {
     trip.driverId === null ? null : db.getUser(trip.driverId).catch(notFoundAsNull),
   ])
   return {
+    kind: 'full',
     trip,
     vehicle,
     driver: driver === null ? null : { id: driver.id, fullName: driver.fullName, phone: driver.phone },
@@ -134,10 +135,12 @@ async function fetchStagingShortages(tripId: string): Promise<ShortageRow[]> {
   return shortages.map((shortage) => {
     const label = labelOf.get(shortage.packageInstanceId)
     return {
+      // Kho mẫu quyết báo thiếu theo kiện: mã của lần báo là mã kiện
+      id: shortage.packageInstanceId,
       packageInstanceId: shortage.packageInstanceId,
       packageName: label?.name ?? '',
       packageCode: label?.packageCode ?? shortage.packageInstanceId,
-      stopNumber: label?.deliveryStop ?? 0,
+      ...(label === undefined ? {} : { stopNumber: label.deliveryStop }),
       at: shortage.at,
       reporterName: shortage.by === null ? null : (users.get(shortage.by) ?? null),
     }
@@ -147,20 +150,20 @@ async function fetchStagingShortages(tripId: string): Promise<ShortageRow[]> {
 /** Kho mẫu làm được mọi việc của màn chuyến. */
 export function mockTripsApi(): TripsApi {
   return {
-    capabilities: { manualConfirms: true, shortages: true, requirements: true },
+    capabilities: { manualConfirms: true, shortages: true, requirements: true, planStatus: true },
     fetchTrips,
     fetchTripDetail,
     fetchTripRequirements,
     fetchManualConfirmations,
     async approveManualConfirmation(tripId, confirmationId) {
-      return sessionDb().approveManualConfirmation(tripId, confirmationId)
+      await sessionDb().approveManualConfirmation(tripId, confirmationId)
     },
     async rejectManualConfirmation(tripId, confirmationId, reason) {
-      return sessionDb().rejectManualConfirmation(tripId, confirmationId, reason)
+      await sessionDb().rejectManualConfirmation(tripId, confirmationId, reason)
     },
     fetchStagingShortages,
-    async resolveStagingShortage(tripId, packageInstanceId, decision) {
-      return sessionDb().resolveStagingShortage(tripId, packageInstanceId, decision)
+    async resolveStagingShortage(tripId, shortageId, decision) {
+      await sessionDb().resolveStagingShortage(tripId, shortageId, decision)
     },
   }
 }

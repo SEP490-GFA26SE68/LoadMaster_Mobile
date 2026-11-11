@@ -35,7 +35,7 @@ async function withPlace(db: MockDb, packages: readonly Package[]): Promise<Pack
 /** Kho mẫu làm được mọi việc của tra cứu kiện. */
 export function mockLookupApi(): LookupApi {
   return {
-    capabilities: { reportFound: true },
+    capabilities: { available: true, reportFound: true },
     async scanPackage(token) {
       const db = sessionDb()
       const [found] = await withPlace(db, [await db.findPackageByQr(token)])

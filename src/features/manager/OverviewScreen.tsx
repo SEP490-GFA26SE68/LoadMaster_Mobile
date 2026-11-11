@@ -16,7 +16,7 @@ import { FleetCard } from './overview/FleetCard'
 import { KpiTiles } from './overview/KpiTiles'
 import { RecentTripsCard } from './overview/RecentTripsCard'
 import { StatusCountsCard } from './overview/StatusCountsCard'
-import { useDashboard, useRefreshDashboard } from './useDashboardQueries'
+import { useDashboard, useDashboardCapabilities, useRefreshDashboard } from './useDashboardQueries'
 
 /** Ba kỳ có sẵn của web; kỳ tuỳ chọn (hai ô ngày) chưa có trên điện thoại. */
 type QuickPreset = Exclude<PeriodPreset, 'tuy-chon'>
@@ -31,9 +31,10 @@ const DEFAULT_PRESET: QuickPreset = QUICK_PRESETS.find((value) => value === DEFA
 /**
  * Tab Tổng quan của quản lý công ty (bảng điều khiển của web, phần đọc, một cột cho điện thoại): kỳ báo cáo (7 ngày · 30 ngày · tháng
  * này, mặc định 30 ngày; khoảng ngày của kỳ nằm dưới tiêu đề), năm số của kỳ kèm nguồn, chuyến theo trạng thái thành danh sách số (không
- * biểu đồ), trạng thái đội xe, rồi tối đa mười chuyến gần nhất — chạm mở Chi tiết chuyến. Kỳ không có chuyến thì một câu thay ba thẻ của
- * chuyến, thẻ đội xe vẫn hiện (không theo kỳ). Không xuất báo cáo, không "so với kỳ trước", không số nghĩ ra; màn không có nút chính.
- * Đổi kỳ tính lại trên máy, không đọc lại. Kéo xuống để đọc lại; lỗi đọc lại khi đã có số thì giữ số, kèm một dải lỗi ở đầu.
+ * biểu đồ), trạng thái đội xe, rồi tối đa mười chuyến gần nhất — chạm mở Chi tiết chuyến khi màn chuyến cùng nguồn. Kỳ không có chuyến
+ * thì một câu thay ba thẻ của chuyến, thẻ đội xe vẫn hiện (không theo kỳ). Không xuất báo cáo, không "so với kỳ trước", không số nghĩ ra;
+ * màn không có nút chính. Mỗi kỳ đọc một lần (máy chủ tính số theo kỳ); đổi kỳ giữ số cũ tới khi số mới về. Kéo xuống để đọc lại; lỗi đọc
+ * lại khi đã có số thì giữ số, kèm một dải lỗi ở đầu.
  */
 export function OverviewScreen() {
   const t = useT()
@@ -66,6 +67,7 @@ export function OverviewScreen() {
 
 function Content({ summary }: { summary: DashboardSummary }) {
   const t = useT()
+  const { tripLinks } = useDashboardCapabilities()
   if (summary.tripCount === 0) {
     return (
       <>
@@ -80,7 +82,7 @@ function Content({ summary }: { summary: DashboardSummary }) {
       <KpiTiles summary={summary} />
       <StatusCountsCard entries={summary.tripsByStatus} total={summary.tripCount} />
       <FleetCard vehicles={summary.vehicles} />
-      <RecentTripsCard trips={summary.trips} />
+      <RecentTripsCard trips={summary.trips} total={summary.tripCount} linked={tripLinks} />
     </>
   )
 }

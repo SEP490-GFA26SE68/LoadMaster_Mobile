@@ -4,7 +4,7 @@ import { MockDbError, requirementStatus, vnDate, type AuditEvent, type AuditName
 import type { User } from '@/types/user'
 
 import type { MonitoringApi } from './monitoring-api'
-import type { MonitoringTrip, OfficeNotification, TripRequirementRow } from './monitoring-model'
+import type { MonitoringTrip, OfficeNotification, RenegotiableRequirement } from './monitoring-model'
 
 /*
  * Nguồn kho mẫu của màn giám sát, như bản web: kho biết người đang đăng nhập và tự xét vai trò cho từng lệnh ghi (`ROLE_NOT_ALLOWED`) —
@@ -72,24 +72,25 @@ async function fetchLiveTrip(tripId: string) {
   return { trip: head, running: trip.phase === 'delivering', userNames, live }
 }
 
-/** Yêu cầu giao của chuyến kèm trạng thái suy từ kiện và số điểm giao của nó, theo điểm rồi theo hạn (như `fetchTripRequirements` của web). */
-async function fetchTripRequirements(tripId: string): Promise<TripRequirementRow[]> {
+/**
+ * Yêu cầu giao của chuyến còn gia hạn được: trạng thái suy từ kiện là Đang giao và kiện của nó nằm ở một điểm giao của chuyến; theo điểm
+ * rồi theo hạn (như `fetchTripRequirements` của web).
+ */
+async function fetchTripRequirements(tripId: string): Promise<RenegotiableRequirement[]> {
   const db = getMockDb()
   const [requirements, packages, trip] = await Promise.all([db.listDeliveryRequirements(), db.listPackages(), db.getTrip(tripId)])
   const packageById = new Map(packages.map((pkg) => [pkg.id, pkg]))
   const numberOfStop = new Map(trip.stops.map((stop, index) => [stop.id, index + 1]))
   return requirements
     .filter((requirement) => requirement.tripId === tripId)
-    .map((requirement) => {
+    .flatMap((requirement) => {
       const members = requirement.packageIds.flatMap((id) => packageById.get(id) ?? [])
       const stopId = members.find((pkg) => pkg.tripId === tripId)?.stopId
-      return { requirement, status: requirementStatus(requirement, members), stopNumber: stopId === undefined ? undefined : numberOfStop.get(stopId) }
+      const stopNumber = stopId === undefined ? undefined : numberOfStop.get(stopId)
+      if (stopNumber === undefined || requirementStatus(requirement, members) !== 'IN_TRIP') return []
+      return [{ id: requirement.id, destinationName: requirement.destinationName, deadline: requirement.deadline, stopNumber }]
     })
-    .toSorted(
-      (a, b) =>
-        (a.stopNumber ?? Number.POSITIVE_INFINITY) - (b.stopNumber ?? Number.POSITIVE_INFINITY) ||
-        Date.parse(a.requirement.deadline) - Date.parse(b.requirement.deadline),
-    )
+    .toSorted((a, b) => a.stopNumber - b.stopNumber || Date.parse(a.deadline) - Date.parse(b.deadline))
 }
 
 /** Tham số của sự kiện nêu mã một người: màn đọc họ tên thay mã. */

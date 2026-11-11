@@ -15,13 +15,18 @@ import { runDateHint } from '../trip-dates'
 export function TripSectionHeader({ date, count, today }: { date: string; count: number; today: string }) {
   const t = useT()
   const format = useFormat()
+  // Nhóm cuối của nguồn máy chủ: chuyến chưa có giờ xuất phát nên chưa có ngày chạy
+  if (date === '') return <Header tag={null} dayText={t('officeServer.trips.noDeparture')} countText={t('trips.list.group.count', { count })} />
   const day = calendarDate(date)
   const shown = date.slice(0, 4) === today.slice(0, 4) ? format.dayMonth(day) : format.date(day)
   const hint = runDateHint(date, today)
   const dayText = hint === null ? shown : t('trips.list.group.day', { weekday: t(`trips.list.weekdays.${hint.weekday}`), date: shown })
   // Như web: chỉ hôm nay và ngày mai có nhãn, hôm qua thì không
   const tag = hint?.relative === 'today' ? t('trips.list.group.today') : hint?.relative === 'tomorrow' ? t('trips.list.group.tomorrow') : null
-  const countText = t('trips.list.group.count', { count })
+  return <Header tag={tag} dayText={dayText} countText={t('trips.list.group.count', { count })} />
+}
+
+function Header({ tag, dayText, countText }: { tag: string | null; dayText: string; countText: string }) {
   return (
     <View
       accessible

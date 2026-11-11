@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useAuth } from '@/features/auth/AuthProvider'
 import { hasTab, type WorkTab } from '@/features/auth/landing'
+import { useLookupCapabilities } from '@/features/lookup/useLookupQueries'
 import { useT } from '@/lib/i18n'
 import { colors, space, TOUCH, type as scale } from '@/theme/tokens'
 
@@ -23,16 +24,20 @@ const TAB_LOOK: Readonly<Record<WorkTab, { readonly label: TabLabel; readonly ic
  * Thanh tab đáy của người đã đăng nhập. Mỗi tab làm việc nằm sau `hasTab` (`features/auth/landing.ts`: phạm vi app của vai trò và quyền
  * của màn) qua `Tabs.Protected`: vai trò không có tab thì không thấy và không mở được route. Quản lý công ty: Tổng quan · Chuyến hàng ·
  * Giám sát · Tài khoản; điều phối viên: Chuyến hàng · Giám sát · Tài khoản; tài xế: Chuyến của tôi · Tài khoản; nhân viên kho: Kho · Tra
- * cứu kiện · Tài khoản. Màn mới thêm tên vào `WORK_TABS` / `ROLE_TABS` và một `Tabs.Screen` ở đây, trong issue của màn đó.
+ * cứu kiện · Tài khoản. Tab có nguồn dữ liệu chưa làm được việc của nó thì ẩn: Tra cứu kiện khi nguồn `packages` là máy chủ (app chưa đọc
+ * kiện của máy chủ). Màn mới thêm tên vào `WORK_TABS` / `ROLE_TABS` và một `Tabs.Screen` ở đây, trong issue của màn đó.
  */
 export default function AppLayout() {
   const t = useT()
   const { user } = useAuth()
   const insets = useSafeAreaInsets()
+  const lookup = useLookupCapabilities()
+  // Tab mà nguồn dữ liệu đang dùng làm được; tab khác luôn có nguồn
+  const sourced = (name: WorkTab) => name !== 'lookup' || lookup.available
   const tab = (name: WorkTab) => {
     const { label, icon: Icon } = TAB_LOOK[name]
     return (
-      <Tabs.Protected key={name} guard={hasTab(user?.role, name)}>
+      <Tabs.Protected key={name} guard={hasTab(user?.role, name) && sourced(name)}>
         <Tabs.Screen name={name} options={{ title: t(label), tabBarIcon: ({ color }) => <Icon color={color} size={24} strokeWidth={1.5} /> }} />
       </Tabs.Protected>
     )

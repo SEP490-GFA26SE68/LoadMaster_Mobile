@@ -6,6 +6,7 @@ import { asDispatcher, LOADING_TRIP, READY_TRIP, stagedTwoCartonTrip, startSessi
 import { optimizedTwoCartonTrip } from '@/test/mock-db-samples'
 
 import * as api from './trips-api'
+import type { FullTripDetail } from './trips-model'
 
 /**
  * Lớp dữ liệu của màn chuyến trên kho mẫu (`trips-mock.ts`): mọi lệnh đòi phiên, kho chỉ trả chuyến của công ty người đăng nhập, và hai
@@ -14,6 +15,16 @@ import * as api from './trips-api'
  */
 
 const signIn = (email: string) => getMockDb().authenticate(email, SEED_PASSWORD)
+
+/** Kho mẫu luôn trả chi tiết đủ thẻ. */
+async function fullDetail(tripId: string): Promise<FullTripDetail> {
+  const detail = await api.fetchTripDetail(tripId)
+  if (detail.kind !== 'full') throw new Error('kho mẫu phải trả chi tiết đủ thẻ')
+  return detail
+}
+
+/** Chuyến như kho đang lưu, dưới phiên hiện tại. */
+const storedTrip = (tripId: string) => getMockDb().getTrip(tripId)
 
 beforeEach(resetMockDb)
 
@@ -32,7 +43,7 @@ describe('lệnh của màn chuyến đòi phiên', () => {
   })
 
   test('kho mẫu làm được mọi việc của màn', () => {
-    expect(api.tripsCapabilities()).toEqual({ manualConfirms: true, shortages: true, requirements: true })
+    expect(api.tripsCapabilities()).toEqual({ manualConfirms: true, shortages: true, requirements: true, planStatus: true })
   })
 })
 
@@ -54,15 +65,15 @@ describe('chuyến của công ty người đăng nhập', () => {
 
   test('chi tiết kèm xe, tài xế, trạng thái và tuyến đã tối ưu', async () => {
     await signIn(MANAGER_EMAIL)
-    const loading = await api.fetchTripDetail(LOADING_TRIP)
+    const loading = await fullDetail(LOADING_TRIP)
     expect(loading.status).toBe('LOADING')
     expect(loading.driver).toMatchObject({ fullName: 'Đặng Hoài Nam', phone: '0907 890 123' })
     expect(loading.vehicle.id).toBe(loading.trip.vehicleId)
     expect(loading.events.every((event) => event.target.type === 'trip' && event.target.id === LOADING_TRIP)).toBe(true)
-    const ready = await api.fetchTripDetail(READY_TRIP)
+    const ready = await fullDetail(READY_TRIP)
     expect(ready.eta?.stops).toHaveLength(ready.trip.stops.length)
     // Chuyến nháp chưa tối ưu tuyến: không có giờ đến
-    expect((await api.fetchTripDetail('TRIP-014')).eta).toBeNull()
+    expect((await fullDetail('TRIP-014')).eta).toBeNull()
   })
 
   test('chuyến của công ty khác đọc như không có', async () => {
@@ -133,7 +144,8 @@ describe('xác nhận tay chờ duyệt', () => {
     await signIn(DISPATCHER_EMAIL)
     const [row] = await api.fetchManualConfirmations(tripId)
     if (row === undefined) throw new Error('thiếu dòng chờ duyệt')
-    const trip = await api.rejectManualConfirmation(tripId, row.id, 'Nhãn còn đọc được, quét lại')
+    await api.rejectManualConfirmation(tripId, row.id, 'Nhãn còn đọc được, quét lại')
+    const trip = await storedTrip(tripId)
     expect(trip.loading?.steps.some((step) => step.packageInstanceId === 'PKG-001-01')).toBe(false)
     expect(await api.fetchManualConfirmations(tripId)).toEqual([])
   })
@@ -166,16 +178,16 @@ describe('kiện kho báo thiếu', () => {
   test('tìm tiếp đóng báo thiếu, chuyến vẫn ở kho', async () => {
     const tripId = await shortageTrip()
     await signIn(DISPATCHER_EMAIL)
-    const trip = await api.resolveStagingShortage(tripId, 'PKG-001-01', 'KEEP_SEARCHING')
-    expect(trip.phase).toBe('loading')
+    await api.resolveStagingShortage(tripId, 'PKG-001-01', 'KEEP_SEARCHING')
+    expect((await storedTrip(tripId)).phase).toBe('loading')
     expect(await api.fetchStagingShortages(tripId)).toEqual([])
   })
 
   test('bỏ kiện đưa chuyến về Đã lập kế hoạch', async () => {
     const tripId = await shortageTrip()
     await signIn(DISPATCHER_EMAIL)
-    const trip = await api.resolveStagingShortage(tripId, 'PKG-001-01', 'DROP')
-    expect(trip.phase).toBe('planning')
+    await api.resolveStagingShortage(tripId, 'PKG-001-01', 'DROP')
+    expect((await storedTrip(tripId)).phase).toBe('planning')
     expect(await api.fetchStagingShortages(tripId)).toEqual([])
   })
 })

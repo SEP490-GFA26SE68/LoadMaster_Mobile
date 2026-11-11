@@ -1,209 +1,116 @@
-import { api, type ApiClient } from '@/data/http'
+import { api, ApiError, type ApiClient } from '@/data/http'
+import { readTripDetail } from '@/features/trips/trips-http'
+import { serverDetailOf } from '@/features/trips/trips-http-mapping'
+import type { ServerTripDetail } from '@/features/trips/trips-model'
+import { backendLocalDateTime, notSupported, readAllPages, withStatusCode } from '@/lib/office-backend'
 
-type LocationDto = { readonly lat: number | null; readonly lng: number | null; readonly recordedAt: string | null }
+import type { MonitoringApi } from './monitoring-api'
+import type {
+  DeliveryRequirementDto,
+  MonitoringBoardDto,
+  RequirementStopDto,
+  RerouteProposalDto,
+  TripExceptionDto,
+  TripMonitoringDto,
+  TripRerouteDto,
+} from './monitoring-http-dto'
+import { boardOf, confirmedRerouteOf, exceptionOf, liveOf, proposalOf, renegotiableOf } from './monitoring-http-mapping'
+import type { MonitoringTrip } from './monitoring-model'
 
-type ExceptionDto = {
-  readonly id: string
-  readonly type: string
-  readonly description: string | null
-  readonly delayMinutes: number | null
-  readonly status: string
-  readonly reportedAt: string | null
-}
+/*
+ * Nguồn backend của màn giám sát (điều phối viên, quản lý công ty), như `monitoring-backend-api.ts` của web. Mã chuyến (`tripCode`) là mã
+ * trên đường dẫn; endpoint giám sát nhận cả mã chuyến lẫn mã số. Giờ đến máy chủ tính không mang MOCK RESULT. Máy chủ chưa có nhận hàng
+ * dọc đường ở màn này và chưa có chuông cho văn phòng: `pickups`, `notifications` tắt, hàm của chúng từ chối `NOT_SUPPORTED`.
+ */
 
-type StopDto = { readonly stopId: string | null; readonly number: number | null; readonly eta: string | null; readonly deadlineStatus: string | null }
+const tripPath = (tripId: string) => `/api/trips/${encodeURIComponent(tripId)}`
+const exceptionPath = (tripId: string, exceptionId: string) => `${tripPath(tripId)}/exceptions/${encodeURIComponent(exceptionId)}`
 
-type FleetDto = {
-  readonly tripId: string
-  readonly location: LocationDto | null
-  readonly stops: readonly StopDto[] | null
-  readonly exceptions: readonly ExceptionDto[] | null
-  readonly refreshMs: number | null
-  readonly isMockResult: boolean | null
-}
-
-type BoardDto = {
-  readonly trips: readonly {
-    readonly tripId: string
-    readonly name: string | null
-    readonly vehicleName: string | null
-    readonly driverName: string | null
-  }[] | null
-}
-
-type OptionDto = {
-  readonly index: number | null
-  readonly route: string | null
-  readonly distanceKm: number | null
-  readonly durationMinutes: number | null
-  readonly eta: string | null
-}
-
-type ProposalDto = {
-  readonly tripId: string
-  readonly stopNumber: number | null
-  readonly options: readonly OptionDto[] | null
-  readonly isMockResult: boolean | null
-}
-
-type MonitoringLocation = { readonly lat: number; readonly lng: number; readonly recordedAt?: string }
-
-type TripExceptionRow = {
-  readonly id: string
-  readonly type: string
-  readonly description: string
-  readonly delayMinutes: number
-  readonly status: string
-  readonly reportedAt?: string
-}
-
-type LiveStop = { readonly id: string; readonly number: number; readonly eta?: string; readonly deadlineStatus?: string }
-
-type MonitoringDetail = {
-  readonly tripId: string
-  readonly location: MonitoringLocation | null
-  readonly stops: readonly LiveStop[]
-  readonly exceptions: readonly TripExceptionRow[]
-  readonly refreshMs: number | null
-  readonly isMockResult: boolean
-}
-
-type BoardTrip = {
-  readonly tripId: string
-  readonly name: string
-  readonly vehicleName: string
-  readonly driverName: string
-  readonly location: MonitoringLocation | null
-  readonly exceptionCount: number
-  readonly refreshMs: number | null
-}
-
-type RerouteOption = {
-  readonly index: number
-  readonly route: string
-  readonly distanceKm: number
-  readonly durationMinutes: number
-  readonly eta?: string
-}
-
-type RerouteProposal = {
-  readonly tripId: string
-  readonly stopNumber?: number
-  readonly isMockResult: boolean
-  readonly options: readonly RerouteOption[]
-}
-
-type HeadMonitoringApi = {
-  readonly capabilities: { readonly resolve: boolean; readonly escalate: boolean; readonly reroute: boolean }
-  fetchBoard(): Promise<BoardTrip[]>
-  fetchTrip(tripId: string): Promise<MonitoringDetail>
-  resolveException(tripId: string, exceptionId: string, input?: { readonly note?: string }): Promise<void>
-  escalateException(tripId: string, exceptionId: string): Promise<void>
-  proposeReroute(tripId: string): Promise<RerouteProposal>
-  confirmReroute(tripId: string, routeIndex: number): Promise<void>
-}
-
-type HttpDeps = { readonly client?: () => ApiClient }
-
-function locationOf(dto: LocationDto | null): MonitoringLocation | null {
-  if (dto === null || dto.lat === null || dto.lng === null) return null
-  return { lat: dto.lat, lng: dto.lng, recordedAt: dto.recordedAt ?? undefined }
-}
-
-function exceptionOf(dto: ExceptionDto): TripExceptionRow {
+/** Đầu chuyến cho màn giám sát một chuyến đã thôi chạy (không còn trên bảng): đọc từ chi tiết chuyến. */
+function headOf(detail: ServerTripDetail): MonitoringTrip {
+  const { depot } = detail
   return {
-    id: dto.id,
-    type: dto.type,
-    description: dto.description ?? '',
-    delayMinutes: dto.delayMinutes ?? 0,
-    status: dto.status,
-    reportedAt: dto.reportedAt ?? undefined,
+    tripId: detail.id,
+    // Như bảng giám sát: chuyến không có tên riêng thì không nhắc lại mã
+    name: detail.name === detail.id ? '' : detail.name,
+    vehicleName: detail.vehicleName,
+    driverName: detail.driverName,
+    ...(depot?.lat !== undefined && depot.lng !== undefined ? { depot: { name: depot.name, lat: depot.lat, lng: depot.lng } } : {}),
+    stops: detail.stops.map((stop) => ({
+      id: stop.id,
+      number: stop.number,
+      name: stop.name,
+      ...(stop.kind === 'PICKUP' ? { kind: 'PICKUP' as const } : {}),
+      ...(stop.lat !== undefined && stop.lng !== undefined ? { lat: stop.lat, lng: stop.lng } : {}),
+      ...(stop.actualArrival !== undefined && stop.status !== 'PENDING' ? { arrivedAt: stop.actualArrival } : {}),
+      ...(stop.actualArrival !== undefined && stop.status === 'COMPLETED' ? { completedAt: stop.actualArrival } : {}),
+    })),
   }
 }
 
-function stopOf(dto: StopDto): LiveStop {
+export function httpMonitoringApi({ client = api }: { readonly client?: () => ApiClient } = {}): MonitoringApi {
+  const fetchMonitoringBoard = async () => boardOf(await client().get<MonitoringBoardDto | null>('/api/dispatcher/dashboard'))
   return {
-    id: dto.stopId ?? String(dto.number ?? ''),
-    number: dto.number ?? 0,
-    eta: dto.eta ?? undefined,
-    deadlineStatus: dto.deadlineStatus ?? undefined,
-  }
-}
-
-function detailOf(dto: FleetDto): MonitoringDetail {
-  return {
-    tripId: dto.tripId,
-    location: locationOf(dto.location),
-    stops: (dto.stops ?? []).map(stopOf),
-    exceptions: (dto.exceptions ?? []).map(exceptionOf),
-    refreshMs: dto.refreshMs,
-    isMockResult: dto.isMockResult === true,
-  }
-}
-
-/** Adapter HTTP cũ của bảng giám sát (hợp đồng trước khi màn điều phối/quản lý thay `MonitoringApi`). */
-export function httpMonitoringApi({ client = api }: HttpDeps = {}): HeadMonitoringApi {
-  return {
-    capabilities: { resolve: true, escalate: true, reroute: true },
-
-    async fetchBoard() {
-      const [fleet, board] = await Promise.all([
-        client().get<readonly FleetDto[] | null>('/api/trips/monitoring'),
-        client()
-          .get<BoardDto>('/api/dispatcher/dashboard')
-          .catch(() => ({ trips: [] })),
+    capabilities: { exceptions: true, reroute: true, escalation: true, pickups: false, notifications: false },
+    fetchMonitoringBoard,
+    async listTripMonitoring() {
+      return ((await client().get<readonly TripMonitoringDto[] | null>('/api/trips/monitoring')) ?? []).map(liveOf)
+    },
+    async fetchLiveTrip(tripId) {
+      const [board, live] = await Promise.all([
+        fetchMonitoringBoard(),
+        withStatusCode(client().get<TripMonitoringDto>(`${tripPath(tripId)}/monitoring`), { 404: 'TRIP_NOT_FOUND' }),
       ])
-      const names = new Map((board.trips ?? []).map((trip) => [trip.tripId, trip]))
-      return (fleet ?? []).map((row): BoardTrip => {
-        const named = names.get(row.tripId)
-        const open = (row.exceptions ?? []).filter((item) => item.status !== 'RESOLVED').length
-        return {
-          tripId: row.tripId,
-          name: named?.name ?? row.tripId,
-          vehicleName: named?.vehicleName ?? '',
-          driverName: named?.driverName ?? '',
-          location: locationOf(row.location),
-          exceptionCount: open,
-          refreshMs: row.refreshMs,
-        }
-      })
+      const wanted = tripId.toLowerCase()
+      const onBoard = board.trips.find((trip) => trip.tripId.toLowerCase() === wanted)
+      const trip = onBoard ?? headOf(serverDetailOf(await readTripDetail(client(), tripId)))
+      return { trip, running: onBoard !== undefined, userNames: board.userNames, live: liveOf(live) }
     },
-
-    async fetchTrip(tripId) {
-      const dto = await client().get<FleetDto>(`/api/trips/${encodeURIComponent(tripId)}/monitoring`)
-      return detailOf(dto)
+    async reportTripException(tripId, input) {
+      const body = { type: input.type, description: input.description, delayMinutes: input.delayMinutes }
+      // Form đã kiểm như backend: 400 ở đây là chuyến không còn đang vận chuyển
+      const dto = await withStatusCode(client().post<TripExceptionDto>(`${tripPath(tripId)}/exceptions`, { body }), { 400: 'GPS_TRIP_NOT_IN_TRANSIT' })
+      return { id: exceptionOf(dto).id }
     },
-
-    async resolveException(tripId, exceptionId, input) {
-      await client().post(`/api/trips/${encodeURIComponent(tripId)}/exceptions/${encodeURIComponent(exceptionId)}/resolve`, {
-        body: { note: input?.note },
-      })
+    async escalateTripException(tripId, exceptionId) {
+      await withStatusCode(client().post<TripExceptionDto>(`${exceptionPath(tripId, exceptionId)}/escalate`), { 404: 'TRIP_EXCEPTION_NOT_FOUND' })
     },
-
-    async escalateException(tripId, exceptionId) {
-      await client().post(`/api/trips/${encodeURIComponent(tripId)}/exceptions/${encodeURIComponent(exceptionId)}/escalate`)
+    async resolveTripException(tripId, exceptionId, note) {
+      const body = note === undefined ? {} : { note }
+      await withStatusCode(client().post<TripExceptionDto>(`${exceptionPath(tripId, exceptionId)}/resolve`, { body }), { 404: 'TRIP_EXCEPTION_NOT_FOUND' })
     },
-
-    async proposeReroute(tripId) {
-      const dto = await client().post<ProposalDto>(`/api/trips/${encodeURIComponent(tripId)}/reroute`)
-      return {
-        tripId: dto.tripId,
-        stopNumber: dto.stopNumber ?? undefined,
-        isMockResult: dto.isMockResult === true,
-        options: (dto.options ?? []).map(
-          (option): RerouteOption => ({
-            index: option.index ?? 0,
-            route: option.route ?? '',
-            distanceKm: option.distanceKm ?? 0,
-            durationMinutes: option.durationMinutes ?? 0,
-            eta: option.eta ?? undefined,
-          }),
-        ),
-      }
+    async requestReroute(tripId) {
+      // 400 có hai nghĩa (chuyến không còn chạy, xe chưa có vị trí): giữ lỗi chung
+      return proposalOf(await withStatusCode(client().post<RerouteProposalDto>(`${tripPath(tripId)}/reroute`), { 404: 'NO_PENDING_DELIVERY_STOP' }))
     },
-
     async confirmReroute(tripId, routeIndex) {
-      await client().post(`/api/trips/${encodeURIComponent(tripId)}/reroute/${routeIndex}/confirm`)
+      const request = client().post<TripRerouteDto>(`${tripPath(tripId)}/reroute/${routeIndex}/confirm`)
+      confirmedRerouteOf(await withStatusCode(request, { 400: 'INVALID_REROUTE_INDEX' }))
     },
+    async fetchTripRequirements(tripId) {
+      // Máy chủ chưa lọc yêu cầu giao theo chuyến: đọc đủ rồi giữ dòng của chuyến; mã số của chuyến lấy từ chính các dòng đó
+      const wanted = tripId.toLowerCase()
+      const rows = (await readAllPages<DeliveryRequirementDto>(client(), '/api/delivery-requirements')).filter(
+        (dto) => dto.tripCode?.toLowerCase() === wanted || (dto.tripId !== null && dto.tripId !== undefined && String(dto.tripId) === tripId),
+      )
+      const numericId = rows.find((dto) => dto.tripId !== null && dto.tripId !== undefined)?.tripId
+      if (numericId === null || numericId === undefined) return []
+      const detail = await client().get<{ readonly stops?: readonly RequirementStopDto[] | null } | null>(
+        `/api/trips/${encodeURIComponent(String(numericId))}/detail`,
+      )
+      return renegotiableOf(rows, detail?.stops ?? [])
+    },
+    async renegotiateDeadline(tripId, exceptionId, input) {
+      const requirementId = Number(input.requirementId)
+      if (!Number.isInteger(requirementId)) throw new ApiError('DELIVERY_REQUIREMENT_NOT_FOUND')
+      const body = { requirementId, newDeadline: backendLocalDateTime(input.deadline), contactNote: input.contactNote }
+      await withStatusCode(client().post<TripExceptionDto>(`${exceptionPath(tripId, exceptionId)}/renegotiate`, { body }), { 404: 'TRIP_EXCEPTION_NOT_FOUND' })
+    },
+    fetchPickupRows: notSupported,
+    createPickupRequest: notSupported,
+    validatePickupRequest: notSupported,
+    approvePickupRequest: notSupported,
+    rejectPickupRequest: notSupported,
+    fetchNotifications: notSupported,
   }
 }

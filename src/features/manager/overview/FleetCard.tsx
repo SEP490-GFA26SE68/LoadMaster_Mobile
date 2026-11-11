@@ -1,4 +1,4 @@
-import { CircleCheck, Truck, Wrench, type LucideIcon } from 'lucide-react-native'
+import { CircleCheck, CircleOff, Truck, Wrench, type LucideIcon } from 'lucide-react-native'
 import { StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
@@ -20,13 +20,19 @@ const GLYPH: Readonly<Record<VehicleStatus, { icon: LucideIcon; tone: BadgeTone 
 
 /**
  * "Trạng thái đội xe" (như `FleetStatusCard` của web): số xe đang phục vụ chuyến trên tổng, rồi ba trạng thái. Đếm trên cả đội lúc đọc
- * kho, không theo kỳ — thẻ nói rõ điều đó. Mobile chưa có màn Đội xe nên thẻ không có lối sang đó.
+ * kho, không theo kỳ — thẻ nói rõ điều đó. Mobile chưa có màn Đội xe nên thẻ không có lối sang đó. Máy chủ đếm thêm xe Ngừng sử dụng:
+ * thẻ thêm dòng đó (xám) chỉ khi nguồn có số.
  */
 export function FleetCard({ vehicles }: { vehicles: DashboardSummary['vehicles'] }) {
   const t = useT()
   const format = useFormat()
   const inUse = format.integer(vehicles.inUse)
   const ratio = t('manager.fleet.ratio', { total: format.integer(vehicles.total) })
+  const { retired } = vehicles.byStatus
+  const rows = [
+    ...STATUSES.map((status) => ({ key: status, ...GLYPH[status], count: vehicles.byStatus[status], label: t(`overview.fleetStatus.${status}`) })),
+    ...(retired === undefined ? [] : [{ key: 'retired', icon: CircleOff, tone: 'neutral' as const, count: retired, label: t('officeServer.overview.retired') }]),
+  ]
   return (
     <Card>
       <AppText variant="heading" accessibilityRole="header">
@@ -38,12 +44,10 @@ export function FleetCard({ vehicles }: { vehicles: DashboardSummary['vehicles']
         </AppText>
         <AppText color={colors.text2}>{ratio}</AppText>
       </View>
-      {STATUSES.map((status) => {
-        const { icon: Icon, tone } = GLYPH[status]
-        const count = format.integer(vehicles.byStatus[status])
-        const label = t(`overview.fleetStatus.${status}`)
+      {rows.map(({ key, icon: Icon, tone, label, ...row }) => {
+        const count = format.integer(row.count)
         return (
-          <View key={status} accessible accessibilityLabel={`${label}: ${count}`} style={styles.row}>
+          <View key={key} accessible accessibilityLabel={`${label}: ${count}`} style={styles.row}>
             <View style={[styles.glyph, { backgroundColor: badgeTones[tone].bg }]}>
               <Icon color={badgeTones[tone].fg} size={16} strokeWidth={1.5} />
             </View>

@@ -1,12 +1,13 @@
 /**
- * Hàm → endpoint backend của Tra cứu kiện; mỗi nguồn là một adapter (`lookup-mock.ts` kho mẫu; backend chưa có adapter: nguồn `http`
- * là lỗi `HTTP_NOT_WIRED`).
+ * Hàm → endpoint backend của Tra cứu kiện; mỗi nguồn là một adapter (`lookup-mock.ts` kho mẫu). Backend chưa có adapter: nguồn `packages`
+ * là máy chủ thì tab Tra cứu kiện ẩn (`available: false`) và mọi hàm là `NOT_SUPPORTED` — không lấy kiện của kho mẫu.
  *   scanPackage         GET /api/packages/scan/{qrToken}
  *   lookupPackages      GET /api/packages/scan/{qrToken} · GET /api/packages?packageCode= · GET /api/packages/{id}
  *   chưa có ở BE: reportPackageFound (backend không có cờ kiện)
  */
 import { createAdapter } from '@/data/adapter'
 import { isApiError } from '@/data/http/api-error'
+import { notSupported } from '@/lib/office-backend'
 import { isMockDbError, type Package, type PackageType } from '@/lib/mock-db'
 
 import { mockLookupApi } from './lookup-mock'
@@ -22,6 +23,8 @@ export type PackageLookup = {
 
 /** Việc tra cứu kiện làm được với nguồn đang dùng; màn ẩn việc nguồn chưa làm được. */
 export type LookupCapabilities = {
+  /** Nguồn có tra cứu kiện: không thì không có tab Tra cứu kiện. */
+  readonly available: boolean
   /** Nhân viên kho báo đã tìm thấy lại kiện mang cờ "Không tìm thấy" (gỡ cờ). */
   readonly reportFound: boolean
 }
@@ -40,7 +43,15 @@ export type LookupApi = {
   reportPackageFound(token: string): Promise<Package>
 }
 
-const adapter = createAdapter<LookupApi>('packages', { mock: mockLookupApi })
+/** Nguồn máy chủ: app chưa đọc kiện của máy chủ (`GET /api/packages/scan/{qrToken}`), nên không có tra cứu kiện. */
+const SERVER_SOURCE: LookupApi = {
+  capabilities: { available: false, reportFound: false },
+  scanPackage: notSupported,
+  lookupPackages: notSupported,
+  reportPackageFound: notSupported,
+}
+
+const adapter = createAdapter<LookupApi>('packages', { mock: mockLookupApi, http: () => SERVER_SOURCE })
 
 /** Lỗi "không khớp kiện nào" — kho mẫu và backend cùng mã `QR_UNKNOWN`. */
 export function isUnknownPackage(error: unknown): boolean {

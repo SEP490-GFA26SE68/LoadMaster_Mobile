@@ -23,8 +23,8 @@ const ROLE_OF_BACKEND: Readonly<Record<string, Role>> = {
   SYSTEM_SUPPORTER: 'systemSupporter',
   ADMIN: 'companyAdmin',
   COMPANY_ADMIN: 'companyAdmin',
-  MANAGER: 'manager',
-  COMPANY_MANAGER: 'manager',
+  MANAGER: 'companyManager',
+  COMPANY_MANAGER: 'companyManager',
   DISPATCHER: 'dispatcher',
   WAREHOUSE_WORKER: 'warehouse',
   DRIVER: 'driver',
@@ -47,5 +47,6 @@ export function isActiveOnBackend(status: string): boolean {
  */
 export function userFromBackend(profile: BackendUserProfile, role: Role, standIn: User): User {
   const { depot: _sampleDepot, ...sample } = standIn
-  return { ...sample, role, fullName: profile.fullName, email: profile.email, phone: profile.phoneNumber ?? '', status: 'active' }
+  const status = profile.status === 'FLAGGED' ? 'flagged' : 'active'
+  return { ...sample, role, fullName: profile.fullName, email: profile.email, phone: profile.phoneNumber ?? '', status }
 }

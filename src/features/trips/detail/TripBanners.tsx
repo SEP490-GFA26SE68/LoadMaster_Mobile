@@ -8,7 +8,7 @@ import { useFormat, useT, type TFunction } from '@/lib/i18n'
 import type { Trip } from '@/lib/mock-db'
 
 import { staleReason, type StaleEdit } from '../trip-detail'
-import type { TripDetail } from '../trips-model'
+import type { FullTripDetail } from '../trips-model'
 
 /**
  * Banner theo pha của Chi tiết chuyến (như `TripDetailBanner` của web): bản duyệt lỗi thời nói **vì sao** — lần sửa xe / kiện mới nhất
@@ -17,7 +17,7 @@ import type { TripDetail } from '../trips-model'
  * mà phương án không lỗi thời thì không có banner. Bản web còn có lối tới Thiết lập tối ưu và câu "vẫn sửa được…": trên điện thoại không
  * sửa chuyến, nên không có.
  */
-export function TripBanners({ detail }: { detail: TripDetail }) {
+export function TripBanners({ detail }: { detail: FullTripDetail }) {
   const t = useT()
   const format = useFormat()
   const { trip, revisions, events, people } = detail

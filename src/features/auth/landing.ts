@@ -29,7 +29,7 @@ const ROLE_TABS: Readonly<Record<Role, readonly WorkTab[]>> = {
   systemManager: [],
   systemSupporter: [],
   companyAdmin: [],
-  manager: ['overview', 'trip-list', 'monitoring'],
+  companyManager: ['overview', 'trip-list', 'monitoring'],
   dispatcher: ['trip-list', 'monitoring'],
   warehouse: ['warehouse', 'lookup'],
   driver: ['trips'],

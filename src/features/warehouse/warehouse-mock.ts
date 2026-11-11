@@ -109,7 +109,7 @@ async function fetchNotifications(): Promise<WarehouseNotification[]> {
 /** Kho mẫu làm được mọi việc của kho. */
 export function mockWarehouseApi(): WarehouseApi {
   return {
-    capabilities: { manualConfirm: true, shortages: true, seal: true, notifications: true },
+    capabilities: { backend: false, manualConfirm: true, shortages: true, seal: true, notifications: true },
     fetchWarehouseTrips,
     async fetchWarehouseTrip(tripId) {
       const db = sessionDb()

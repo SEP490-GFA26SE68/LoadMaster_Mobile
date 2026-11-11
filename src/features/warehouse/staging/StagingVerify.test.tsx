@@ -233,7 +233,7 @@ describe('đối chiếu kiện vào khu chờ', () => {
   })
 
   test('nguồn dữ liệu không nhận xác nhận tay: tờ chỉ có quét và gõ mã', async () => {
-    jest.spyOn(warehouseApi, 'warehouseCapabilities').mockReturnValue({ manualConfirm: false, shortages: true, seal: true, notifications: true })
+    jest.spyOn(warehouseApi, 'warehouseCapabilities').mockReturnValue({ backend: false, manualConfirm: false, shortages: true, seal: true, notifications: true })
     await renderSession(READY_TRIP)
     await openVerify()
 

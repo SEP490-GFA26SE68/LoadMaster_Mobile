@@ -27,5 +27,5 @@ export const common = {
     RETURNED: 'Returned',
   },
   packageFlags: { NOT_FOUND: 'Not found', DAMAGED: 'Damaged' },
-  obstacleTypes: { WHEEL_ARCH: 'Wheel arch', COOLING_UNIT: 'Cooling unit', PARTITION: 'Partition', RESERVED_ZONE: 'Reserved zone' },
+  obstacleTypes: { WHEEL_ARCH: 'Wheel arch', COOLING_UNIT: 'Cooling unit', PARTITION: 'Partition', RESERVED_ZONE: 'Reserved zone', OTHER: 'Other obstacle' },
 } satisfies Dictionary<typeof source>

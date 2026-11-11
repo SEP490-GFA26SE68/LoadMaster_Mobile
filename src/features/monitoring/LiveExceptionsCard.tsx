@@ -101,9 +101,11 @@ export function LiveExceptionsCard({ trip, live, userNames, running, notice, onN
               number: format.integer(live.reroute.stopNumber),
             })}
           </AppText>
-          <View style={styles.row}>
-            <MockResultTag />
-          </View>
+          {live.isMockResult ? (
+            <View style={styles.row}>
+              <MockResultTag />
+            </View>
+          ) : null}
         </View>
       )}
       {!can('exceptions.resolve') && exceptions.some(isActiveException) ? <AppText color={colors.text3}>{t('monitoring.exceptions.readOnly')}</AppText> : null}

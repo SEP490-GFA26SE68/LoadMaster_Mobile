@@ -35,7 +35,7 @@ function entry(overrides: Partial<OfficeNotification> & Pick<OfficeNotification,
 const row = (notification: OfficeNotification, permissions = DISPATCHER) => officeRow(notification, vi.t, vi.format, canOf(permissions))
 
 test('mọi sự kiện chuông của điều phối viên và quản lý công ty có câu riêng, không lộ mã của kho', () => {
-  const actions = new Set([...NOTIFICATION_ACTIONS.dispatcher, ...NOTIFICATION_ACTIONS.manager])
+  const actions = new Set([...NOTIFICATION_ACTIONS.dispatcher, ...NOTIFICATION_ACTIONS.companyManager])
   for (const action of actions) {
     const sentence = row(entry({ action })).sentence
     expect(sentence).not.toBe(action)

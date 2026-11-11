@@ -26,10 +26,14 @@ một câu nói rõ (`features/auth/landing.ts`).
 
 **Trạng thái dữ liệu:** mặc định app chạy trên **kho dữ liệu mẫu trong máy** (cùng logic và seed với bản web). Kho mẫu không thay
 backend: bản web và máy khác không thấy gì trong đó. Mỗi feature nối backend riêng, khi backend có phần đó (mục 5). Đã nối được:
-đăng nhập (`auth`, Keycloak của backend — mục 6) và màn tài xế (`driver`, trọn luồng như web: xuất phát ở thẻ chuyến, đã đến, dỡ,
-xác nhận tay, sự cố, nhận kiện ở điểm nhận, hoàn tất điểm, GPS; việc backend chưa có thì màn ẩn nút).
-Màn kho (`warehouse`), Tra cứu kiện (`packages`) và các màn của điều phối viên, quản lý (`trips`, `monitoring`, `dashboard`) mới chạy
-trên kho mẫu: chưa có adapter `http`. Tài xế trên backend chưa có: tạo yêu cầu nhận hàng dọc đường, xác nhận tay ở điểm nhận
+đăng nhập (`auth`, Keycloak của backend — mục 6); màn tài xế (`driver`, trọn luồng như web: xuất phát ở thẻ chuyến, đã đến, dỡ,
+xác nhận tay, sự cố, nhận kiện ở điểm nhận, hoàn tất điểm, GPS); màn kho (`warehouse`, như `ServerWarehouseTripsPage` /
+`ServerLoadingSession` của web: danh sách `GET /api/warehouse/tasks`, bắt đầu kèm bước soạn, soạn — đối chiếu, xác nhận tay, báo
+thiếu —, xếp — đối chiếu, xác nhận tay, sai lệch vị trí, kiện hỏng —, hoàn tất, số seal; máy chủ giữ phiên nên mọi lệnh ghi đọc lại phiên);
+chuyến, giám sát và Tổng quan của điều phối viên, quản lý (`trips`, `monitoring`, `dashboard`). Việc backend chưa có thì màn ẩn theo bảng
+`capabilities` của từng feature (mục 5, luật 11), không lấy kho mẫu điền vào: Tra cứu kiện (`packages` là máy chủ thì tab ẩn — app chưa
+đọc kiện của máy chủ), chuông của kho và của hai vai trò văn phòng, khung vị trí kiện của phiên kho (vị trí ghi bằng số), yêu cầu giao và
+dòng phụ phương án của chuyến, nhận hàng dọc đường ở Giám sát; của tài xế: tạo yêu cầu nhận hàng, xác nhận tay ở điểm nhận
 (`pickupManualConfirm`), thông báo, số liệu tổng kết — `driver-http.ts` từ chối `NOT_SUPPORTED` hoặc màn ẩn phần đó.
 Cách chạy với backend: README.
 
@@ -144,8 +148,11 @@ src/
     pickups/           nhận hàng dọc đường: form tạo (tài xế, điều phối viên), mười luật, thẻ yêu cầu, duyệt / từ chối
     warehouse/         màn của nhân viên kho: danh sách chuyến (`WarehouseTripsScreen`, `trips/`) và phiên soạn → xếp một chuyến
                        (`LoadingSessionScreen` chọn bước: `staging/` soạn hàng, `loading/` xếp, `finished/` xếp xong + số seal);
-                       adapter warehouse-mock.ts; ← chép từ web: `warehouse-trips.ts`, `loading-session.ts`, `describe-step.ts`
-    lookup/            Tra cứu kiện: quét hoặc gõ mã, thẻ kiện, báo đã tìm thấy kiện; adapter lookup-mock.ts
+                       adapter warehouse-mock.ts; nguồn máy chủ ở `server/` (`ServerWarehouseTripsScreen`,
+                       `ServerLoadingSessionScreen`) với hợp đồng riêng `warehouse-server-api.ts` → warehouse-http.ts — route chọn màn
+                       theo `useWarehouseCapabilities().backend`; ← chép từ web: `warehouse-trips.ts`, `loading-session.ts`,
+                       `describe-step.ts`, `server-loading.ts`
+    lookup/            Tra cứu kiện: quét hoặc gõ mã, thẻ kiện, báo đã tìm thấy kiện; adapter lookup-mock.ts (nguồn máy chủ: tab ẩn)
     errors/            màn lỗi chung `RouteErrorScreen` (là `ErrorBoundary` của route) và màn không tìm thấy `NotFoundScreen`
     notifications/     ← chép từ web: sự kiện nào báo cho ai
     viewer3d/          ← chép từ web: phần thuần (kiện theo điểm giao, thứ tự dỡ) — không có Three.js
@@ -191,7 +198,8 @@ hai lần. Bản web là nguồn chuẩn.
   lẻ khai ở `MIRRORED_FILES` của `scripts/sync-from-web.mjs` — quyền và hồ sơ backend (`features/auth/permissions.ts`,
   `backend-user.ts`), phần thuần của màn tài xế (`features/driver/`: tiến độ giao, giờ đến, hoàn tất điểm, form sự cố…), của màn kho
   (`features/warehouse/`: nhóm chuyến của kho, bước và tiến độ của phiên soạn → xếp, chỉ dẫn đặt từng kiện — vùng, vật cản gần,
-  lưu ý, hướng đặt), của viewer 3D và chuông,
+  lưu ý, hướng đặt; tiến độ của phiên máy chủ `server-loading.ts`, nó import kiểu từ `./warehouse-server-api` của mobile), của viewer
+  3D và chuông,
   `lib/stops.ts`, `lib/calendar-date.ts`, `lib/isometric.ts` + `lib/tokens.ts` (phép chiếu đẳng cự của hình hướng đặt; ngoài trình
   duyệt `readToken` trả chuỗi rỗng), `lib/i18n/types.ts`, `lib/i18n/hardcoded-strings.ts` (bộ dò chữ viết cứng của cổng i18n, mục 8),
   phần thuần của màn chuyến và số liệu của điều phối viên, quản lý (`features/trips/`: dòng danh sách chuyến, tab trạng thái, "cần bạn
@@ -200,8 +208,8 @@ hai lần. Bản web là nguồn chuẩn.
   `LiveMonitoring`, `MonitoringBoard`, `MonitoringStop`, `MonitoringTrip`), của nhận hàng dọc đường (`features/pickups/`: câu của mười
   luật, tên điểm, màu trạng thái), `lib/list-filter.ts` (tìm bỏ dấu), `components/map/coordinates.ts` + `place-search.ts` (phần thuần của
   ô chọn toạ độ: chữ → toạ độ, tìm địa danh mẫu; bản đồ của web không chép),
-  các nhánh từ điển `dataErrors`, `issues`, `language`, `lookup`, `manager`, `monitoring`, `pickups`, `roles`, `status`, `trips`,
-  `warehouse`, và hai file test dùng chung `test/trip-flow.ts`, `test/mock-db-samples.ts`.
+  các nhánh từ điển `dataErrors`, `issues`, `language`, `lookup`, `manager`, `monitoring`, `pickups`, `roles`, `serverWarehouse`,
+  `status`, `trips`, `warehouse`, và hai file test dùng chung `test/trip-flow.ts`, `test/mock-db-samples.ts`.
 - Hàm chép từ web mà dựng đường dẫn của web thì không dùng: `loadingSessionPath` (`warehouse-trips.ts`) ra `/kho?chuyen=`; app mở
   phiên bằng `loadingPath` của `features/warehouse/session-routes.ts`.
 - **Không sửa các file đó ở mobile.** Cần đổi thì sửa ở bản web (qua quy trình của web), rồi chạy `pnpm sync:web`.
@@ -256,7 +264,8 @@ màn / component  →  hook Query của feature  →  features/<tên>/<tên>-api
    (số liệu). Một lệnh ghi ở màn này đổi thứ màn kia đang hiện, nên lệnh ghi của hai vai trò **chờ** khoá của chính màn đang hiện (cả
    khi lỗi) và làm mới **không chờ** các gốc còn lại.
 10. Không thêm store phía client cho dữ liệu nghiệp vụ. Không lưu dữ liệu nghiệp vụ vào `expo-secure-store`.
-11. **Hợp đồng nói nguồn làm được gì** (`capabilities`: `DriverCapabilities`, `WarehouseCapabilities`, `LookupCapabilities`;
+11. **Hợp đồng nói nguồn làm được gì** (`capabilities`: `DriverCapabilities`, `WarehouseCapabilities`, `LookupCapabilities`, `TripsCapabilities`,
+    `MonitoringCapabilities`, `DashboardCapabilities`;
     màn đọc qua hook `use…Capabilities`). Việc nguồn chưa làm được (backend chưa có
     endpoint, vai trò chưa có quyền ở backend) thì màn **ẩn** nút — không nút giả; gọi tới vẫn là lỗi `NOT_SUPPORTED`, không âm thầm bỏ
     qua. Backend thêm endpoint: viết hàm ở adapter `http` rồi bật cờ, màn không đổi.
@@ -286,7 +295,9 @@ liệu. Backend lệch với hợp đồng của app thì ghi vào issue và h�
   ty Tổng quan `/overview` · Chuyến hàng `/trip-list` · Giám sát `/monitoring`; điều phối viên Chuyến hàng · Giám sát; ai cũng có Tài
   khoản. `hasTab` đòi cả hai: tab nằm trong `ROLE_TABS` của vai trò **và** vai trò có quyền của màn (`TAB_PERMISSION`). Có quyền mà màn
   của vai trò đó ở web thì không có tab: điều phối viên có `dashboard.view`, `packages.lookup` nhưng bảng điều khiển và tra cứu kiện của
-  họ ở web. Màn mới thêm tên vào `WORK_TABS` / `ROLE_TABS` và một dòng ở `(tabs)/_layout.tsx`.
+  họ ở web. Tab mà nguồn dữ liệu chưa làm được việc của nó thì ẩn ở `(tabs)/_layout.tsx`: Tra cứu kiện khi
+  `useLookupCapabilities().available` sai (nguồn `packages` là máy chủ). Màn mới thêm tên vào `WORK_TABS` / `ROLE_TABS` và một dòng ở
+  `(tabs)/_layout.tsx`.
 - Sau khi đăng nhập mở màn chính của vai trò (`landingOf`: tab làm việc đầu tiên; vai trò không có tab làm việc nào — quản trị công ty,
   ba vai trò nền tảng — mở `/account`, kèm câu `scopeNote`). Màn đó phải là màn vai trò mở được (`landing.test.ts`).
 - Quyền của từng route chồng: `trip/[tripId]` sau `driver.operate`; phiên `loading/[tripId]` sau `warehouse.operate`;
@@ -406,9 +417,9 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
   khớp dòng nào cũng làm test đỏ.
 - Từ điển ở `src/lib/i18n/vi/<nhánh>.ts` và `en/<nhánh>.ts`; `en` khai `satisfies Dictionary<…>` nên thiếu hoặc thừa key là lỗi kiểm
   kiểu. Màn mới thêm nhánh bằng file mới và một dòng ghép ở `vi.ts`, `en.ts`. Mỗi nhánh có chú thích nói nó phục vụ màn nào.
-- Bảy nhánh chép từ web (mục 4: `dataErrors`, `issues`, `language`, `lookup`, `roles`, `status`, `warehouse`) không sửa ở đây. Màn kho
-  viết câu riêng ở nhánh của từng màn (`warehouseTrips`, `warehouseSession`, `warehouseStaging`, `warehouseLoading`,
-  `warehouseFinished`, `packageLookup`; tờ đối chiếu ở `verify`), và dùng lại câu của web ở `warehouse.*`, `lookup.*` khi câu đó đã có.
+- Các nhánh chép từ web (mục 4) không sửa ở đây. Màn kho viết câu riêng ở nhánh của từng màn (`warehouseTrips`, `warehouseSession`,
+  `warehouseStaging`, `warehouseLoading`, `warehouseFinished`, `warehouseServer` — câu riêng của màn kho máy chủ, `packageLookup`; tờ
+  đối chiếu ở `verify`), và dùng lại câu của web ở `warehouse.*`, `serverWarehouse.*`, `lookup.*` khi câu đó đã có.
 - Câu số nhiều là object `{ one, other }` với `{count}`; hai dạng của câu tiếng Việt giống hệt nhau.
 - Không dịch: **MOCK RESULT**, LoadMaster, tên riêng trong dữ liệu.
 - Logic thuần trả mã, component dịch. Schema zod dùng key từ điển làm message.
@@ -433,6 +444,8 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
   đang test. Luồng kho: `src/test/warehouse-flow.tsx` — `renderWarehouseScreen` (đăng nhập tài khoản kho rồi vẽ màn), `renderSession`
   (vẽ phiên của một chuyến, chờ qua lúc đang tải / đang bắt đầu), chuyến mẫu `READY_TRIP`, `LOADING_TRIP`, `LOADED_TRIP`, `STALE_TRIP`,
   `startSession`, `stageAllBut`, `loadUpTo`, `asDispatcher` (làm việc của điều phối viên như duyệt xác nhận tay), `stagedTwoCartonTrip`.
+  Kho trên máy chủ giả: `src/test/warehouse-backend.ts` (`warehouseBackend`, `sessionDto`, `loadingDto`, `step`, `TASKS`; dùng chung máy
+  chủ giả của tài xế).
 - `FlatList` / `SectionList` trong Jest chỉ vẽ mấy ô đầu: test cần ô phía dưới thì bắn `layout` và `contentSizeChange` lên danh sách
   trước (`WarehouseTripsScreen.test.tsx`).
 - Test đi qua router thật (màn lỗi, màn không tìm thấy: `src/features/errors/error-routes.test.tsx`): `jest.unmock('expo-router')` rồi

@@ -110,7 +110,7 @@ describe('tab Tra cứu kiện — tờ quét mã QR', () => {
   })
 
   test('nguồn chưa gỡ cờ được: quét kiện mang cờ chỉ mở thẻ kiện, cờ giữ nguyên', async () => {
-    jest.spyOn(lookupApi, 'lookupCapabilities').mockReturnValue({ reportFound: false })
+    jest.spyOn(lookupApi, 'lookupCapabilities').mockReturnValue({ available: true, reportFound: false })
     const token = await qrOf('PK-0063')
     await renderWarehouseScreen(<PackageLookupScreen />)
     await openSheet()
