@@ -19,17 +19,25 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
 - Nhân viên kho, đủ luồng trên kho mẫu: tab **Kho** — chuyến theo nhóm (đang xếp, chờ soạn, xếp xong — chờ xuất phát, chờ điều phối
   tối ưu lại); phiên một chuyến — soạn hàng (đối chiếu từng kiện, báo thiếu), xếp theo thứ tự của phương án (thẻ chỉ dẫn, sơ đồ thùng
   2D nhìn từ trên, hướng đặt, báo kiện hỏng), xếp xong và số seal; tab **Tra cứu kiện** (quét hoặc gõ mã, báo đã tìm thấy kiện);
-  chuông và màn thông báo. Chưa có: khung 3D (bước xếp dùng sơ đồ 2D), nối backend cho kho.
+  chuông và màn thông báo. Chưa có: khung 3D (bước xếp dùng sơ đồ 2D).
 - Điều phối viên và quản lý công ty, trên kho mẫu: tab **Chuyến hàng** (danh sách theo ngày, tab trạng thái, tìm bỏ dấu; chi tiết
   chuyến chỉ đọc, điều phối viên duyệt xác nhận tay và quyết kiện báo thiếu); tab **Giám sát** (chuyến đang chạy, vị trí và giờ đến
   bằng chữ, sự cố cấp chuyến, tìm tuyến khác, duyệt / từ chối nhận hàng dọc đường; quản lý gia hạn sự cố đã chuyển lên); tab **Tổng
   quan** của quản lý (số liệu theo kỳ, đội xe, chuyến gần đây); chuông của hai vai trò. Tài xế tạo được yêu cầu nhận hàng dọc đường
-  (tờ "Thêm" ở màn điểm giao). Chưa có: bản đồ, khung 3D, nối backend cho các màn này.
+  (tờ "Thêm" ở màn điểm giao). Chưa có: bản đồ, khung 3D.
 - Nối backend: đăng nhập (Keycloak + `GET /api/users/me`); tài xế chạy trọn trên máy chủ như bản web — "Chuyến của tôi" đủ bốn
   nhóm, "Xuất phát" ngay ở thẻ chuyến (kho chưa xếp xong thì nút mờ kèm lý do), "Đã đến điểm n", dỡ bằng quét QR hoặc gõ mã (mã QR, mã
   vạch, mã kho, mã bên gửi khi duy nhất), xác nhận tay chờ điều phối viên duyệt, báo sự cố theo kiện, sự cố trên đường, nhận kiện ở điểm
   nhận dọc đường, hoàn tất điểm, vị trí GPS. Giờ đến và tiến độ từng kiện đọc lại từ máy chủ, nên mở lại app vẫn đúng. Máy chủ chưa có:
   thông báo, yêu cầu nhận hàng của tài xế, xác nhận tay ở điểm nhận, số liệu tổng kết chuyến — app ẩn phần đó.
+- Nối backend cho nhân viên kho: tab **Kho** đọc `GET /api/warehouse/tasks` (đang xếp, chờ xếp, xếp xong — chờ xuất phát, chờ điều
+  phối tối ưu lại kèm lý do); phiên đọc lại từ máy chủ ở máy nào cũng được — soạn hàng (đối chiếu không cần thứ tự, xác nhận tay chờ
+  duyệt, báo thiếu), xếp theo thứ tự (đối chiếu, xác nhận tay, ghi sai lệch vị trí, kiện hỏng: bỏ lại kho hoặc chuyến về lập kế hoạch),
+  hoàn tất xếp (mờ khi còn xác nhận tay chờ), số seal. Chưa có trên máy chủ ở app: tab **Tra cứu kiện** (ẩn), chuông của kho, khung vị
+  trí kiện (vị trí ghi bằng số).
+- Nối backend cho điều phối viên và quản lý công ty: danh sách và chi tiết chuyến (duyệt xác nhận tay, quyết kiện báo thiếu), Giám sát
+  (sự cố cấp chuyến, tìm tuyến khác, chuyển quản lý, gia hạn), Tổng quan theo kỳ. Ẩn khi dùng máy chủ: yêu cầu giao và dòng phụ phương
+  án của chuyến, nhận hàng dọc đường ở Giám sát, chuông của hai vai trò.
 - Ngày 16/10 đã chạy bản debug trên máy ảo Android 16: với kho mẫu — đăng nhập tài xế, xuất phát, đã đến điểm, dỡ kiện bằng gõ mã; với
   backend — bản đăng nhập qua trình duyệt cũ (đã thay bằng form trong app ngày 04/11, chưa chạy lại trên máy). **Chưa** chạy với backend
   thật (đăng nhập trọn vòng, các endpoint của tài xế), chưa kiểm camera QR, GPS thật, điện thoại thật và iOS; hai màn lỗi và toàn bộ
@@ -62,7 +70,7 @@ Chép `.env.example` thành `.env` khi cần đổi. Mặc định mọi chức 
 | Biến | Nghĩa |
 |---|---|
 | `EXPO_PUBLIC_DATA_SOURCE` | `mock` (mặc định) hoặc `http` cho mọi chức năng |
-| `EXPO_PUBLIC_HTTP_FEATURES` | Các chức năng đã nối backend khi mặc định là `mock`: `auth`, `driver`, `warehouse`, `monitoring`, `fleet` |
+| `EXPO_PUBLIC_HTTP_FEATURES` | Các chức năng dùng backend khi mặc định là `mock`: `auth`, `driver`, `warehouse`, `packages` (chỉ ẩn Tra cứu kiện), `trips`, `monitoring`, `dashboard` |
 | `EXPO_PUBLIC_API_URL` | Địa chỉ backend |
 | `EXPO_PUBLIC_KEYCLOAK_URL`, `_REALM`, `_CLIENT_ID` | Keycloak của backend; bắt buộc khi `auth` dùng backend |
 | `EXPO_PUBLIC_GOONG_MAPTILES_KEY` | Khoá map tiles Goong (cùng loại với web). Trống: bản đồ nền trống, vẫn vẽ tuyến |
@@ -78,7 +86,7 @@ Cần backend và Keycloak của repo backend chạy trên máy tính (cổng 80
 2. **`.env`** (chép từ `.env.example`):
 
    ```bash
-   EXPO_PUBLIC_HTTP_FEATURES=auth,driver,warehouse,monitoring,fleet
+   EXPO_PUBLIC_HTTP_FEATURES=auth,driver,warehouse,packages,trips,monitoring,dashboard
    EXPO_PUBLIC_API_URL=http://localhost:8080
    EXPO_PUBLIC_KEYCLOAK_URL=http://localhost:8180
    EXPO_PUBLIC_KEYCLOAK_REALM=loadmaster
@@ -97,7 +105,8 @@ Cần backend và Keycloak của repo backend chạy trên máy tính (cổng 80
 
 Đăng nhập bằng tài khoản của realm. Tài khoản vai trò `DRIVER` vào màn tài xế và thấy các chuyến được gán cho mình: Đang vận chuyển,
 Đang xếp hàng (xuất phát ở thẻ khi kho đã xếp xong) và đã giao gần đây; màn chỉ mở chuyến có trong danh sách của chính tài xế. Chỉ
-`auth` (bỏ `driver`): đăng nhập bằng backend, dữ liệu vẫn là kho mẫu của tài khoản dùng thử cùng vai trò.
+`auth` (bỏ `driver`): đăng nhập bằng backend, dữ liệu vẫn là kho mẫu của tài khoản dùng thử cùng vai trò. Tài khoản `WAREHOUSE_WORKER`
+vào tab Kho của máy chủ (cần nguồn `warehouse` là `http`); tab Tra cứu kiện ẩn khi nguồn `packages` là `http`.
 
 ## Logic dùng chung với bản web
 
