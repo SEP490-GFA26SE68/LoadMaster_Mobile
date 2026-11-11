@@ -18,7 +18,7 @@ import { TripSectionHeader } from './list/TripSectionHeader'
 import { tripDateSections, tripListView, type TripDateSection } from './list/trip-sections'
 import { todayInVietnam } from './trip-dates'
 import { needsAction, TRIP_LIST_TABS, tripTabCounts, type TripListTab, type TripRow } from './trip-list'
-import { useTripRows } from './useTripsQueries'
+import { useTripRows, useTripsCapabilities } from './useTripsQueries'
 
 /**
  * Tab Chuyến hàng của điều phối viên và quản lý công ty (như `TripListPage` của web), chỉ để xem: dưới tiêu đề là dòng số đếm trên cả
@@ -32,8 +32,10 @@ export function TripListScreen() {
   const t = useT()
   const format = useFormat()
   const can = useCan()
-  // "Cần bạn xử lý" là việc của người duyệt phương án (điều phối viên); quản lý công ty chỉ đọc
-  const canAct = can('plans.approve')
+  // "Cần bạn xử lý" là việc của người duyệt phương án (điều phối viên); quản lý công ty chỉ đọc. Nguồn không trả phương án của chuyến
+  // (máy chủ) thì không có số đó: không vẽ 0 như thể đã đếm được
+  const { planStatus } = useTripsCapabilities()
+  const canAct = can('plans.approve') && planStatus
   const query = useTripRows()
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<TripListTab>('all')

@@ -7,14 +7,14 @@ import { useFormat, useT } from '@/lib/i18n'
 import { colors, palette, radius, space } from '@/theme/tokens'
 
 import { cargoSummary } from '../trip-summary'
-import type { TripDetail } from '../trips-model'
+import type { FullTripDetail } from '../trips-model'
 
 /**
  * "Tóm tắt hàng hoá" của Chi tiết chuyến (như `CargoSummaryCard` của web): tổng kiện, thể tích, khối lượng, rồi hai ô tải trọng và thể
  * tích sử dụng — phần trăm lớn, "đã dùng / sức chứa" của xe, thước đo. Vượt tải trọng thì số và thước đo đỏ kèm một dòng cảnh báo bằng
  * chữ. Mọi số tính từ kiện của chuyến và thông số xe. Chuyến đang giao hoặc đã giao thì thẻ nhường chỗ cho tiến độ giao (như web).
  */
-export function CargoCard({ detail }: { detail: TripDetail }) {
+export function CargoCard({ detail }: { detail: FullTripDetail }) {
   const t = useT()
   const format = useFormat()
   const { trip, vehicle } = detail

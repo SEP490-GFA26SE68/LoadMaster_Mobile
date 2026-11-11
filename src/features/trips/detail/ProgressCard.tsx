@@ -10,7 +10,7 @@ import { useFormat, useT, type TFunction } from '@/lib/i18n'
 import { colors, palette, radius, space } from '@/theme/tokens'
 
 import { tripProgress, type ProgressStep } from '../trip-progress'
-import type { TripDetail } from '../trips-model'
+import type { FullTripDetail } from '../trips-model'
 
 type Look = 'done' | 'closed' | 'final' | 'current' | 'next' | 'stale' | 'cancel' | 'pending'
 
@@ -41,7 +41,7 @@ const DOT: Record<Look, { readonly bg: string; readonly border: string; readonly
  * tiếp mang "Tiếp theo" (hoặc "Chờ duyệt lại" khi bản duyệt lỗi thời); mốc duyệt mang "Lỗi thời". Mọi mốc lấy từ kho. Mỗi mốc là một
  * phần tử đọc, tên đọc gồm đủ các ý.
  */
-export function ProgressCard({ detail }: { detail: TripDetail }) {
+export function ProgressCard({ detail }: { detail: FullTripDetail }) {
   const t = useT()
   const { trip, revisions, events, people } = detail
   const steps = useMemo(() => tripProgress(trip, revisions, events), [trip, revisions, events])

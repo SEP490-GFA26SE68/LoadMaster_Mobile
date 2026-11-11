@@ -8,14 +8,14 @@ import { vnClock } from '@/lib/mock-db'
 import { colors, space } from '@/theme/tokens'
 import type { TripSubStatus } from '@/types/trip'
 
-import type { TripDetail } from '../trips-model'
+import type { FullTripDetail } from '../trips-model'
 
 /**
  * Phần dưới tiêu đề của Chi tiết chuyến, vẫn trong dải trời (như dải `PageHero` của web): tên chuyến; chip trạng thái cùng các dòng phụ
  * (phương án, tiến độ kho, điểm trễ hạn, xác nhận tay chờ duyệt); rồi dòng "Ngày chạy 24/09/2026, xuất phát 08:00 · xe · tài xế" — giờ
  * xuất phát theo giờ Việt Nam. Mã chuyến là tiêu đề của màn.
  */
-export function TripSummaryBand({ detail }: { detail: TripDetail }) {
+export function TripSummaryBand({ detail }: { detail: FullTripDetail }) {
   const t = useT()
   const format = useFormat()
   const { trip, vehicle, driver } = detail

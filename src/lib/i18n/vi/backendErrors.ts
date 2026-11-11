@@ -22,6 +22,18 @@ export const backendErrors = {
   PICKUP_PACKAGE_NOT_AT_STOP: 'Kiện này không phải kiện nhận ở điểm hiện tại.',
   PICKUP_PACKAGE_ALREADY_PICKED: 'Kiện này đã được nhận lên xe.',
   PICKUP_STOP_INCOMPLETE: 'Còn kiện nhận chưa đối chiếu lên xe — chưa hoàn tất điểm nhận được.',
+  // Màn điều phối viên và quản lý công ty nối backend
+  TRIP_NOT_FOUND: 'Không tìm thấy chuyến này, hoặc chuyến không thuộc công ty của bạn.',
+  TRIP_EXCEPTION_NOT_FOUND: 'Sự cố này không còn trên chuyến. Kéo xuống để đọc lại.',
+  GPS_TRIP_NOT_IN_TRANSIT: 'Chuyến không còn đang vận chuyển.',
+  NO_PENDING_DELIVERY_STOP: 'Chuyến không còn điểm nào chờ giao nên không có tuyến để tìm.',
+  INVALID_REROUTE_INDEX: 'Lựa chọn tuyến này không còn dùng được. Đóng lại rồi tìm tuyến khác.',
+  DELIVERY_REQUIREMENT_NOT_FOUND: 'Không tìm thấy yêu cầu giao này.',
+  DELIVERY_REQUIREMENT_NOT_IN_TRIP: 'Yêu cầu giao này không thuộc chuyến.',
+  CONTACT_NOTE_REQUIRED: 'Ghi lại nội dung đã liên hệ khách trước khi nhập hạn mới.',
+  STAGING_SHORTAGE_NOT_FOUND: 'Báo thiếu này không còn. Kéo xuống để đọc lại.',
+  STAGING_SHORTAGE_NOT_OPEN: 'Báo thiếu này đã được xử lý.',
+  MANUAL_CONFIRM_NOT_FOUND: 'Xác nhận tay này không còn. Kéo xuống để đọc lại.',
   // Đăng nhập qua Keycloak của backend
   SIGN_IN_FAILED: 'Máy chủ đăng nhập không nhận lượt đăng nhập này. Thử lại; vẫn không được thì báo cho quản trị hệ thống.',
   /** Tài khoản đang dùng mật khẩu tạm (vừa được cấp hoặc vừa đặt lại): phải đặt mật khẩu mới trước khi vào app. */

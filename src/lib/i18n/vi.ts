@@ -16,6 +16,7 @@ import { manager } from './vi/manager'
 import { monitoring } from './vi/monitoring'
 import { nav } from './vi/nav'
 import { notifications } from './vi/notifications'
+import { officeServer } from './vi/officeServer'
 import { overview } from './vi/overview'
 import { packageLookup } from './vi/packageLookup'
 import { pickupRequest } from './vi/pickupRequest'
@@ -41,7 +42,7 @@ import { warehouseTrips } from './vi/warehouseTrips'
  *   ưu tiên câu của nhánh chép (cùng chữ với web): kho `warehouse`, tra cứu kiện `lookup`, chuyến của điều phối viên và quản lý `trips`,
  *   giám sát và sự cố `monitoring`, nhận hàng dọc đường `pickups`, số liệu của quản lý `manager`. Câu chỉ mobile cần nằm ở nhánh riêng
  *   của từng màn (`warehouseTrips`, `warehouseSession`, `warehouseStaging`, `warehouseLoading`, `warehouseFinished`, `packageLookup`,
- *   `companyTrips`, `overview`, `liveTrip`, `pickupRequest`).
+ *   `companyTrips`, `overview`, `liveTrip`, `pickupRequest`), và phần máy chủ trả khác kho mẫu ở nhánh `officeServer`.
  * - Tham số viết `{ten}`; câu đổi theo số lượng là object đúng hai key `one` / `other` với tham số `{count}`.
  * - Tên riêng không dịch (LoadMaster, MOCK RESULT) để thẳng trong JSX.
  */
@@ -64,6 +65,7 @@ export const vi = {
   monitoring,
   nav,
   notifications,
+  officeServer,
   overview,
   packageLookup,
   pickupRequest,

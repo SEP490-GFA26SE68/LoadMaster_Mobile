@@ -5,13 +5,13 @@ import { Card } from '@/components/Card'
 import { useFormat, useT } from '@/lib/i18n'
 import { colors, space } from '@/theme/tokens'
 
-import type { TripDetail } from '../trips-model'
+import type { FullTripDetail } from '../trips-model'
 
 /**
  * Mục "Phương tiện" của Chi tiết chuyến (như `VehicleCard` của web, chỉ đọc): xe kèm biển số, tài xế kèm số điện thoại, lòng thùng,
  * cửa, số vật cản. Không có "Đổi xe": trên điện thoại không sửa chuyến. Tài khoản tài xế không còn trong kho thì hiện mã như web.
  */
-export function VehicleFactsCard({ detail }: { detail: TripDetail }) {
+export function VehicleFactsCard({ detail }: { detail: FullTripDetail }) {
   const t = useT()
   const format = useFormat()
   const { trip, vehicle, driver } = detail

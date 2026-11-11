@@ -16,6 +16,7 @@ import { manager } from './en/manager'
 import { monitoring } from './en/monitoring'
 import { nav } from './en/nav'
 import { notifications } from './en/notifications'
+import { officeServer } from './en/officeServer'
 import { overview } from './en/overview'
 import { packageLookup } from './en/packageLookup'
 import { pickupRequest } from './en/pickupRequest'
@@ -54,6 +55,7 @@ export const en = {
   monitoring,
   nav,
   notifications,
+  officeServer,
   overview,
   packageLookup,
   pickupRequest,
