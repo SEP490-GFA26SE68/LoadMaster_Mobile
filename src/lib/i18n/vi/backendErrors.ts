@@ -13,4 +13,7 @@ export const backendErrors = {
   SIGN_IN_REJECTED: 'Máy chủ không nhận phiên vừa đăng nhập: cấu hình đăng nhập của app và của máy chủ chưa khớp. Báo cho quản trị hệ thống.',
   PROFILE_UNAVAILABLE: 'Không đọc được hồ sơ tài khoản từ máy chủ. Thử đăng nhập lại.',
   ROLE_UNKNOWN: 'Tài khoản có vai trò "{role}" mà app chưa hỗ trợ. Liên hệ quản trị công ty.',
+  LOADING_NOT_STARTED: 'Chưa bắt đầu xếp chuyến {tripId}.',
+  PACKAGE_LOOKUP_UNKNOWN: 'Không tìm thấy kiện với mã {code}.',
+  PLACEMENT_ALREADY_CONFIRMED: 'Kiện này đã được xác nhận xếp.',
 } as const

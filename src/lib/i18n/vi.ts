@@ -7,6 +7,7 @@ import { companyTrips } from './vi/companyTrips'
 import { dataErrors } from './vi/dataErrors'
 import { driver } from './vi/driver'
 import { errors } from './vi/errors'
+import { fleet } from './vi/fleet'
 import { issues } from './vi/issues'
 import { language } from './vi/language'
 import { liveTrip } from './vi/liveTrip'
@@ -29,6 +30,7 @@ import { warehouseFinished } from './vi/warehouseFinished'
 import { warehouseLoading } from './vi/warehouseLoading'
 import { warehouseSession } from './vi/warehouseSession'
 import { warehouseStaging } from './vi/warehouseStaging'
+import { warehouseTask } from './vi/warehouseTask'
 import { warehouseTrips } from './vi/warehouseTrips'
 
 /**
@@ -53,6 +55,7 @@ export const vi = {
   dataErrors,
   driver,
   errors,
+  fleet,
   issues,
   language,
   liveTrip,
@@ -75,5 +78,6 @@ export const vi = {
   warehouseLoading,
   warehouseSession,
   warehouseStaging,
+  warehouseTask,
   warehouseTrips,
 } as const
