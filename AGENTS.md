@@ -75,7 +75,9 @@ Khi tài liệu chưa rõ, đọc khai báo kiểu trong `node_modules/<gói>/bu
 
 ```bash
 pnpm expo install <gói>   # LUÔN dùng lệnh này để thêm gói — nó chọn bản hợp với SDK; gói dev: thêm "-- --save-dev"
-pnpm start                # dev server (quét mã bằng Expo Go, hoặc bấm a / w)
+pnpm start                # dev server cho development build (dự án có expo-dev-client nên đây là chế độ mặc định); bấm a / w
+pnpm start:go             # dev server cho Expo Go (expo start --go) — chỉ chạy được khi không cần module native ngoài bộ của Expo Go
+pnpm android              # build bản debug rồi cài lên máy / máy ảo Android (expo run:android; JDK 17 + Android SDK, mục "Xuất file APK")
 pnpm web                  # xem thử trên trình duyệt — chỉ để dev, không phải sản phẩm
 pnpm check                # dấu file chép từ web + lint + kiểm kiểu + test: chạy trước khi báo xong việc
 pnpm sync:web             # chép lại logic từ bản web (mục 4)
@@ -100,7 +102,7 @@ Hai đường, cùng ra một file cài được lên máy Android:
 pnpm dlx eas-cli@latest build --platform android --profile preview     # hồ sơ "preview" ở eas.json: buildType apk
 
 # 2. Trên máy (cần JDK 17 và Android SDK: platform 36, build-tools 36.0.0, NDK 27.1; JAVA_HOME và ANDROID_HOME đã đặt)
-pnpm exec expo prebuild --platform android      # sinh thư mục android/ (không commit); lệnh này đổi script trong package.json — đừng commit phần đó
+pnpm exec expo prebuild --platform android      # sinh thư mục android/ (không commit)
 cd android && ./gradlew assembleRelease          # → android/app/build/outputs/apk/release/app-release.apk
 ```
 

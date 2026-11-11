@@ -40,7 +40,9 @@ Cần Node 22 và pnpm 11.
 
 ```bash
 pnpm install
-pnpm start        # dev server; bấm "a" để mở trên máy ảo Android
+pnpm start        # dev server cho development build; bấm "a" để mở trên máy ảo Android
+pnpm start:go     # dev server cho Expo Go (quét mã QR bằng app Expo Go)
+pnpm android      # build bản debug và cài lên máy Android (JDK 17 + Android SDK, xem AGENTS.md)
 pnpm web          # xem thử trên trình duyệt (chỉ để dev)
 pnpm check        # dấu file chép từ web + lint + kiểm kiểu + test
 ```
@@ -88,8 +90,7 @@ Cần backend và Keycloak của repo backend chạy trên máy tính (cổng 80
    adb reverse tcp:8080 tcp:8080
    ```
 
-4. **Chạy bản debug:** `pnpm exec expo run:android` (JDK 17 + Android SDK, xem AGENTS.md; lệnh có thể đổi script trong `package.json`
-   — đừng commit phần đó). Bản release chặn `http://`.
+4. **Chạy bản debug:** `pnpm android` (`expo run:android`; JDK 17 + Android SDK, xem AGENTS.md). Bản release chặn `http://`.
 
 Đăng nhập bằng tài khoản của realm. Tài khoản vai trò `DRIVER` vào màn tài xế và thấy chuyến **Đang vận chuyển** của xe mình được gán
 (backend tìm chuyến theo tài xế của xe). Nhánh `develop` của backend hiện đã bỏ `GET /api/driver/trips` (từ 19/10): tới khi endpoint này
