@@ -29,6 +29,8 @@ export const driver = {
     /** Tên đọc của nút mở chuyến: hành động kèm mã chuyến, để trình đọc màn hình phân biệt các thẻ. */
     openLabel: '{action} {tripId}',
     waitingLoading: 'Kho đang soạn / xếp — chưa xuất phát được, chỉ xem trước.',
+    /** Backend: Xuất phát ngay ở thẻ chuyến; kho chưa xếp xong thì nút mờ kèm câu này. */
+    departNote: 'Kho chưa xếp xong — xuất phát được khi kho hoàn tất xếp hàng.',
     recheck: {
       one: 'Điều phối viên từ chối {count} xác nhận tay: mở chuyến để kiểm lại kiện.',
       other: 'Điều phối viên từ chối {count} xác nhận tay: mở chuyến để kiểm lại kiện.',

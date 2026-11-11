@@ -1,71 +1,13 @@
 import { decodePolyline, pathFromEncodedPolylines } from '@/domain/routing/polyline'
-import { TRIP_STATUSES, type TripStatus } from '@/types/trip'
 
-import type { DriverRouteMap, DriverTripRow, DriverTripStop, StopItem, StopScreen, VerifyVia } from './driver-model'
+import type { DriverTripDto, RoutePlanDetailDto } from './driver-http-dto'
+import type { DriverRouteMap, DriverTripRow, DriverTrips } from './driver-model'
+import { RECENT_LIMIT } from './my-trips'
 
 /*
- * Dữ liệu backend trả cho tài xế (`/api/driver/**`) và cách đổi sang dạng màn cần (`driver-model.ts`). Kiểu DTO không ra khỏi lớp
- * `driver-http*`. Phần backend chưa trả thì để trống — màn bỏ hẳn phần đó, không điền số thay.
+ * Chuyến của tài xế và tuyến đang đi theo backend, đổi sang dạng màn cần (`driver-model.ts`), theo `driver-dto.ts` của web. Phần backend
+ * chưa trả thì để trống — màn bỏ hẳn phần đó, không điền số thay. Điểm đang giao: `driver-http-stop.ts`.
  */
-
-/** `GET /api/driver/trips` — chỉ chuyến đang vận chuyển. */
-export type DriverTripDto = {
-  readonly tripId: number
-  readonly tripCode: string | null
-  readonly vehicleLicensePlate: string | null
-  readonly stopCount: number
-  /** `LocalDateTime` của backend: không kèm múi giờ. */
-  readonly departureTime: string | null
-  readonly status: string | null
-}
-
-export type StopPackageDto = {
-  readonly packageId: number | null
-  readonly packageName: string | null
-  readonly trackingBarcode: string | null
-  readonly weight: number | null
-  readonly unloadOrder: number
-}
-
-/** `GET /api/driver/trips/{id}/current-stop` — điểm chưa hoàn tất đầu tiên và kiện của điểm đó theo thứ tự dỡ. */
-export type CurrentStopDto = {
-  readonly stopId: number
-  readonly stopSequence: number
-  readonly stopName: string | null
-  readonly address: string | null
-  readonly packages: readonly StopPackageDto[] | null
-}
-
-/** `GET /api/trips/{id}/route-plans/active` — DRIVER được đọc. */
-export type RouteGuidanceStepDto = {
-  readonly instruction?: string | null
-  readonly maneuver?: string | null
-  readonly distanceMeters?: number | null
-  readonly durationSeconds?: number | null
-  readonly lat?: number | null
-  readonly lng?: number | null
-}
-
-export type RouteLegDto = {
-  readonly legSequence: number
-  readonly endStopId?: number | null
-  readonly polyline?: string | null
-  readonly steps?: readonly RouteGuidanceStepDto[] | null
-}
-
-export type RoutePlanDetailDto = {
-  readonly planVersion?: number | null
-  readonly legs?: readonly RouteLegDto[] | null
-}
-
-/** `POST /api/driver/stops/{id}/complete` */
-export type CompleteStopDto = { readonly tripCompleted: boolean }
-
-/** `POST /api/driver/location` */
-export type LocationPointDto = { readonly recordedAt: string }
-
-/** Kiện đã dỡ ở một điểm, theo mã kiện, kèm cách đối chiếu (`undefined`: biết đã dỡ nhưng không biết bằng cách nào). */
-export type UnloadedItems = ReadonlyMap<string, VerifyVia | undefined>
 
 const LOCAL_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/
 
@@ -73,17 +15,21 @@ const LOCAL_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/
  * Giờ backend lưu kiểu `LocalDateTime` (không múi giờ) là giờ Việt Nam: thêm `+07:00` để thành một thời điểm. Phần lẻ của giây giữ tối
  * đa 3 chữ số (Hermes không đọc được nhiều hơn). Rỗng hoặc đọc không được thì `undefined`.
  */
-export function vnInstant(value: string | null): string | undefined {
+export function vnInstant(value: string | null | undefined): string | undefined {
   const text = value?.trim().replace(/(\.\d{3})\d+/, '$1') ?? ''
   if (text === '') return undefined
   const iso = LOCAL_DATE_TIME.test(text) ? `${text}+07:00` : text
   return Number.isNaN(Date.parse(iso)) ? undefined : iso
 }
 
-const tripStatusOf = (value: string | null): TripStatus => TRIP_STATUSES.find((status) => status === value) ?? 'IN_TRANSIT'
+/** Trạng thái chuyến màn tài xế dùng; trạng thái khác (chưa tới kho, đã huỷ) không hiện. */
+type ShownStatus = 'IN_TRANSIT' | 'LOADING' | 'DELIVERED'
 
-/** Một chuyến của danh sách: backend chưa có tên tuyến, số kiện, giờ đến, sự cố — để trống. */
-export function tripRowOf(dto: DriverTripDto): DriverTripRow {
+/**
+ * Một chuyến của "Chuyến của tôi": backend chưa có tên tuyến, số kiện, điểm đang giao, sự cố — để trống. Chuyến Đang xếp hàng mà kho đã
+ * xếp xong (`loadingCompleted`) mang dòng phụ "Xếp xong — chờ xuất phát".
+ */
+export function tripRowOf(dto: DriverTripDto, status: ShownStatus): DriverTripRow {
   const id = String(dto.tripId)
   return {
     id,
@@ -91,13 +37,13 @@ export function tripRowOf(dto: DriverTripDto): DriverTripRow {
     name: undefined,
     date: vnInstant(dto.departureTime),
     vehicleName: dto.vehicleLicensePlate ?? '',
-    status: tripStatusOf(dto.status),
-    sub: null,
+    status,
+    sub: status === 'LOADING' && dto.loadingCompleted === true ? { kind: 'loaded' } : null,
     manualSub: null,
-    stopCount: dto.stopCount,
+    stopCount: dto.stopCount ?? 0,
     packageCount: undefined,
     currentStop: undefined,
-    completedAt: undefined,
+    completedAt: status === 'DELIVERED' ? vnInstant(dto.completedAt) : undefined,
     issueCount: 0,
     recheck: 0,
     stops: [],
@@ -105,41 +51,28 @@ export function tripRowOf(dto: DriverTripDto): DriverTripRow {
   }
 }
 
-/**
- * Kiện của điểm ứng với mã quét hoặc gõ được: khớp mã in trên nhãn (mã vạch; kiện không có mã vạch thì mã kiện), không phân biệt hoa
- * thường. `label` là mã hiện trên màn.
- */
-export function packageOfCode(dto: CurrentStopDto, code: string): { readonly packageId: number; readonly label: string } | undefined {
-  const wanted = code.trim().toUpperCase()
-  if (wanted === '') return undefined
-  for (const { packageId, trackingBarcode } of dto.packages ?? []) {
-    if (packageId === null) continue
-    const label = trackingBarcode ?? String(packageId)
-    if (label.trim().toUpperCase() === wanted) return { packageId, label }
-  }
-  return undefined
+/** Trạng thái màn tài xế dùng của một chuyến backend; `undefined` khi chuyến không hiện. */
+export function shownStatusOf(dto: DriverTripDto): ShownStatus | undefined {
+  return dto.status === 'IN_TRANSIT' || dto.status === 'LOADING' || dto.status === 'DELIVERED' ? dto.status : undefined
 }
 
-function itemsOf(dto: CurrentStopDto, unloaded: UnloadedItems): StopItem[] {
-  return (dto.packages ?? []).flatMap((pkg): StopItem[] => {
-    if (pkg.packageId === null) return []
-    const id = String(pkg.packageId)
-    return [
-      {
-        id,
-        label: pkg.trackingBarcode ?? id,
-        name: pkg.packageName ?? pkg.trackingBarcode ?? id,
-        weightKg: pkg.weight ?? undefined,
-        unloadingOrder: pkg.unloadOrder,
-        place: undefined,
-        unloaded: unloaded.has(id),
-        via: unloaded.get(id),
-        rejectedReason: undefined,
-        issueKind: undefined,
-        returned: false,
-      },
-    ]
-  })
+const byDeparture = (a: DriverTripDto, b: DriverTripDto) => (a.departureTime ?? '').localeCompare(b.departureTime ?? '') || a.tripId - b.tripId
+
+/**
+ * Chuyến của tài xế theo backend (như `myTripsOf` của web): Đang vận chuyển; Đang xếp hàng mà kho đã xếp xong ở "Xếp xong — chờ xuất
+ * phát"; Đang xếp hàng mà kho chưa xong ở "Kho đang soạn / xếp"; Đã giao ở "Đã giao gần đây" (`RECENT_LIMIT` chuyến giao xong gần nhất).
+ * Chuyến chưa tới kho và chuyến đã huỷ không hiện. Ba nhóm đầu: giờ xuất phát sớm trước, rồi mã chuyến.
+ */
+export function myTripsOf(dtos: readonly DriverTripDto[]): DriverTrips['groups'] {
+  const of = (status: 'IN_TRANSIT' | 'LOADING', keep: (dto: DriverTripDto) => boolean = () => true) =>
+    dtos.filter((dto) => dto.status === status && keep(dto)).toSorted(byDeparture).map((dto) => tripRowOf(dto, status))
+  const loaded = (dto: DriverTripDto) => dto.loadingCompleted === true
+  const recent = dtos
+    .filter((dto) => dto.status === 'DELIVERED')
+    .map((dto) => tripRowOf(dto, 'DELIVERED'))
+    .toSorted((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))
+    .slice(0, RECENT_LIMIT)
+  return { inTransit: of('IN_TRANSIT'), loaded: of('LOADING', loaded), preparing: of('LOADING', (dto) => !loaded(dto)), recent }
 }
 
 /** Bản đồ từ plan active: polyline Goong, mốc điểm = điểm cuối từng leg, kho = điểm đầu tuyến. */
@@ -169,70 +102,5 @@ export function routeMapOf(plan: RoutePlanDetailDto | null | undefined, current:
     ...(path.length > 1 ? { path } : {}),
     ...(plan?.planVersion !== undefined && plan.planVersion !== null ? { planVersion: plan.planVersion } : {}),
     ...(here?.steps?.length ? { guidanceSteps: here.steps } : {}),
-  }
-}
-
-/**
- * Màn điểm giao từ điểm hiện tại của backend. Backend chưa có bước "Đã đến" nên điểm hiện tại luôn dỡ được; chưa trả kiện nào đã dỡ nên
- * adapter đưa vào những kiện nó đã ghi (`unloaded`); chỉ biết điểm hiện tại nên các điểm khác của dải tiến độ chỉ có số và đã xong
- * hay chưa (điểm hoàn tất theo thứ tự). Toạ độ lấy từ plan active khi có.
- */
-export function stopScreenOf(
-  dto: CurrentStopDto,
-  tripStopCount: number,
-  unloaded: UnloadedItems,
-  plan: RoutePlanDetailDto | null = null,
-): StopScreen {
-  const number = dto.stopSequence
-  const name = dto.stopName ?? ''
-  const items = itemsOf(dto, unloaded)
-  const doneCount = items.filter((item) => item.unloaded).length
-  const remaining = items.length - doneCount
-  const stopCount = Math.max(tripStopCount, number)
-  const stops = Array.from({ length: stopCount }, (_, index): DriverTripStop => {
-    const current = index + 1 === number
-    return {
-      number: index + 1,
-      name: current ? name : '',
-      kind: 'DELIVERY',
-      packageCount: current ? items.length : undefined,
-      done: index + 1 < number,
-      timing: undefined,
-    }
-  })
-  const routeMap = routeMapOf(plan, { number, name })
-  const here = routeMap?.stops.find((stop) => stop.number === number)
-  return {
-    mode: 'delivering',
-    stop: {
-      number,
-      ref: String(dto.stopId),
-      name,
-      address: dto.address ?? '',
-      phone: undefined,
-      contactName: undefined,
-      kind: 'DELIVERY',
-      lat: here?.lat,
-      lng: here?.lng,
-    },
-    stops,
-    stopCount,
-    arrived: true,
-    arrivedAt: undefined,
-    timing: undefined,
-    items,
-    pickupItems: [],
-    leftAtWarehouse: 0,
-    total: items.length,
-    doneCount,
-    issueCount: 0,
-    remaining,
-    verifiable: remaining,
-    pendingConfirms: 0,
-    completion: { delivered: doneCount, returned: [], picked: 0, issues: 0, next: undefined, nextKnown: false },
-    names: Object.fromEntries(items.map((item) => [item.id, item.name])),
-    hasPickupStops: false,
-    refreshMs: null,
-    routeMap,
   }
 }

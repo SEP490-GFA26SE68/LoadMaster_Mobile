@@ -11,9 +11,11 @@ import { calendarDate } from '@/lib/calendar-date'
 import { useFormat, useT } from '@/lib/i18n'
 import { badgeTones, colors, radius, space } from '@/theme/tokens'
 
+import { DepartButton } from './DepartButton'
 import type { DriverTripRow } from './driver-model'
 import { myTripGroup } from './my-trips'
 import { EtaSourceLine, StopListTime } from './StopTimingParts'
+import { useDriverCapabilities } from './useDriverQueries'
 
 /** Đường mở một chuyến ở màn điểm giao (hoặc tổng kết khi chuyến đã giao). */
 export function tripPath(tripId: string) {
@@ -35,6 +37,8 @@ export function TripCard({ trip, primary = false }: { trip: DriverTripRow; prima
   const format = useFormat()
   const router = useRouter()
   const preparing = myTripGroup(trip) === 'preparing'
+  // Máy chủ: chuyến Đang xếp hàng xuất phát ngay ở thẻ — máy chủ không mở màn điểm giao trước khi xe chạy; nút bật khi kho đã xếp xong
+  const departs = useDriverCapabilities().departFromList && trip.status === 'LOADING'
   const facts = [
     ...(trip.date === undefined ? [] : [format.date(dayOf(trip.date))]),
     t('driver.myTrips.stops', { count: trip.stopCount }),
@@ -79,7 +83,7 @@ export function TripCard({ trip, primary = false }: { trip: DriverTripRow; prima
         <View style={[styles.box, styles.neutral]}>
           <Clock color={colors.text2} size={20} strokeWidth={1.5} style={styles.boxIcon} />
           <AppText color={colors.text2} style={styles.boxText}>
-            {t('driver.myTrips.waitingLoading')}
+            {t(departs ? 'driver.myTrips.departNote' : 'driver.myTrips.waitingLoading')}
           </AppText>
         </View>
       ) : null}
@@ -95,12 +99,22 @@ export function TripCard({ trip, primary = false }: { trip: DriverTripRow; prima
         </AppText>
       ) : null}
 
-      <Button
-        variant={primary ? 'primary' : 'secondary'}
-        accessibilityLabel={t('driver.myTrips.openLabel', { action, tripId: trip.code })}
-        onPress={() => router.push(tripPath(trip.id))}>
-        {action}
-      </Button>
+      {departs ? (
+        <DepartButton
+          tripId={trip.id}
+          tripCode={trip.code}
+          primary={primary}
+          blockedReason={preparing ? t('driver.myTrips.departNote') : undefined}
+          href={tripPath(trip.id)}
+        />
+      ) : (
+        <Button
+          variant={primary ? 'primary' : 'secondary'}
+          accessibilityLabel={t('driver.myTrips.openLabel', { action, tripId: trip.code })}
+          onPress={() => router.push(tripPath(trip.id))}>
+          {action}
+        </Button>
+      )}
     </Card>
   )
 }

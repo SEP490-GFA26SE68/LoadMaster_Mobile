@@ -47,7 +47,12 @@ export function useUnloadVerify(tripId: string, screen: StopScreen): VerifyContr
       .map((item) => ({ id: item.id, label: item.label, name: item.name, description: t('driver.item.order', { order: item.unloadingOrder }) })),
     ...screen.pickupItems
       .filter((item) => !item.done)
-      .map((item) => ({ id: item.id, label: item.id, name: item.name, description: t('driver.pickup.candidate', { request: item.requestId }) })),
+      .map((item) => ({
+        id: item.id,
+        label: item.label,
+        name: item.name,
+        description: item.requestId === '' ? t('driver.pickup.listTitle') : t('driver.pickup.candidate', { request: item.requestId }),
+      })),
   ]
 
   function setOpenState(next: boolean) {
@@ -64,7 +69,7 @@ export function useUnloadVerify(tripId: string, screen: StopScreen): VerifyContr
   function recordedOutcome(id: string): VerifyOutcome {
     const pickup = screen.pickupItems.find((item) => item.id === id)
     const item = screen.items.find((entry) => entry.id === id)
-    const label = item?.label ?? id
+    const label = item?.label ?? pickup?.label ?? id
     const name = item?.name ?? pickup?.name ?? screen.names[id] ?? ''
     return {
       tone: 'success',

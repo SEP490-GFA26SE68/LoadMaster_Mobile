@@ -9,6 +9,19 @@ export const backendErrors = {
   PACKAGE_NOT_AT_STOP: 'Kiện {code} không thuộc điểm đang giao. Chưa ghi gì — để kiện lại trên xe.',
   STOP_NOT_COMPLETABLE: 'Máy chủ chưa cho hoàn tất điểm {name}: còn kiện chưa dỡ.',
   TRIP_NOT_IN_TRANSIT: 'Chuyến {tripId} không còn trong danh sách chuyến đang vận chuyển của bạn.',
+  /** Mã của bên gửi trùng nhiều kiện của điểm: không biết là kiện nào. */
+  UNLOAD_CODE_AMBIGUOUS: 'Mã {code} trùng {count} kiện của điểm này — gõ mã QR hoặc mã vạch in trên nhãn của kiện.',
+  LOADING_NOT_COMPLETED: 'Kho chưa xếp xong hàng cho chuyến này, chưa xuất phát được.',
+  DELIVERY_STOP_ALREADY_COMPLETED: 'Điểm giao này đã hoàn tất.',
+  DELIVERY_STOP_NOT_CURRENT: 'Chưa tới lượt điểm giao này — hoàn tất điểm đang giao trước.',
+  DELIVERY_STOP_NOT_ARRIVED: 'Chưa báo đã đến điểm này. Bấm "Đã đến điểm" trước khi dỡ hoặc báo sự cố.',
+  DELIVERY_ISSUE_NOTE_REQUIRED: 'Sự cố loại "Khác" cần ghi chú.',
+  MANUAL_CONFIRM_NOTE_REQUIRED: 'Lý do "Khác" cần ghi chú.',
+  /** Máy chủ không nói còn bao nhiêu xác nhận tay chờ (mã `MANUAL_CONFIRM_PENDING` của kho mẫu có số). */
+  STOP_MANUAL_CONFIRM_PENDING: 'Còn xác nhận tay chờ điều phối viên duyệt — chưa hoàn tất điểm được.',
+  PICKUP_PACKAGE_NOT_AT_STOP: 'Kiện này không phải kiện nhận ở điểm hiện tại.',
+  PICKUP_PACKAGE_ALREADY_PICKED: 'Kiện này đã được nhận lên xe.',
+  PICKUP_STOP_INCOMPLETE: 'Còn kiện nhận chưa đối chiếu lên xe — chưa hoàn tất điểm nhận được.',
   // Đăng nhập qua Keycloak của backend
   SIGN_IN_FAILED: 'Máy chủ đăng nhập không nhận lượt đăng nhập này. Thử lại; vẫn không được thì báo cho quản trị hệ thống.',
   /** Tài khoản đang dùng mật khẩu tạm (vừa được cấp hoặc vừa đặt lại): phải đặt mật khẩu mới trước khi vào app. */

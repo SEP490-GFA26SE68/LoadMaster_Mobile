@@ -20,8 +20,10 @@ import type { DeliveryIssueRequest, DriverCapabilities, ManualConfirmRequest, St
 
 const NO_CAPABILITIES: DriverCapabilities = {
   depart: false,
+  departFromList: false,
   arrive: false,
   manualConfirm: false,
+  pickupManualConfirm: false,
   deliveryIssues: false,
   tripExceptions: false,
   pickups: false,

@@ -135,7 +135,7 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
             done: screen.doneCount,
             total: screen.total,
           })}
-          manualAllowed={capabilities.manualConfirm}
+          manualAllowed={capabilities.manualConfirm && (!pickupStop || capabilities.pickupManualConfirm)}
         />
       ) : null}
       <ReportIssueSheet

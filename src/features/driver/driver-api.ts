@@ -1,13 +1,17 @@
 /**
  * Hàm → endpoint backend; mỗi nguồn là một adapter (`driver-mock.ts` kho mẫu, `driver-http.ts` backend).
- *   fetchMyTrips          GET  /api/driver/trips
- *   fetchTripScreen       GET  /api/driver/trips/{id}/current-stop (+ GET /api/trips/{id}/route-plans/active)
- *   confirmUnload         POST /api/driver/packages/{id}/unload
- *   completeStop          POST /api/driver/stops/{id}/complete
- *   postLocation          POST /api/driver/location
- *   reportTripException   POST /api/driver/trips/{id}/exceptions
- *   createPickupRequest   POST /api/trips/{id}/pickup-requests (tài xế chưa có quyền ở BE)
- *   chưa có ở BE: startDelivery, arriveAtStop, confirmUnloadManually, reportDeliveryIssue, setDriverGps, fetchNotifications
+ *   fetchMyTrips            GET  /api/driver/trips
+ *   fetchTripScreen         GET  /api/driver/trips/{id}/current-stop (+ GET /api/trips/{id}/route-plans/active)
+ *   startDelivery           POST /api/driver/trips/{id}/start
+ *   arriveAtStop            POST /api/driver/stops/{id}/arrive
+ *   confirmUnload           POST /api/driver/packages/{id}/unload (điểm nhận: POST /api/driver/pickup-packages/{id}/pick)
+ *   confirmUnloadManually   POST /api/driver/packages/{id}/manual-unload
+ *   reportDeliveryIssue     POST /api/driver/packages/{id}/issues
+ *   completeStop            POST /api/driver/stops/{id}/complete
+ *   postLocation            POST /api/driver/location
+ *   reportTripException     POST /api/driver/trips/{id}/exceptions
+ *   createPickupRequest     POST /api/trips/{id}/pickup-requests (tài xế chưa có quyền ở BE)
+ *   chưa có ở BE: setDriverGps, fetchNotifications
  */
 import { createAdapter } from '@/data/adapter'
 import type { PickupRequestResult } from '@/features/pickups/pickup-model'
@@ -67,12 +71,12 @@ export function fetchTripScreen(tripId: string): Promise<DriverTripScreen> {
   return adapter().fetchTripScreen(tripId)
 }
 
-// chưa có ở BE
+// POST /api/driver/trips/{id}/start
 export function startDelivery(tripId: string): Promise<void> {
   return adapter().startDelivery(tripId)
 }
 
-// chưa có ở BE
+// POST /api/driver/stops/{id}/arrive
 export function arriveAtStop(tripId: string, stop: StopKey): Promise<void> {
   return adapter().arriveAtStop(tripId, stop)
 }
@@ -82,12 +86,12 @@ export function confirmUnload(tripId: string, input: VerifyCodeInput): Promise<R
   return adapter().confirmUnload(tripId, input)
 }
 
-// chưa có ở BE
+// POST /api/driver/packages/{id}/manual-unload
 export function confirmUnloadManually(tripId: string, input: ManualConfirmRequest): Promise<RecordedItem> {
   return adapter().confirmUnloadManually(tripId, input)
 }
 
-// chưa có ở BE
+// POST /api/driver/packages/{id}/issues
 export function reportDeliveryIssue(tripId: string, input: DeliveryIssueRequest): Promise<void> {
   return adapter().reportDeliveryIssue(tripId, input)
 }

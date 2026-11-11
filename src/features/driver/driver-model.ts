@@ -18,12 +18,19 @@ import type { EtaSource, StopTiming } from './stop-timing'
  * không nút giả.
  */
 export type DriverCapabilities = {
-  /** Bấm "Xuất phát" khi kho đã xếp xong. Không có: chuyến chỉ hiện từ lúc đã rời kho. */
+  /** Bấm "Xuất phát" ở màn điểm giao khi kho đã xếp xong (kho mẫu: màn mở được trước khi xe chạy). */
   readonly depart: boolean
+  /**
+   * Bấm "Xuất phát" ngay ở thẻ chuyến Đang xếp hàng của "Chuyến của tôi" (backend: màn điểm giao chỉ mở khi xe đã chạy). Kho chưa xếp
+   * xong thì nút mờ kèm lý do.
+   */
+  readonly departFromList: boolean
   /** Bấm "Đã đến" trước khi dỡ. Không có: tới điểm nào là dỡ được ngay. */
   readonly arrive: boolean
   /** Xác nhận tay một kiện khi nhãn không đọc được (chờ điều phối viên duyệt). */
   readonly manualConfirm: boolean
+  /** Xác nhận tay cả kiện nhận dọc đường ở điểm nhận. */
+  readonly pickupManualConfirm: boolean
   /** Báo sự cố cho một kiện (hỏng, thiếu, khách từ chối, khác). */
   readonly deliveryIssues: boolean
   /** Báo sự cố trên đường (tắc đường, hỏng xe…) cho cả chuyến. */
@@ -110,8 +117,12 @@ export type StopItem = {
 /** Một kiện nhận dọc đường của điểm: nhận lên xe (`pick`) hoặc dỡ ở điểm giao (`deliver`). */
 export type StopPickupItem = {
   readonly id: string
+  /** Mã in trên nhãn, hiện trên màn. */
+  readonly label: string
   readonly name: string
-  readonly weightKg: number
+  /** Vắng khi nguồn không trả khối lượng. */
+  readonly weightKg: number | undefined
+  /** Mã yêu cầu nhận; rỗng khi nguồn không trả. */
   readonly requestId: string
   readonly role: 'pick' | 'deliver'
   readonly done: boolean
