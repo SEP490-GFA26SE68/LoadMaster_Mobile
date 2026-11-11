@@ -20,9 +20,10 @@ export const RECENT_TRIP_LIMIT = 10
  * "Chuyến trong kỳ" (bảng của web thành danh sách thẻ trên điện thoại): tối đa mười chuyến có ngày chạy gần nhất — tên, mã, trạng thái và
  * dòng phụ, ngày chạy, xe, số kiện, lấp đầy của bản duyệt, khối lượng đã giao ("—" khi chưa có số). Chạm một chuyến mở Chi tiết chuyến.
  * Cột "Phương án" của web (mở Planner) không có: mobile không có Planner. Máy chủ không trả dòng phụ, số kiện, khối lượng đã giao: thẻ bỏ
- * hẳn phần đó, không vẽ 0.
+ * hẳn phần đó, không vẽ 0. Số đầu thẻ là số chuyến của kỳ (`total`) — máy chủ chỉ trả các chuyến gần nhất. Màn chuyến đọc nguồn khác
+ * (`linked` tắt) thì dòng chỉ để đọc: mã chuyến của nguồn này không mở được ở đó.
  */
-export function RecentTripsCard({ trips }: { trips: readonly DashboardTripView[] }) {
+export function RecentTripsCard({ trips, total, linked }: { trips: readonly DashboardTripView[]; total: number; linked: boolean }) {
   const t = useT()
   return (
     <Card>
@@ -31,18 +32,18 @@ export function RecentTripsCard({ trips }: { trips: readonly DashboardTripView[]
           {t('manager.recent.title')}
         </AppText>
         <AppText color={colors.text2} style={styles.number}>
-          {t('manager.recent.count', { count: trips.length })}
+          {t('manager.recent.count', { count: total })}
         </AppText>
       </View>
       <AppText color={colors.text3}>{t('manager.recent.subtitle', { count: RECENT_TRIP_LIMIT })}</AppText>
       {trips.slice(0, RECENT_TRIP_LIMIT).map((trip) => (
-        <RecentTrip key={trip.id} trip={trip} />
+        <RecentTrip key={trip.id} trip={trip} linked={linked} />
       ))}
     </Card>
   )
 }
 
-function RecentTrip({ trip }: { trip: DashboardTripView }) {
+function RecentTrip({ trip, linked }: { trip: DashboardTripView; linked: boolean }) {
   const t = useT()
   const format = useFormat()
   const router = useRouter()
@@ -67,6 +68,36 @@ function RecentTrip({ trip }: { trip: DashboardTripView }) {
     `${t('manager.recent.vehicle')}: ${vehicle}`,
     ...facts.map((fact) => `${fact.label}: ${fact.value}`),
   ].join(', ')
+  const body = (
+    <View style={styles.body}>
+      <AppText variant="label">{trip.name}</AppText>
+      <AppText color={colors.text3} style={styles.number}>
+        {trip.id}
+      </AppText>
+      <View style={styles.chips}>
+        <TripStatusChip status={trip.status} />
+        {sub === null ? null : <TripSubStatusTag sub={sub} />}
+      </View>
+      <AppText color={colors.text2}>{vehicle}</AppText>
+      <View style={styles.facts}>
+        {facts.map((fact) => (
+          <View key={fact.key} style={styles.fact}>
+            <AppText color={colors.text3}>{fact.label}</AppText>
+            <AppText variant="label" style={styles.number}>
+              {fact.value}
+            </AppText>
+          </View>
+        ))}
+      </View>
+    </View>
+  )
+  if (!linked) {
+    return (
+      <View accessible accessibilityLabel={spoken} style={styles.trip}>
+        {body}
+      </View>
+    )
+  }
   return (
     <Pressable
       accessibilityRole="button"
@@ -74,27 +105,7 @@ function RecentTrip({ trip }: { trip: DashboardTripView }) {
       accessibilityHint={t('companyTrips.list.openHint')}
       onPress={() => router.push(tripDetailPath(trip.id))}
       style={({ pressed }) => [styles.trip, pressed && styles.pressed]}>
-      <View style={styles.body}>
-        <AppText variant="label">{trip.name}</AppText>
-        <AppText color={colors.text3} style={styles.number}>
-          {trip.id}
-        </AppText>
-        <View style={styles.chips}>
-          <TripStatusChip status={trip.status} />
-          {sub === null ? null : <TripSubStatusTag sub={sub} />}
-        </View>
-        <AppText color={colors.text2}>{vehicle}</AppText>
-        <View style={styles.facts}>
-          {facts.map((fact) => (
-            <View key={fact.key} style={styles.fact}>
-              <AppText color={colors.text3}>{fact.label}</AppText>
-              <AppText variant="label" style={styles.number}>
-                {fact.value}
-              </AppText>
-            </View>
-          ))}
-        </View>
-      </View>
+      {body}
       <ChevronRight color={colors.text3} size={20} strokeWidth={1.5} />
     </Pressable>
   )
