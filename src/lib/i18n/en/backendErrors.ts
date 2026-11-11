@@ -21,4 +21,7 @@ export const backendErrors = {
   OTP_EXPIRED: 'The code has expired or can no longer be used. Tap Send a new code to get another.',
   OTP_INCORRECT: 'The code is wrong. Check the code in your email.',
   OTP_ATTEMPTS_EXCEEDED: 'Too many wrong attempts. Tap Send a new code to get another.',
+  LOADING_NOT_STARTED: 'Loading has not started for trip {tripId}.',
+  PACKAGE_LOOKUP_UNKNOWN: 'No package matches code {code}.',
+  PLACEMENT_ALREADY_CONFIRMED: 'This placement is already confirmed.',
 } satisfies Dictionary<typeof source>

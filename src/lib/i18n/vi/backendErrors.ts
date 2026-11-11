@@ -27,4 +27,8 @@ export const backendErrors = {
   OTP_EXPIRED: 'Mã đã hết hạn hoặc không còn dùng được. Bấm Gửi lại mã để nhận mã mới.',
   OTP_INCORRECT: 'Mã không đúng. Kiểm tra lại mã trong email.',
   OTP_ATTEMPTS_EXCEEDED: 'Bạn đã nhập sai mã quá nhiều lần. Bấm Gửi lại mã để nhận mã mới.',
+  // Màn kho nối backend
+  LOADING_NOT_STARTED: 'Chưa bắt đầu xếp chuyến {tripId}.',
+  PACKAGE_LOOKUP_UNKNOWN: 'Không tìm thấy kiện với mã {code}.',
+  PLACEMENT_ALREADY_CONFIRMED: 'Kiện này đã được xác nhận xếp.',
 } as const

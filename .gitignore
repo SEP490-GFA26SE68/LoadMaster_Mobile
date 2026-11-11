@@ -3,6 +3,10 @@
 # dependencies
 node_modules/
 
+# repo dùng pnpm (AGENTS mục 2): chặn lockfile của npm và yarn
+package-lock.json
+yarn.lock
+
 # Expo
 .expo/
 dist/

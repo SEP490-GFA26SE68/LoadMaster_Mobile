@@ -5,6 +5,11 @@ const expoConfig = require("eslint-config-expo/flat");
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ["dist/*"],
+    // These templates resolve their relative imports after being copied into src/.
+    files: ["scripts/web-overrides/**/*.ts"],
+    rules: { "import/no-unresolved": "off" },
+  },
+  {
+    ignores: ["dist/**", ".expo/**"],
   }
 ]);

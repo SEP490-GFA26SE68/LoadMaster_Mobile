@@ -7,6 +7,7 @@ import { companyTrips } from './en/companyTrips'
 import { dataErrors } from './en/dataErrors'
 import { driver } from './en/driver'
 import { errors } from './en/errors'
+import { fleet } from './en/fleet'
 import { issues } from './en/issues'
 import { language } from './en/language'
 import { liveTrip } from './en/liveTrip'
@@ -29,6 +30,7 @@ import { warehouseFinished } from './en/warehouseFinished'
 import { warehouseLoading } from './en/warehouseLoading'
 import { warehouseSession } from './en/warehouseSession'
 import { warehouseStaging } from './en/warehouseStaging'
+import { warehouseTask } from './en/warehouseTask'
 import { warehouseTrips } from './en/warehouseTrips'
 import type { Dictionary } from './types'
 import type { vi } from './vi'
@@ -43,6 +45,7 @@ export const en = {
   dataErrors,
   driver,
   errors,
+  fleet,
   issues,
   language,
   liveTrip,
@@ -65,5 +68,6 @@ export const en = {
   warehouseLoading,
   warehouseSession,
   warehouseStaging,
+  warehouseTask,
   warehouseTrips,
 } satisfies Dictionary<typeof vi>
