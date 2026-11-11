@@ -21,7 +21,9 @@ import type { DriverTripRow, DriverTripScreen, TripHead, VerifyVia } from './dri
  * Điều backend chưa trả thì adapter tự giữ trong lần mở app này, theo người đang đăng nhập: kiện nào của điểm hiện tại đã dỡ, chuyến nào
  * vừa giao xong (chuyến đã giao rời khỏi danh sách). Mở lại app thì quét lại kiện đã dỡ: backend báo trùng và adapter ghi nhận lại.
  *
- * Backend chưa gắn mã vào lỗi nghiệp vụ, nên lỗi của từng lệnh được đổi theo mã HTTP sang mã có câu ở nhánh `backendErrors`.
+ * Lỗi của từng lệnh đổi sang mã có câu ở nhánh `backendErrors`. Lỗi ném bằng `AppException` kèm tên `ErrorCode` trong phong bì; lỗi
+ * có handler riêng (dỡ trùng 409, sai điểm 400, điểm chưa xong 400) — và mọi lỗi của backend trước khi gắn mã — chỉ có mã HTTP. Mỗi lệnh
+ * nhận cả hai dạng.
  */
 
 type Memory = {
@@ -37,8 +39,15 @@ type Memory = {
 
 const emptyMemory = (): Memory => ({ trips: new Map(), stops: new Map(), unloaded: new Map(), finished: new Map() })
 
-/** Lỗi backend trả kèm mã HTTP mà không kèm mã nghiệp vụ (client đặt mã chung `SERVER_ERROR`). */
-const uncoded = (error: unknown, status: number) => isApiError(error) && error.status === status && error.code === 'SERVER_ERROR'
+/**
+ * Backend từ chối với mã HTTP `status`: phản hồi không kèm mã nghiệp vụ (client đặt mã chung `SERVER_ERROR`), hoặc kèm đúng mã `code`
+ * của `ErrorCode` gây ra nó.
+ */
+const refused = (error: unknown, status: number, code?: string): error is ApiError =>
+  isApiError(error) && error.status === status && (error.code === 'SERVER_ERROR' || error.code === code)
+
+/** Backend báo mã nghiệp vụ `code` (`AppException`). */
+const coded = (error: unknown, code: string): error is ApiError => isApiError(error) && error.code === code
 
 const unsupported = async (): Promise<never> => {
   throw new ApiError('NOT_SUPPORTED')
@@ -125,10 +134,10 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     }
     const trip = headOf(tripId)
     if ('error' in current) {
+      // Chuyến vừa bị xoá ở máy chủ giữa hai lượt đọc
+      if (coded(current.error, 'TRIP_NOT_FOUND')) throw new ApiError('TRIP_NOT_IN_TRANSIT', { status: 404, params: { tripId: trip.code } })
       // Chuyến đang vận chuyển mà không còn điểm nào chưa hoàn tất: chuyến không có điểm giao
-      if (uncoded(current.error, 404) || (isApiError(current.error) && current.error.code === 'NO_PENDING_DELIVERY_STOP')) {
-        return { kind: 'noStops', trip }
-      }
+      if (refused(current.error, 404, 'NO_PENDING_DELIVERY_STOP')) return { kind: 'noStops', trip }
       throw current.error
     }
     const { dto } = current
@@ -168,12 +177,14 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       try {
         await client().post(`/api/driver/packages/${pkg.packageId}/unload`, { query: { driverId: driverId() } })
       } catch (error) {
-        if (uncoded(error, 409)) {
+        // DuplicateUnloadException
+        if (refused(error, 409)) {
           // Đã dỡ từ trước (lần mở app trước, hoặc máy khác): ghi nhận để danh sách kiện đúng trở lại
           unloaded.set(id, unloaded.get(id))
           throw new ApiError('PACKAGE_ALREADY_UNLOADED', { status: 409, params: { code: label } })
         }
-        if (uncoded(error, 400)) throw new ApiError('PACKAGE_NOT_AT_STOP', { status: 400, params: { code: label } })
+        // WrongStopException
+        if (refused(error, 400)) throw new ApiError('PACKAGE_NOT_AT_STOP', { status: 400, params: { code: label } })
         throw error
       }
       unloaded.set(id, method)
@@ -188,7 +199,8 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
           query: { driverId: driverId() },
         })
       } catch (error) {
-        if (uncoded(error, 400)) {
+        // IncompleteStopException
+        if (refused(error, 400)) {
           const name = mine().stops.get(tripId)?.stopName ?? String(stop.number)
           throw new ApiError('STOP_NOT_COMPLETABLE', { status: 400, params: { name } })
         }
@@ -206,7 +218,10 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
         const point = await client().post<LocationPointDto>('/api/driver/location', { body: { tripId, lat, lng, speedKmh, heading } })
         return { recordedAt: point.recordedAt }
       } catch (error) {
-        if (uncoded(error, 400)) throw new ApiError('TRIP_NOT_IN_TRANSIT', { status: 400, params: { tripId: headOf(tripId).code } })
+        // Chuyến không còn chạy, hoặc vừa bị xoá ở máy chủ
+        if (refused(error, 400, 'GPS_TRIP_NOT_IN_TRANSIT') || coded(error, 'TRIP_NOT_FOUND')) {
+          throw new ApiError('TRIP_NOT_IN_TRANSIT', { status: error.status, params: { tripId: headOf(tripId).code } })
+        }
         throw error
       }
     },

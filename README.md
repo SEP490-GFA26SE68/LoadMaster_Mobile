@@ -11,8 +11,9 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
 
 23/10/2026:
 
-- Đăng nhập, phiên, phân quyền theo tám vai trò; màn Tài khoản; chuyển ngôn ngữ vi / en. Đăng nhập bằng kho mẫu hoặc bằng Keycloak
-  của backend. Màn lỗi chung khi một màn hỏng lúc vẽ, và màn "Không có màn này" cho địa chỉ lạ.
+- Đăng nhập, phiên, phân quyền theo tám vai trò; màn Tài khoản; chuyển ngôn ngữ vi / en. Đăng nhập bằng form email và mật khẩu ngay
+  trong app, trên kho mẫu hoặc trên Keycloak của backend (password grant); khi dùng backend có thêm Đặt lại mật khẩu qua mã gửi tới
+  email (ba bước, ngay trong màn đăng nhập). Màn lỗi chung khi một màn hỏng lúc vẽ, và màn "Không có màn này" cho địa chỉ lạ.
 - Tài xế, đủ luồng trên kho mẫu: "Chuyến của tôi"; màn một chuyến — xuất phát, đã đến điểm, đối chiếu kiện khi dỡ (quét QR, gõ mã,
   xác nhận tay), báo sự cố theo kiện, sự cố trên đường, hoàn tất điểm, tổng kết; gửi vị trí GPS; thông báo.
 - Nhân viên kho, đủ luồng trên kho mẫu: tab **Kho** — chuyến theo nhóm (đang xếp, chờ soạn, xếp xong — chờ xuất phát, chờ điều phối
@@ -27,11 +28,11 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
 - Nối backend: đăng nhập (Keycloak + `GET /api/users/me`) và năm endpoint của tài xế (danh sách chuyến, điểm hiện tại, dỡ kiện, hoàn
   tất điểm, vị trí). Việc backend chưa có (xuất phát, đã đến, xác nhận tay, sự cố, thông báo) thì app ẩn nút khi chạy với backend.
 - Ngày 16/10 đã chạy bản debug trên máy ảo Android 16: với kho mẫu — đăng nhập tài xế, xuất phát, đã đến điểm, dỡ kiện bằng gõ mã; với
-  backend — nút Đăng nhập mở trang Keycloak trong trình duyệt đúng tham số (PKCE `S256`, `loadmaster://auth`). **Chưa** chạy với backend
+  backend — bản đăng nhập qua trình duyệt cũ (đã thay bằng form trong app ngày 04/11, chưa chạy lại trên máy). **Chưa** chạy với backend
   thật (đăng nhập trọn vòng, năm endpoint của tài xế), chưa kiểm camera QR, GPS thật, điện thoại thật và iOS; hai màn lỗi và toàn bộ
   màn kho thêm sau ngày đó chưa chạy trên máy.
 
-Kiểm thử: 369 test (Jest, 52 suite), lint và kiểm kiểu sạch; đóng gói Android (`expo export`) chạy được.
+Kiểm thử: 425 test (Jest, 53 suite), lint và kiểm kiểu sạch; đóng gói Android (`expo export`) chạy được.
 
 ## Chạy
 
@@ -65,11 +66,10 @@ Chép `.env.example` thành `.env` khi cần đổi. Mặc định mọi chức 
 
 Cần backend và Keycloak của repo backend chạy trên máy tính (cổng 8080 và 8180).
 
-1. **Client Keycloak cho app** (realm `loadmaster`): công khai, Standard flow, PKCE `S256`, Valid redirect URIs `loadmaster://*`,
-   client scope `offline_access` dạng optional (để phiên sống qua ca làm; thiếu thì không dùng 30 phút là phải đăng nhập lại), và mapper
-   audience `loadmaster-api` (loại Audience, thêm vào access token) như client `loadmaster-web` — thiếu mapper này backend trả 401 và app
-   báo "Máy chủ không nhận phiên vừa đăng nhập". Cách nhanh để chạy thử: thêm `loadmaster://*` vào Valid redirect URIs của
-   `loadmaster-web` (đã có mapper) và dùng client đó.
+1. **Client Keycloak cho app** (realm `loadmaster`, client `loadmaster-mobile`): công khai, bật **Direct access grants** (app gửi email
+   và mật khẩu từ form của nó tới endpoint token; không cần redirect URI), và mapper audience `loadmaster-api` (loại Audience, thêm vào
+   access token) như client `loadmaster-web` — thiếu mapper này backend trả 401 và app báo "Máy chủ không nhận phiên vừa đăng nhập".
+   App xin `scope=openid`: không dùng 30 phút (`refresh_expires_in` của realm) là phải đăng nhập lại.
 2. **`.env`** (chép từ `.env.example`):
 
    ```bash
@@ -89,8 +89,7 @@ Cần backend và Keycloak của repo backend chạy trên máy tính (cổng 80
    ```
 
 4. **Chạy bản debug:** `pnpm exec expo run:android` (JDK 17 + Android SDK, xem AGENTS.md; lệnh có thể đổi script trong `package.json`
-   — đừng commit phần đó). Bản release chặn `http://`. Expo Go trả phiên về `exp://…/--/auth`: muốn dùng Expo Go thì thêm redirect
-   `exp://*` vào client.
+   — đừng commit phần đó). Bản release chặn `http://`.
 
 Đăng nhập bằng tài khoản của realm. Tài khoản vai trò `DRIVER` vào màn tài xế và thấy chuyến **Đang vận chuyển** của xe mình được gán
 (backend tìm chuyến theo tài xế của xe). Nhánh `develop` của backend hiện đã bỏ `GET /api/driver/trips` (từ 19/10): tới khi endpoint này

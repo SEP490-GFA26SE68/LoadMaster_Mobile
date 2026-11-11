@@ -14,10 +14,8 @@ type AuthState = { readonly status: 'restoring' } | { readonly status: 'signedOu
 type AuthValue = {
   readonly status: AuthState['status']
   readonly user: User | null
-  /** Kiểu đăng nhập của nguồn hiện tại: màn đăng nhập vẽ form mật khẩu hay nút mở trang đăng nhập của máy chủ. */
-  readonly kind: AuthAdapter['kind']
-  /** Kiểu `password` truyền email và mật khẩu; kiểu `redirect` gọi không tham số. Thất bại thì ném lỗi có mã. */
-  signIn(email?: string, password?: string): Promise<void>
+  /** Thất bại thì ném lỗi có mã (`dataErrorMessage`); không cất gì. */
+  signIn(email: string, password: string): Promise<void>
   signOut(): Promise<void>
 }
 
@@ -61,6 +59,7 @@ export function AuthProvider({ children, adapter: injected }: { children: ReactN
   useEffect(() => {
     connectAuth({
       accessToken: () => adapter.accessToken(),
+      renewAccessToken: (rejected) => adapter.renewAccessToken(rejected),
       onUnauthenticated: () => void signOut(),
       // Đọc thẳng từ adapter, không từ state: màn mở ngay sau khi đăng nhập gọi backend trước khi effect này kịp chạy lại
       userId: () => adapter.backendUserId(),
@@ -71,9 +70,8 @@ export function AuthProvider({ children, adapter: injected }: { children: ReactN
     () => ({
       status: state.status,
       user: state.status === 'signedIn' ? state.user : null,
-      kind: adapter.kind,
-      async signIn(email = '', password = '') {
-        const session = adapter.kind === 'password' ? await adapter.signIn(email, password) : await adapter.signIn()
+      async signIn(email, password) {
+        const session = await adapter.signIn(email, password)
         queryClient.clear()
         await writeStored(SESSION_KEY, session.saved)
         setState({ status: 'signedIn', user: session.user })

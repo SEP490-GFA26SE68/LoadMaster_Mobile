@@ -1,17 +1,16 @@
-import { z } from 'zod'
-
 import { ApiError, isApiError } from '@/data/http'
 import type { Role, User } from '@/types/user'
 
-import { SIGN_IN_CANCELLED, type AuthSession, type RedirectAuth } from './auth-adapter'
-import { isActiveOnBackend, roleOfBackend, userFromBackend, type BackendUserProfile } from './backend-user'
+import type { AuthAdapter, AuthSession } from './auth-adapter'
+import type { BackendUserProfile } from './backend-user'
 import type { OAuthClient, TokenSet } from './keycloak-oauth'
+import { profileError, profileOf, readSaved, roleOf, savedOf, userOf } from './keycloak-profile'
 
 /**
- * Phiên đăng nhập bằng Keycloak của backend. Phần giữ phiên nằm ở đây, tách khỏi thư viện đăng nhập (`keycloak-oauth.ts`) để test được:
+ * Phiên đăng nhập bằng Keycloak của backend. Phần giữ phiên nằm ở đây, tách khỏi lượt gọi Keycloak (`keycloak-oauth.ts`) để test được:
  * - token truy cập sống 60 giây và chỉ ở trong bộ nhớ; mỗi lượt gọi backend lấy token qua `accessToken()`, sắp hết hạn thì làm mới —
- *   nhiều lượt gọi cùng lúc chung một lần làm mới;
- * - kho khoá của máy cất refresh token kèm hồ sơ (`saved`), cất lại mỗi khi Keycloak cấp refresh token mới;
+ *   nhiều lượt gọi cùng lúc chung một lần làm mới; backend trả 401 thì `renewAccessToken()` làm mới một lần để gọi lại;
+ * - kho khoá của máy cất refresh token kèm hồ sơ (`saved`), cất lại mỗi khi Keycloak cấp refresh token mới (refresh token xoay vòng);
  * - Keycloak từ chối refresh token (phiên hết, bị đóng, tài khoản bị khoá) là `UNAUTHENTICATED`: app đăng xuất. Không tới được Keycloak
  *   thì không đăng xuất — mở app lúc mất sóng vẫn vào bằng hồ sơ đã cất, lượt gọi sau làm mới lại.
  */
@@ -36,75 +35,12 @@ export type KeycloakAuthDeps = {
 /** Làm mới khi token truy cập còn dưới ngần này: lượt gọi đang bay không mang token hết hạn tới backend. */
 const MIN_VALIDITY_MS = 20_000
 
-const text = z
-  .string()
-  .nullish()
-  .transform((value) => value ?? '')
-
-const profileSchema = z.object({
-  id: z.number(),
-  keycloakId: text,
-  username: text,
-  email: text,
-  fullName: text,
-  phoneNumber: z
-    .string()
-    .nullish()
-    .transform((value) => value ?? null),
-  companyId: z
-    .number()
-    .nullish()
-    .transform((value) => value ?? null),
-  userRoleType: z.string(),
-  status: z.string(),
-})
-
-const savedSchema = z.object({ v: z.literal(1), refreshToken: z.string().min(1), profile: profileSchema })
-
-function profileOf(raw: unknown): BackendUserProfile | null {
-  const parsed = profileSchema.safeParse(raw)
-  if (!parsed.success) return null
-  const profile = parsed.data
-  // Tài khoản chưa khai họ tên vẫn có tên để hiện
-  return { ...profile, fullName: profile.fullName || profile.username || profile.email }
-}
-
-function parseJson(value: string): unknown {
-  try {
-    return JSON.parse(value) as unknown
-  } catch {
-    return null
-  }
-}
-
-const savedOf = (refreshToken: string, profile: BackendUserProfile) => JSON.stringify({ v: 1, refreshToken, profile })
-
-/** Vai trò app biết và tài khoản còn hoạt động; không thì lỗi có mã. */
-function roleOf(profile: BackendUserProfile): Role {
-  const role = roleOfBackend(profile.userRoleType)
-  if (role === null) throw new ApiError('ROLE_UNKNOWN', { params: { role: profile.userRoleType } })
-  if (!isActiveOnBackend(profile.status)) throw new ApiError('ACCOUNT_SUSPENDED')
-  return role
-}
-
-/** Có tài khoản mẫu: mã, công ty là của nó (dữ liệu mẫu gắn với các mã đó), kho của nó bị bỏ; không thì mọi thứ là của backend. */
-function userOf(profile: BackendUserProfile, role: Role, standIn: User | null): User {
-  if (standIn !== null) return userFromBackend(profile, role, standIn)
-  return {
-    id: String(profile.id),
-    fullName: profile.fullName,
-    email: profile.email,
-    phone: profile.phoneNumber ?? '',
-    role,
-    status: 'active',
-    lastActiveAt: null,
-    ...(profile.companyId === null ? {} : { companyId: String(profile.companyId) }),
-  }
-}
+/** Hồ sơ không dùng được: tài khoản không còn vào app này (phiên bị đóng ở Keycloak, phiên cất bị xoá). */
+const SESSION_ENDING = ['SIGN_IN_REJECTED', 'PROFILE_NOT_FOUND']
 
 type Live = { readonly tokens: TokenSet; readonly profile: BackendUserProfile }
 
-export function createKeycloakAuth({ oauth, readProfile, persist, standIn, now = Date.now }: KeycloakAuthDeps): RedirectAuth {
+export function createKeycloakAuth({ oauth, readProfile, persist, standIn, now = Date.now }: KeycloakAuthDeps): AuthAdapter {
   let live: Live | null = null
   /** Tăng mỗi lần đăng xuất: lượt làm mới đang dở của phiên cũ không ghi đè phiên mới, không cất lại phiên đã xoá. */
   let generation = 0
@@ -115,11 +51,7 @@ export function createKeycloakAuth({ oauth, readProfile, persist, standIn, now =
     try {
       raw = await readProfile(accessToken)
     } catch (error) {
-      // Backend không nhận token Keycloak vừa cấp: app gọi Keycloak qua địa chỉ khác địa chỉ backend tin, hoặc client của app không
-      // gắn audience mà backend đòi
-      if (isApiError(error) && error.code === 'UNAUTHENTICATED') throw new ApiError('SIGN_IN_REJECTED')
-      if (isApiError(error) && (error.code === 'NETWORK_ERROR' || error.code === 'TIMEOUT')) throw error
-      throw new ApiError('PROFILE_UNAVAILABLE')
+      throw profileError(error)
     }
     const profile = profileOf(raw)
     if (profile === null) throw new ApiError('PROFILE_UNAVAILABLE')
@@ -152,10 +84,8 @@ export function createKeycloakAuth({ oauth, readProfile, persist, standIn, now =
     return tokens
   }
 
-  function freshTokens(): Promise<TokenSet> {
-    const current = live
-    if (current === null) return Promise.reject(new ApiError('UNAUTHENTICATED'))
-    if (current.tokens.expiresAt - now() > MIN_VALIDITY_MS) return Promise.resolve(current.tokens)
+  /** Một lần làm mới cho mọi lượt gọi đang chờ. */
+  function renewOnce(current: Live): Promise<TokenSet> {
     if (refreshing === null) {
       const run: Promise<TokenSet> = renew(current).finally(() => {
         if (refreshing === run) refreshing = null
@@ -163,6 +93,13 @@ export function createKeycloakAuth({ oauth, readProfile, persist, standIn, now =
       refreshing = run
     }
     return refreshing
+  }
+
+  function freshTokens(): Promise<TokenSet> {
+    const current = live
+    if (current === null) return Promise.reject(new ApiError('UNAUTHENTICATED'))
+    if (current.tokens.expiresAt - now() > MIN_VALIDITY_MS) return Promise.resolve(current.tokens)
+    return renewOnce(current)
   }
 
   /** Quên phiên ngay (phần đồng bộ), rồi đóng phiên kho mẫu và phiên Keycloak. */
@@ -179,11 +116,8 @@ export function createKeycloakAuth({ oauth, readProfile, persist, standIn, now =
   }
 
   return {
-    kind: 'redirect',
-
-    async signIn() {
-      const tokens = await oauth.authorize()
-      if (tokens === null) throw new ApiError(SIGN_IN_CANCELLED)
+    async signIn(email, password) {
+      const tokens = await oauth.passwordGrant(email, password)
       try {
         if (tokens.refreshToken === null) throw new ApiError('SIGN_IN_FAILED')
         const profile = await profileFor(tokens.accessToken)
@@ -191,19 +125,19 @@ export function createKeycloakAuth({ oauth, readProfile, persist, standIn, now =
         live = { tokens, profile }
         return session
       } catch (error) {
-        // Không vào được app (vai trò lạ, tài khoản bị khoá, không đọc được hồ sơ): đóng luôn phiên vừa mở ở Keycloak
-        if (tokens.refreshToken !== null) void oauth.endSession(tokens.refreshToken).catch(() => undefined)
+        // Không vào được app (chưa gắn người dùng ở backend, vai trò lạ, tài khoản bị khoá, không đọc được hồ sơ): đóng luôn phiên vừa
+        // mở ở Keycloak — không để lại phiên app không dùng được
+        if (tokens.refreshToken !== null) void oauth.endSession(tokens.refreshToken)
         throw error
       }
     },
 
     async restore(saved) {
-      const stored = savedSchema.safeParse(parseJson(saved))
-      if (!stored.success) return null
-      let profile = profileOf(stored.data.profile)
-      if (profile === null) return null
+      const stored = readSaved(saved)
+      if (stored === null) return null
+      let profile = stored.profile
       // Token truy cập không được cất: mở app là làm mới ngay
-      live = { tokens: { accessToken: '', refreshToken: stored.data.refreshToken, expiresAt: 0 }, profile }
+      live = { tokens: { accessToken: '', refreshToken: stored.refreshToken, expiresAt: 0 }, profile }
       let tokens: TokenSet | null = null
       try {
         tokens = await freshTokens()
@@ -213,18 +147,18 @@ export function createKeycloakAuth({ oauth, readProfile, persist, standIn, now =
       }
       if (tokens !== null) {
         try {
-          // Đọc lại hồ sơ để thấy vai trò, trạng thái, tên mới; không đọc được thì dùng bản đã cất
+          // Đọc lại hồ sơ để thấy vai trò, trạng thái, tên mới; không đọc được (máy chủ lỗi, mất sóng) thì dùng bản đã cất
           profile = await profileFor(tokens.accessToken)
           live = { tokens: live?.tokens ?? tokens, profile }
         } catch (error) {
-          if (isApiError(error) && error.code === 'SIGN_IN_REJECTED') {
+          if (isApiError(error) && SESSION_ENDING.includes(error.code)) {
             await forget().catch(() => undefined)
             return null
           }
         }
       }
       try {
-        return sessionOf(profile, live?.tokens.refreshToken ?? stored.data.refreshToken)
+        return sessionOf(profile, live?.tokens.refreshToken ?? stored.refreshToken)
       } catch {
         // Vai trò không còn dùng được hoặc tài khoản đã bị khoá
         await forget().catch(() => undefined)
@@ -237,6 +171,15 @@ export function createKeycloakAuth({ oauth, readProfile, persist, standIn, now =
     async accessToken() {
       if (live === null) return null
       return (await freshTokens()).accessToken
+    },
+
+    async renewAccessToken(rejected) {
+      const current = live
+      if (current === null) throw new ApiError('UNAUTHENTICATED')
+      if (refreshing !== null) return (await refreshing).accessToken
+      // Token đã được làm mới từ lúc lượt gọi bị từ chối rời máy: gọi lại bằng token mới, không làm mới thêm
+      if (current.tokens.accessToken !== rejected) return current.tokens.accessToken
+      return (await renewOnce(current)).accessToken
     },
 
     backendUserId() {

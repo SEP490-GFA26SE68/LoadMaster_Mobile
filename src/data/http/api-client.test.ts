@@ -91,6 +91,61 @@ describe('createApiClient', () => {
     expect(await failure(() => client.get('/x'))).toMatchObject({ code: 'NETWORK_ERROR', status: 0 })
   })
 
+  describe('backend trả 401 khi có cách làm mới token', () => {
+    /** Client gọi lần lượt các phản hồi; `renew` là việc làm mới token của nơi giữ phiên. */
+    function retrying(responses: readonly Response[], renew: (rejected: string) => Promise<string | null>) {
+      const tokens: (string | undefined)[] = []
+      const queue = [...responses]
+      const onUnauthenticated = jest.fn()
+      const renewAccessToken = jest.fn(renew)
+      const client = createApiClient({
+        baseUrl: 'http://api.test',
+        accessToken: async () => 'OLD',
+        renewAccessToken,
+        onUnauthenticated,
+        fetch: (async (_url: string, init: RequestInit) => {
+          tokens.push((init.headers as Record<string, string>).Authorization)
+          const next = queue.shift()
+          if (next === undefined) throw new Error('hết phản hồi giả')
+          return next
+        }) as unknown as typeof fetch,
+      })
+      return { client, tokens, onUnauthenticated, renewAccessToken }
+    }
+
+    test('làm mới một lần rồi gọi lại bằng token mới; không đăng xuất', async () => {
+      const { client, tokens, onUnauthenticated, renewAccessToken } = retrying(
+        [respond(401, undefined), respond(200, { success: true, data: { id: 1 } })],
+        async () => 'NEW',
+      )
+      await expect(client.post('/api/driver/location', { body: { lat: 1 } })).resolves.toEqual({ id: 1 })
+      expect(renewAccessToken).toHaveBeenCalledWith('OLD')
+      expect(tokens).toEqual(['Bearer OLD', 'Bearer NEW'])
+      expect(onUnauthenticated).not.toHaveBeenCalled()
+    })
+
+    test('gọi lại vẫn 401: UNAUTHENTICATED, đăng xuất, không làm mới lần hai', async () => {
+      const { client, tokens, onUnauthenticated, renewAccessToken } = retrying([respond(401, undefined), respond(401, undefined)], async () => 'NEW')
+      expect((await failure(() => client.get('/api/users/me'))).code).toBe('UNAUTHENTICATED')
+      expect(renewAccessToken).toHaveBeenCalledTimes(1)
+      expect(tokens).toHaveLength(2)
+      expect(onUnauthenticated).toHaveBeenCalledTimes(1)
+    })
+
+    test('Keycloak không gia hạn phiên nữa: không gọi lại, đăng xuất', async () => {
+      const { client, tokens, onUnauthenticated } = retrying([respond(401, undefined)], () => Promise.reject(new ApiError('UNAUTHENTICATED')))
+      expect((await failure(() => client.get('/api/users/me'))).code).toBe('UNAUTHENTICATED')
+      expect(tokens).toHaveLength(1)
+      expect(onUnauthenticated).toHaveBeenCalledTimes(1)
+    })
+
+    test('mất mạng lúc làm mới: lỗi mạng, không đăng xuất', async () => {
+      const { client, onUnauthenticated } = retrying([respond(401, undefined)], () => Promise.reject(new ApiError('NETWORK_ERROR')))
+      expect((await failure(() => client.get('/api/users/me'))).code).toBe('NETWORK_ERROR')
+      expect(onUnauthenticated).not.toHaveBeenCalled()
+    })
+  })
+
   test('quá thời gian chờ → TIMEOUT', async () => {
     const calls: AbortSignal[] = []
     const client = createApiClient({
