@@ -100,9 +100,11 @@ export function RerouteSheet({ tripId, stopName, open, onClose, onConfirmed }: R
             value={chosen}
             onChange={setChosen}
           />
-          <View style={styles.row}>
-            <MockResultTag />
-          </View>
+          {proposal.isMockResult ? (
+            <View style={styles.row}>
+              <MockResultTag />
+            </View>
+          ) : null}
           <AppText color={colors.text3}>{t('monitoring.reroute.note')}</AppText>
         </>
       )}

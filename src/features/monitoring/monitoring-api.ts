@@ -1,17 +1,21 @@
 /**
- * Hàm → endpoint backend; nguồn hiện chỉ có kho mẫu (`monitoring-mock.ts`), feature chưa nối backend.
+ * Hàm → endpoint backend; mỗi nguồn là một adapter (`monitoring-mock.ts` kho mẫu, `monitoring-http.ts` backend).
  *   fetchMonitoringBoard    GET   /api/dispatcher/dashboard
  *   listTripMonitoring      GET   /api/trips/monitoring
- *   fetchLiveTrip           GET   /api/trips/monitoring (một chuyến; chuyến đã thôi chạy: chưa có ở BE)
+ *   fetchLiveTrip           GET   /api/trips/{id}/monitoring · GET /api/dispatcher/dashboard (chuyến đã thôi chạy: GET /api/trips/{id}/detail)
  *   reportTripException     POST  /api/trips/{id}/exceptions
+ *   escalateTripException   POST  /api/trips/{id}/exceptions/{eid}/escalate
  *   resolveTripException    POST  /api/trips/{id}/exceptions/{eid}/resolve
  *   requestReroute          POST  /api/trips/{id}/reroute
  *   confirmReroute          POST  /api/trips/{id}/reroute/{routeIndex}/confirm
- *   renegotiateDeadline     PATCH /api/delivery-requirements/{id} (ghi "đã liên hệ khách": chưa có ở BE)
+ *   fetchTripRequirements   GET   /api/delivery-requirements · GET /api/trips/{id}/detail
+ *   renegotiateDeadline     POST  /api/trips/{id}/exceptions/{eid}/renegotiate
+ *   fetchPickupRows         GET   /api/trips/{id}/pickup-requests
  *   createPickupRequest     POST  /api/trips/{id}/pickup-requests
- *   validatePickupRequest   GET   /api/trips/{id}/pickup-requests/{pid}/validate
+ *   validatePickupRequest   POST  /api/trips/{id}/pickup-requests/{pid}/validate
  *   approvePickupRequest    POST  /api/trips/{id}/pickup-requests/{pid}/approve
- *   chưa có ở BE: escalateTripException, fetchTripRequirements, fetchPickupRows, rejectPickupRequest, fetchNotifications
+ *   rejectPickupRequest     POST  /api/trips/{id}/pickup-requests/{pid}/reject
+ *   chưa có ở BE: fetchNotifications (chuông của văn phòng)
  */
 import { createAdapter } from '@/data/adapter'
 import type { PickupApprovalResult, PickupRequestResult, PickupRow } from '@/features/pickups/pickup-model'
@@ -24,6 +28,7 @@ import type {
   TripExceptionInput,
 } from '@/lib/mock-db'
 
+import { httpMonitoringApi } from './monitoring-http'
 import { mockMonitoringApi } from './monitoring-mock'
 import type {
   LiveMonitoring,
@@ -31,7 +36,7 @@ import type {
   MonitoringBoard,
   MonitoringCapabilities,
   OfficeNotification,
-  TripRequirementRow,
+  RenegotiableRequirement,
 } from './monitoring-model'
 
 /** Lớp dữ liệu của màn giám sát (điều phối viên, quản lý công ty), sự cố cấp chuyến, nhận hàng dọc đường và chuông của hai vai trò đó. */
@@ -43,7 +48,7 @@ export type {
   MonitoringStop,
   MonitoringTrip,
   OfficeNotification,
-  TripRequirementRow,
+  RenegotiableRequirement,
 } from './monitoring-model'
 
 /**
@@ -60,7 +65,7 @@ export type MonitoringApi = {
   resolveTripException(tripId: string, exceptionId: string, note: string | undefined): Promise<void>
   requestReroute(tripId: string): Promise<RerouteProposal>
   confirmReroute(tripId: string, routeIndex: number): Promise<void>
-  fetchTripRequirements(tripId: string): Promise<TripRequirementRow[]>
+  fetchTripRequirements(tripId: string): Promise<RenegotiableRequirement[]>
   renegotiateDeadline(tripId: string, exceptionId: string, input: DeadlineRenegotiationInput): Promise<void>
   fetchPickupRows(tripId: string): Promise<PickupRow[]>
   createPickupRequest(tripId: string, input: PickupRequestInput): Promise<PickupRequestResult>
@@ -70,7 +75,7 @@ export type MonitoringApi = {
   fetchNotifications(): Promise<OfficeNotification[]>
 }
 
-const adapter = createAdapter<MonitoringApi>('monitoring', { mock: mockMonitoringApi })
+const adapter = createAdapter<MonitoringApi>('monitoring', { mock: mockMonitoringApi, http: () => httpMonitoringApi() })
 
 /** Việc của màn giám sát làm được với nguồn đang dùng. */
 export function monitoringCapabilities(): MonitoringCapabilities {
@@ -87,7 +92,7 @@ export function listTripMonitoring(): Promise<LiveMonitoring[]> {
   return adapter().listTripMonitoring()
 }
 
-// GET /api/trips/monitoring
+// GET /api/trips/{id}/monitoring
 export function fetchLiveTrip(tripId: string): Promise<LiveTrip> {
   return adapter().fetchLiveTrip(tripId)
 }
@@ -97,7 +102,7 @@ export function reportTripException(tripId: string, input: TripExceptionInput): 
   return adapter().reportTripException(tripId, input)
 }
 
-// chưa có ở BE
+// POST /api/trips/{id}/exceptions/{eid}/escalate
 export function escalateTripException(tripId: string, exceptionId: string): Promise<void> {
   return adapter().escalateTripException(tripId, exceptionId)
 }
@@ -117,17 +122,17 @@ export function confirmReroute(tripId: string, routeIndex: number): Promise<void
   return adapter().confirmReroute(tripId, routeIndex)
 }
 
-// chưa có ở BE
-export function fetchTripRequirements(tripId: string): Promise<TripRequirementRow[]> {
+// GET /api/delivery-requirements · GET /api/trips/{id}/detail
+export function fetchTripRequirements(tripId: string): Promise<RenegotiableRequirement[]> {
   return adapter().fetchTripRequirements(tripId)
 }
 
-// PATCH /api/delivery-requirements/{id}
+// POST /api/trips/{id}/exceptions/{eid}/renegotiate
 export function renegotiateDeadline(tripId: string, exceptionId: string, input: DeadlineRenegotiationInput): Promise<void> {
   return adapter().renegotiateDeadline(tripId, exceptionId, input)
 }
 
-// chưa có ở BE
+// GET /api/trips/{id}/pickup-requests
 export function fetchPickupRows(tripId: string): Promise<PickupRow[]> {
   return adapter().fetchPickupRows(tripId)
 }
@@ -137,7 +142,7 @@ export function createPickupRequest(tripId: string, input: PickupRequestInput): 
   return adapter().createPickupRequest(tripId, input)
 }
 
-// GET /api/trips/{id}/pickup-requests/{pid}/validate
+// POST /api/trips/{id}/pickup-requests/{pid}/validate
 export function validatePickupRequest(tripId: string, pickupId: string): Promise<PickupRequest> {
   return adapter().validatePickupRequest(tripId, pickupId)
 }
@@ -147,7 +152,7 @@ export function approvePickupRequest(tripId: string, pickupId: string, input: Pi
   return adapter().approvePickupRequest(tripId, pickupId, input)
 }
 
-// chưa có ở BE
+// POST /api/trips/{id}/pickup-requests/{pid}/reject
 export function rejectPickupRequest(tripId: string, pickupId: string, reason: string): Promise<void> {
   return adapter().rejectPickupRequest(tripId, pickupId, reason)
 }

@@ -1,4 +1,4 @@
-import type { AuditAction, DeliveryRequirement, RequirementStatus, StopKind, TripMonitoring } from '@/lib/mock-db'
+import type { AuditAction, StopKind, TripMonitoring } from '@/lib/mock-db'
 
 /**
  * Kiểu dữ liệu của màn giám sát, cùng hình với bản web (`features/monitoring/monitoring-api.ts`): hàm thuần chép từ web
@@ -70,12 +70,18 @@ export type LiveTrip = {
   readonly live: LiveMonitoring
 }
 
-/** Một yêu cầu giao của chuyến (để quản lý chọn yêu cầu cần gia hạn), như `TripRequirement` của web. */
-export type TripRequirementRow = {
-  readonly requirement: DeliveryRequirement
-  readonly status: RequirementStatus
-  /** Số điểm giao của yêu cầu trong chuyến; vắng khi kiện của nó chưa nằm ở điểm nào. */
-  readonly stopNumber: number | undefined
+/**
+ * Một yêu cầu giao của chuyến còn gia hạn được (để quản lý chọn yêu cầu cần gia hạn), như `RenegotiableRequirement` của web: còn đang
+ * giao và còn một điểm giao chưa hoàn tất trong chuyến.
+ */
+export type RenegotiableRequirement = {
+  readonly id: string
+  /** Tên điểm giao; nguồn không có thì tên khách hay địa chỉ. */
+  readonly destinationName: string
+  /** Hạn hiện tại, ISO 8601. */
+  readonly deadline: string
+  /** Số điểm giao của yêu cầu trong chuyến. */
+  readonly stopNumber: number
 }
 
 /**

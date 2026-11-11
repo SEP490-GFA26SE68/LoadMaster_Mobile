@@ -16,7 +16,7 @@ import { MAX_EXCEPTION_NOTE_LENGTH } from '@/lib/mock-db'
 import { colors } from '@/theme/tokens'
 
 import { deadlineText, parseDeadline } from './deadline-input'
-import type { TripRequirementRow } from './monitoring-api'
+import type { RenegotiableRequirement } from './monitoring-api'
 import type { EscalationRow } from './monitoring-view'
 import { useMoment } from './useMoment'
 import { useRenegotiateDeadlineMutation, useTripRequirementsQuery } from './useMonitoringQueries'
@@ -64,14 +64,14 @@ export function RenegotiateSheet({ row, open, onClose, onDone }: RenegotiateShee
   const query = useTripRequirementsQuery(row.trip.tripId, true)
   const renegotiate = useRenegotiateDeadlineMutation(row.trip.tripId)
   const [failure, setFailure] = useState<string | null>(null)
-  // Yêu cầu còn đang giao và còn điểm giao trong chuyến mới gia hạn được
-  const requirements = (query.data ?? []).filter((item) => item.status === 'IN_TRIP' && item.stopNumber !== undefined)
+  // Nguồn chỉ trả yêu cầu còn đang giao và còn điểm giao chưa hoàn tất trong chuyến: những yêu cầu gia hạn được
+  const requirements = query.data ?? []
   const initial = requirements.find((item) => item.stopNumber === row.exception.stopNumber) ?? requirements[0]
-  const parts = initial === undefined ? { date: '', time: '' } : deadlineText(initial.requirement.deadline)
+  const parts = initial === undefined ? { date: '', time: '' } : deadlineText(initial.deadline)
   // Dựng form trước khi tải xong yêu cầu giao (tờ là một Modal: không đổi tờ giữa chừng); tải xong thì điền giá trị chọn sẵn
   const form = useForm<Input, unknown, Values>({
     resolver: zodResolver(schema),
-    values: { requirementId: initial?.requirement.id ?? '', contactNote: '', date: parts.date, time: parts.time },
+    values: { requirementId: initial?.id ?? '', contactNote: '', date: parts.date, time: parts.time },
     resetOptions: { keepDirtyValues: true },
   })
   const message = (code: string | undefined) => {
@@ -125,12 +125,12 @@ export function RenegotiateSheet({ row, open, onClose, onDone }: RenegotiateShee
             render={({ field, fieldState }) => (
               <ChoiceGroup
                 label={t('monitoring.renegotiate.requirement')}
-                choices={requirements.map(({ requirement, stopNumber }) => ({
-                  value: requirement.id,
+                choices={requirements.map(({ id, destinationName, stopNumber }) => ({
+                  value: id,
                   label: t('monitoring.renegotiate.requirementOption', {
-                    id: requirement.id,
-                    destination: requirement.destinationName,
-                    number: format.integer(stopNumber ?? 0),
+                    id,
+                    destination: destinationName,
+                    number: format.integer(stopNumber),
                   }),
                 }))}
                 value={field.value}
@@ -194,14 +194,14 @@ export function RenegotiateSheet({ row, open, onClose, onDone }: RenegotiateShee
 }
 
 /** Hạn hiện tại của yêu cầu đang chọn và giờ đến dự kiến của điểm giao của nó — con số quản lý cần khi thoả thuận hạn mới. */
-function CurrentDeadline({ control, row, requirements }: { control: Control<Input, unknown, Values>; row: EscalationRow; requirements: readonly TripRequirementRow[] }) {
+function CurrentDeadline({ control, row, requirements }: { control: Control<Input, unknown, Values>; row: EscalationRow; requirements: readonly RenegotiableRequirement[] }) {
   const t = useT()
   const moment = useMoment()
   const requirementId = useWatch({ control, name: 'requirementId' })
-  const chosen = requirements.find((item) => item.requirement.id === requirementId)
+  const chosen = requirements.find((item) => item.id === requirementId)
   if (chosen === undefined) return null
   const eta = row.stops.find((stop) => stop.number === chosen.stopNumber)?.eta
-  const deadline = moment(chosen.requirement.deadline)
+  const deadline = moment(chosen.deadline)
   return (
     <AppText color={colors.text2}>
       {eta === undefined ? t('monitoring.renegotiate.current', { deadline }) : t('monitoring.renegotiate.currentEta', { deadline, eta: moment(eta) })}
