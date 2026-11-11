@@ -52,8 +52,21 @@ export const backendErrors = {
   OTP_EXPIRED: 'Mã đã hết hạn hoặc không còn dùng được. Bấm Gửi lại mã để nhận mã mới.',
   OTP_INCORRECT: 'Mã không đúng. Kiểm tra lại mã trong email.',
   OTP_ATTEMPTS_EXCEEDED: 'Bạn đã nhập sai mã quá nhiều lần. Bấm Gửi lại mã để nhận mã mới.',
-  // Màn kho nối backend
-  LOADING_NOT_STARTED: 'Chưa bắt đầu xếp chuyến {tripId}.',
-  PACKAGE_LOOKUP_UNKNOWN: 'Không tìm thấy kiện với mã {code}.',
+  // Màn kho nối backend: phiên xếp của máy chủ (`warehouse-http.ts`)
+  TRIP_NOT_LOADING: 'Chuyến không còn ở Đang xếp hàng, không mở được phiên xếp.',
+  LOADING_EXECUTION_NOT_FOUND: 'Không tìm thấy phiên xếp hàng của chuyến.',
+  TRIP_ALREADY_LOADING: 'Chuyến đã bắt đầu xếp hàng.',
+  TRIP_NOT_READY_FOR_LOADING: 'Chỉ bắt đầu xếp được chuyến Đã lập kế hoạch.',
+  NO_APPROVED_LOAD_PLAN: 'Chuyến chưa có phương án đã duyệt.',
   PLACEMENT_ALREADY_CONFIRMED: 'Kiện này đã được xác nhận xếp.',
+  PLACEMENT_NOT_FOUND: 'Không tìm thấy vị trí của kiện trong phương án.',
+  PLACEMENT_NOT_IN_PLAN: 'Kiện này không thuộc phương án đang xếp.',
+  PACKAGE_NOT_IN_LOADING_PLAN: 'Kiện này không thuộc phương án đang xếp của chuyến.',
+  INVALID_SEQUENCE_ORDER: 'Chưa tới lượt kiện này — xếp theo đúng thứ tự.',
+  DEVIATION_ALREADY_RECORDED: 'Sai lệch của kiện này đã được ghi.',
+  INCOMPLETE_LOADING: 'Còn kiện chưa xếp, chưa hoàn tất được.',
+  LOADING_MANUAL_CONFIRM_PENDING: 'Còn xác nhận tay chờ điều phối viên duyệt — chưa hoàn tất xếp được.',
+  /** Mã `STAGING_INCOMPLETE` của máy chủ — không kèm số kiện như mã cùng tên của kho mẫu, nên adapter đổi sang mã này. */
+  STAGING_NOT_READY: 'Chưa soạn đủ hàng vào khu chờ, hoặc còn kiện báo thiếu chờ điều phối viên quyết — chưa xếp được.',
+  SEAL_NOT_ALLOWED: 'Chỉ ghi được số seal khi đã xếp xong và xe chưa xuất phát.',
 } as const

@@ -1,17 +1,13 @@
 /**
- * Hàm → endpoint backend; mỗi nguồn là một adapter (`warehouse-mock.ts` kho mẫu; backend chưa có adapter: nguồn `http` là lỗi
- * `HTTP_NOT_WIRED`).
- *   startLoading            POST /api/trips/{id}/start-loading
- *   confirmStagingByQr      POST /api/warehouse/verify-package
- *   confirmLoadingByQr      POST /api/warehouse/placements/{id}/confirm
- *   reportDamagedPackage    POST /api/warehouse/placements/{id}/deviation
- *   completeLoading         POST /api/trips/{id}/complete-loading
- *   chưa có ở BE: fetchWarehouseTrips, fetchWarehouseTrip, fetchTripLabels, fetchNotifications
- *   chưa có ở BE (Q-11): confirmStagingManually, reportStagingShortage, recordSeal, confirmLoadingManually
- *   tên sẽ đổi khi nối BE: confirmStagingByQr → verifyPackage; confirmLoadingByQr → confirmPlacement;
- *   reportDamagedPackage → reportPlacementDeviation
+ * Hàm → endpoint của màn kho khi nguồn là **kho mẫu** (`warehouse-mock.ts`): kho mẫu dựng phiên soạn → xếp từ chuyến và revision. Khi nguồn
+ * `warehouse` là máy chủ, màn đọc thẳng phiên của máy chủ qua `warehouse-server-api.ts` (bảng endpoint ở đó) và mọi hàm dưới đây từ chối
+ * `NOT_SUPPORTED` — không có hàm nào lấy dữ liệu kho mẫu khi đăng nhập bằng máy chủ. `warehouseCapabilities` đọc được ở cả hai nguồn.
+ *   chỉ có ở kho mẫu: fetchWarehouseTrips, fetchWarehouseTrip, startLoading, confirmStagingByQr, confirmStagingManually,
+ *   reportStagingShortage, confirmLoadingByQr, confirmLoadingManually, reportDamagedPackage, completeLoading, recordSeal, fetchTripLabels
+ *   chưa có ở BE: fetchNotifications
  */
 import { createAdapter } from '@/data/adapter'
+import { notSupported } from '@/lib/office-backend'
 import type { ManualConfirmInput, ScanResult, StagingScanResult, Trip, TripLabel } from '@/lib/mock-db'
 
 import { mockWarehouseApi } from './warehouse-mock'
@@ -58,69 +54,90 @@ export type WarehouseApi = {
   fetchNotifications(): Promise<WarehouseNotification[]>
 }
 
-const adapter = createAdapter<WarehouseApi>('warehouse', { mock: mockWarehouseApi })
+/**
+ * Nguồn máy chủ của hợp đồng kho mẫu: chỉ nói việc kho làm được — soạn (kèm xác nhận tay, báo thiếu), xếp, seal; chưa có thông báo —, mọi
+ * hàm còn lại từ chối `NOT_SUPPORTED` vì màn đọc phiên của máy chủ qua `warehouse-server-api.ts`.
+ */
+const SERVER_SOURCE: WarehouseApi = {
+  capabilities: { backend: true, manualConfirm: true, shortages: true, seal: true, notifications: false },
+  fetchWarehouseTrips: notSupported,
+  fetchWarehouseTrip: notSupported,
+  startLoading: notSupported,
+  confirmStagingByQr: notSupported,
+  confirmStagingManually: notSupported,
+  reportStagingShortage: notSupported,
+  confirmLoadingByQr: notSupported,
+  confirmLoadingManually: notSupported,
+  reportDamagedPackage: notSupported,
+  completeLoading: notSupported,
+  recordSeal: notSupported,
+  fetchTripLabels: notSupported,
+  fetchNotifications: notSupported,
+}
+
+const adapter = createAdapter<WarehouseApi>('warehouse', { mock: mockWarehouseApi, http: () => SERVER_SOURCE })
 
 /** Việc kho làm được với nguồn đang dùng. */
 export function warehouseCapabilities(): WarehouseCapabilities {
   return adapter().capabilities
 }
 
-// chưa có ở BE
+// chỉ kho mẫu
 export function fetchWarehouseTrips(): Promise<WarehouseTripRow[]> {
   return adapter().fetchWarehouseTrips()
 }
 
-// chưa có ở BE
+// chỉ kho mẫu
 export function fetchWarehouseTrip(tripId: string): Promise<WarehouseTrip> {
   return adapter().fetchWarehouseTrip(tripId)
 }
 
-// POST /api/trips/{id}/start-loading
+// chỉ kho mẫu
 export function startLoading(tripId: string): Promise<Trip> {
   return adapter().startLoading(tripId)
 }
 
-// POST /api/warehouse/verify-package
+// chỉ kho mẫu
 export function confirmStagingByQr(tripId: string, input: VerifyCodeInput): Promise<StagingScanResult<Trip>> {
   return adapter().confirmStagingByQr(tripId, input)
 }
 
-// chưa có ở BE (Q-11)
+// chỉ kho mẫu
 export function confirmStagingManually(tripId: string, input: ManualConfirmInput): Promise<ScanResult<Trip>> {
   return adapter().confirmStagingManually(tripId, input)
 }
 
-// chưa có ở BE (Q-11)
+// chỉ kho mẫu
 export function reportStagingShortage(tripId: string, packageInstanceId: string): Promise<Trip> {
   return adapter().reportStagingShortage(tripId, packageInstanceId)
 }
 
-// POST /api/warehouse/placements/{id}/confirm
+// chỉ kho mẫu
 export function confirmLoadingByQr(tripId: string, input: VerifyCodeInput): Promise<ScanResult<Trip>> {
   return adapter().confirmLoadingByQr(tripId, input)
 }
 
-// chưa có ở BE (Q-11)
+// chỉ kho mẫu
 export function confirmLoadingManually(tripId: string, input: ManualConfirmInput): Promise<ScanResult<Trip>> {
   return adapter().confirmLoadingManually(tripId, input)
 }
 
-// POST /api/warehouse/placements/{id}/deviation
+// chỉ kho mẫu
 export function reportDamagedPackage(tripId: string, packageInstanceId: string): Promise<Trip> {
   return adapter().reportDamagedPackage(tripId, packageInstanceId)
 }
 
-// POST /api/trips/{id}/complete-loading
+// chỉ kho mẫu
 export function completeLoading(tripId: string): Promise<Trip> {
   return adapter().completeLoading(tripId)
 }
 
-// chưa có ở BE (Q-11)
+// chỉ kho mẫu
 export function recordSeal(tripId: string, sealNumber: string): Promise<Trip> {
   return adapter().recordSeal(tripId, sealNumber)
 }
 
-// chưa có ở BE
+// chỉ kho mẫu
 export function fetchTripLabels(tripId: string): Promise<TripLabel[]> {
   return adapter().fetchTripLabels(tripId)
 }

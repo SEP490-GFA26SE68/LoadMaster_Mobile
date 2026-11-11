@@ -21,6 +21,7 @@ import { packageLookup } from './en/packageLookup'
 import { pickupRequest } from './en/pickupRequest'
 import { pickups } from './en/pickups'
 import { roles } from './en/roles'
+import { serverWarehouse } from './en/serverWarehouse'
 import { status } from './en/status'
 import { tripException } from './en/tripException'
 import { trips } from './en/trips'
@@ -29,8 +30,8 @@ import { warehouse } from './en/warehouse'
 import { warehouseFinished } from './en/warehouseFinished'
 import { warehouseLoading } from './en/warehouseLoading'
 import { warehouseSession } from './en/warehouseSession'
+import { warehouseServer } from './en/warehouseServer'
 import { warehouseStaging } from './en/warehouseStaging'
-import { warehouseTask } from './en/warehouseTask'
 import { warehouseTrips } from './en/warehouseTrips'
 import type { Dictionary } from './types'
 import type { vi } from './vi'
@@ -59,6 +60,7 @@ export const en = {
   pickupRequest,
   pickups,
   roles,
+  serverWarehouse,
   status,
   tripException,
   trips,
@@ -67,7 +69,7 @@ export const en = {
   warehouseFinished,
   warehouseLoading,
   warehouseSession,
+  warehouseServer,
   warehouseStaging,
-  warehouseTask,
   warehouseTrips,
 } satisfies Dictionary<typeof vi>

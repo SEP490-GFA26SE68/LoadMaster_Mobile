@@ -32,8 +32,9 @@ const MIRRORED_FILES = [
   ...['scene-input', 'scene-pickups', 'scene-types', 'viewer-types', 'operations/unloading'].map((name) => `features/viewer3d/${name}.ts`),
   // Chuông: sự kiện nào báo cho ai, câu riêng của tài xế
   'features/notifications/notifications.ts',
-  // Màn kho: nhóm chuyến của danh sách kho, phiên soạn → xếp theo bản duyệt, số liệu hướng dẫn đặt từng kiện
-  ...['warehouse-trips', 'loading-session', 'describe-step'].map((name) => `features/warehouse/${name}.ts`),
+  // Màn kho: nhóm chuyến của danh sách kho, phiên soạn → xếp theo bản duyệt, số liệu hướng dẫn đặt từng kiện; tiến độ soạn, xếp của phiên
+  // máy chủ và số kiện tựa lên kiện hỏng (`server-loading`)
+  ...['warehouse-trips', 'loading-session', 'describe-step', 'server-loading'].map((name) => `features/warehouse/${name}.ts`),
   // Điều phối viên, quản lý: dòng của danh sách chuyến, tab trạng thái, "cần bạn xử lý"; điểm giao và hàng, lý do lỗi thời, tiến trình
   // của chi tiết chuyến
   ...['trip-list', 'trip-summary', 'trip-packages', 'trip-detail', 'trip-progress', 'trip-dates'].map((name) => `features/trips/${name}.ts`),
@@ -55,7 +56,7 @@ const MIRRORED_FILES = [
   // Ngày lịch `YYYY-MM-DD` (ngày chạy) → giữa trưa giờ máy, để ngày hiện đúng ở mọi múi giờ
   'lib/calendar-date.ts',
   'lib/i18n/types.ts',
-  ...['dataErrors', 'issues', 'language', 'lookup', 'manager', 'monitoring', 'pickups', 'roles', 'status', 'trips', 'warehouse'].flatMap((branch) => [
+  ...['dataErrors', 'issues', 'language', 'lookup', 'manager', 'monitoring', 'pickups', 'roles', 'serverWarehouse', 'status', 'trips', 'warehouse'].flatMap((branch) => [
     `lib/i18n/vi/${branch}.ts`,
     `lib/i18n/en/${branch}.ts`,
   ]),

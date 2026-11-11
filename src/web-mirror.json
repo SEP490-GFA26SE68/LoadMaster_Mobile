@@ -1,6 +1,6 @@
 {
   "syncedOn": "2026-11-11",
-  "digest": "5ddce2cceede370c137e1c6640e502c694f67f6b99ced43804284e4a80c3b883",
+  "digest": "d99768a14d4efe5791a5d7fc042ec31eea1afa99e699361c6c980c2e14ed648c",
   "files": [
     "components/map/coordinates.ts",
     "components/map/place-search.ts",
@@ -104,6 +104,7 @@
     "features/viewer3d/viewer-types.ts",
     "features/warehouse/describe-step.ts",
     "features/warehouse/loading-session.ts",
+    "features/warehouse/server-loading.ts",
     "features/warehouse/warehouse-trips.ts",
     "lib/calendar-date.ts",
     "lib/i18n/en/dataErrors.ts",
@@ -114,6 +115,7 @@
     "lib/i18n/en/monitoring.ts",
     "lib/i18n/en/pickups.ts",
     "lib/i18n/en/roles.ts",
+    "lib/i18n/en/serverWarehouse.ts",
     "lib/i18n/en/status.ts",
     "lib/i18n/en/trips.ts",
     "lib/i18n/en/warehouse.ts",
@@ -127,6 +129,7 @@
     "lib/i18n/vi/monitoring.ts",
     "lib/i18n/vi/pickups.ts",
     "lib/i18n/vi/roles.ts",
+    "lib/i18n/vi/serverWarehouse.ts",
     "lib/i18n/vi/status.ts",
     "lib/i18n/vi/trips.ts",
     "lib/i18n/vi/warehouse.ts",

@@ -182,7 +182,7 @@ describe('thông báo của nhân viên kho', () => {
   test('nguồn dữ liệu của kho chưa có thông báo: không có chuông, màn nói không làm được', async () => {
     const capabilities = jest
       .spyOn(warehouseApi, 'warehouseCapabilities')
-      .mockReturnValue({ manualConfirm: true, shortages: true, seal: true, notifications: false })
+      .mockReturnValue({ backend: false, manualConfirm: true, shortages: true, seal: true, notifications: false })
     try {
       await signInAs(WAREHOUSE_EMAIL)
       await asDispatcher((db) => db.cancelTrip(LOADING_TRIP, 'Xe hỏng máy lạnh'))

@@ -12,6 +12,11 @@ import type { TripRevisions } from './warehouse-trips'
  * được — không nút giả.
  */
 export type WarehouseCapabilities = {
+  /**
+   * Nguồn là máy chủ: danh sách và phiên xếp đọc thẳng phiên của máy chủ (`warehouse-server-api.ts`, thư mục `server/`); các hàm của hợp
+   * đồng `WarehouseApi` (kho mẫu) không dùng được.
+   */
+  readonly backend: boolean
   /** Xác nhận tay một kiện lúc soạn hoặc lúc xếp khi nhãn không đọc được (chờ điều phối viên duyệt). */
   readonly manualConfirm: boolean
   /** Báo thiếu một kiện chưa soạn (điều phối viên quyết tìm tiếp hay bỏ kiện). */

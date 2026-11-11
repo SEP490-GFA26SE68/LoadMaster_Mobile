@@ -109,8 +109,8 @@ function ProgressMeter({ row }: { row: WarehouseTripRow }) {
   )
 }
 
-/** Một thông tin của chuyến: nhãn trên, giá trị dưới. `wide` chiếm cả hàng (tiến độ kèm kiện hỏng, tên xe). */
-function Fact({ label, code = false, wide = false, children }: { label: string; code?: boolean; wide?: boolean; children: ReactNode }) {
+/** Một thông tin của chuyến: nhãn trên, giá trị dưới. `wide` chiếm cả hàng (tiến độ kèm kiện hỏng, tên xe). Thẻ bản máy chủ dùng lại. */
+export function Fact({ label, code = false, wide = false, children }: { label: string; code?: boolean; wide?: boolean; children: ReactNode }) {
   return (
     <View style={[styles.fact, wide && styles.wide]}>
       <AppText color={colors.text3}>{label}</AppText>
@@ -121,8 +121,8 @@ function Fact({ label, code = false, wide = false, children }: { label: string; 
   )
 }
 
-/** Khung nhấn của thẻ: icon cảnh báo kèm câu — màu chỉ nhấn, chữ nói đủ. */
-function Warning({ tone, children }: { tone: 'warning' | 'danger'; children: ReactNode }) {
+/** Khung nhấn của thẻ: icon cảnh báo kèm câu — màu chỉ nhấn, chữ nói đủ. Thẻ bản máy chủ dùng lại. */
+export function Warning({ tone, children }: { tone: 'warning' | 'danger'; children: ReactNode }) {
   const { bg, fg, border } = badgeTones[tone]
   return (
     <View style={[styles.box, { backgroundColor: bg, borderColor: border }]}>

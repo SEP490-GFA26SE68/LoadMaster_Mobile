@@ -1,193 +1,124 @@
-import { api, ApiError, currentUserId, isApiError, type ApiClient } from '@/data/http'
-import { TRIP_STATUSES, type TripStatus } from '@/types/trip'
+import { api, ApiError, isApiError, type ApiClient } from '@/data/http'
+import { withStatusCode } from '@/lib/office-backend'
 
-import type { WarehouseApi } from './warehouse-task-api'
-import type { LoadingSession, PackageLookup, WarehousePlacement, WarehouseTask } from './warehouse-task-model'
+import type { DamageDto, StagingDto, StartLoadingDto, WarehouseTaskDto } from './warehouse-http-dto'
+import { sessionOf, taskOf } from './warehouse-http-mapping'
+import type { ServerWarehouseApi } from './warehouse-server-api'
+import type { ServerLoadingSession, ServerManualInput, ServerWarehouseTrip } from './warehouse-server-model'
 
-type TaskDto = {
-  readonly tripId: number
-  readonly tripCode: string | null
-  readonly vehicleInfo: string | null
-  readonly totalPackages: number | null
-  readonly departureTime: string | null
-  readonly status: string | null
-}
+/*
+ * Nguồn backend của màn kho (như `createWarehouseBackend` của web). Máy chủ giữ phiên xếp: danh sách chuyến có cả chuyến Đang xếp hàng kèm
+ * trạng thái phiên, và phiên đọc lại được ở mọi thiết bị kèm kết quả từng kiện. Sau mỗi lần ghi adapter đọc lại phiên, nên màn luôn vẽ đúng
+ * điều máy chủ đã ghi — không giữ tiến độ ở máy.
+ *
+ * Lỗi mang tên `ErrorCode` của backend đi thẳng (câu ở `backendErrors`); vài mã đổi sang mã của app: `STAGING_INCOMPLETE` (máy chủ không
+ * kèm số kiện còn thiếu) → `STAGING_NOT_READY`, `SEAL_INVALID` kèm độ dài tối đa. Máy chủ cũ trả lỗi không kèm mã: lệnh hoàn tất xếp đọc
+ * 400 là còn kiện chưa xử lý.
+ */
 
-type PlacementDto = {
-  readonly placementId: number
-  readonly packageName: string | null
-  readonly trackingBarcode: string | null
-  readonly posX: number | null
-  readonly posY: number | null
-  readonly posZ: number | null
-  readonly sequence: number | null
-}
+/** Số seal của máy chủ: 1 → 32 ký tự (`SEAL_INVALID`). */
+const SERVER_SEAL_MAX = 32
 
-type StartDto = {
-  readonly tripId: number
-  readonly tripCode: string | null
-  readonly vehicleInfo: string | null
-  readonly totalPackages: number | null
-  readonly status: string | null
-  readonly placements: readonly PlacementDto[] | null
-}
+const hasCode = (error: unknown, code: string) => isApiError(error) && error.code === code
 
-type ConfirmDto = { readonly nextPlacement: PlacementDto | null }
-type DeviationDto = { readonly nextPlacement: PlacementDto | null }
-type CompleteDto = {
-  readonly tripId: number
-  readonly tripCode: string | null
-  readonly totalPackages: number | null
-  readonly totalDeviations: number | null
-}
+const tripPath = (tripId: string) => `/api/warehouse/tasks/${encodeURIComponent(tripId)}`
+const placementPath = (placementId: string) => `/api/warehouse/placements/${encodeURIComponent(placementId)}`
+const stagingPath = (tripId: string, packageId: string) => `${tripPath(tripId)}/staging/packages/${encodeURIComponent(packageId)}`
 
-type ScanDto = {
-  readonly id: number
-  readonly packageCode: string | null
-  readonly status: string | null
-  readonly destination: string | null
-  readonly actualWeightKg: number | null
-  readonly trip: { readonly name: string | null } | null
-  readonly stop: { readonly number: number | null; readonly name: string | null } | null
-}
+const manualBody = (input: ServerManualInput) => ({ reason: input.reason, note: input.note?.trim() || undefined })
 
-type HttpDeps = { readonly client?: () => ApiClient; readonly userId?: () => string | null }
+const byDeparture = (a: ServerWarehouseTrip, b: ServerWarehouseTrip) =>
+  (a.departureAt ?? '').localeCompare(b.departureAt ?? '') || a.code.localeCompare(b.code)
 
-const uncoded = (error: unknown, status: number) => isApiError(error) && error.status === status && error.code === 'SERVER_ERROR'
-
-const tripStatusOf = (value: string | null): TripStatus => TRIP_STATUSES.find((status) => status === value) ?? 'PLANNED'
-
-function placementOf(dto: PlacementDto, confirmed: boolean): WarehousePlacement {
-  return {
-    id: String(dto.placementId),
-    packageName: dto.packageName ?? String(dto.placementId),
-    barcode: dto.trackingBarcode ?? undefined,
-    sequence: dto.sequence ?? 0,
-    posX: dto.posX ?? undefined,
-    posY: dto.posY ?? undefined,
-    posZ: dto.posZ ?? undefined,
-    confirmed,
+/** Đổi mã của máy chủ sang mã của app ở các chỗ câu của app cần thêm tham số. */
+async function translated<T>(request: Promise<T>): Promise<T> {
+  try {
+    return await request
+  } catch (error) {
+    if (!isApiError(error)) throw error
+    if (error.code === 'STAGING_INCOMPLETE') throw new ApiError('STAGING_NOT_READY', { status: error.status })
+    if (error.code === 'SEAL_INVALID') throw new ApiError('SEAL_INVALID', { status: error.status, params: { max: SERVER_SEAL_MAX } })
+    throw error
   }
 }
 
-function sessionOf(dto: StartDto, confirmed = new Set<string>()): LoadingSession {
-  const placements = (dto.placements ?? []).map((item) => placementOf(item, confirmed.has(String(item.placementId))))
-  const next = placements.find((item) => !item.confirmed)
-  return {
-    tripId: String(dto.tripId),
-    tripCode: dto.tripCode ?? String(dto.tripId),
-    vehicleInfo: dto.vehicleInfo ?? '',
-    status: dto.status ?? 'IN_PROGRESS',
-    totalPackages: dto.totalPackages ?? placements.length,
-    placements,
-    nextId: next?.id ?? null,
+export function httpWarehouseApi({ client = api }: { readonly client?: () => ApiClient } = {}): ServerWarehouseApi {
+  async function fetchSession(tripId: string): Promise<ServerLoadingSession> {
+    return sessionOf(await client().get<StartLoadingDto>(tripPath(tripId)))
   }
-}
 
-function applyNext(session: LoadingSession, placementId: string, next: PlacementDto | null): LoadingSession {
-  const placements = session.placements.map((item) => (item.id === placementId ? { ...item, confirmed: true } : item))
-  const extra = next === null || placements.some((item) => item.id === String(next.placementId)) ? [] : [placementOf(next, false)]
-  const all = [...placements, ...extra]
-  return { ...session, placements: all, nextId: next === null ? null : String(next.placementId) }
-}
-
-export function httpWarehouseApi({ client = api, userId = currentUserId }: HttpDeps = {}): WarehouseApi {
-  const sessions = new Map<string, LoadingSession>()
-
-  function workerId(): string {
-    const id = userId()
-    if (id === null) throw new ApiError('UNAUTHENTICATED')
-    return id
+  /** Ghi một lệnh rồi đọc lại phiên; `ignore` là mã nói việc đã được ghi từ trước (lượt gọi trước mất phản hồi) — không báo lỗi. */
+  async function writeThenRead(tripId: string, write: () => Promise<unknown>, ignore?: string): Promise<ServerLoadingSession> {
+    try {
+      await translated(write())
+    } catch (error) {
+      if (ignore === undefined || !hasCode(error, ignore)) throw error
+    }
+    return fetchSession(tripId)
   }
 
   return {
-    capabilities: { deviation: true, scan: true },
-
     async fetchTasks() {
-      const dtos = await client().get<readonly TaskDto[] | null>('/api/warehouse/tasks', { query: { workerId: workerId() } })
-      return (dtos ?? []).map(
-        (dto): WarehouseTask => ({
-          id: String(dto.tripId),
-          code: dto.tripCode ?? String(dto.tripId),
-          vehicleInfo: dto.vehicleInfo ?? '',
-          packageCount: dto.totalPackages ?? 0,
-          departureAt: dto.departureTime ?? undefined,
-          status: tripStatusOf(dto.status),
-          inProgress: false,
-        }),
-      )
+      // Thêm chuyến chờ điều phối tối ưu lại (`awaitingReplan`) như màn web
+      const tasks = await client().get<readonly WarehouseTaskDto[] | null>('/api/warehouse/tasks', { query: { includeAwaitingReplan: true } })
+      return (tasks ?? []).map(taskOf).sort(byDeparture)
     },
 
-    async startLoading(tripId) {
-      const dto = await client().post<StartDto>(`/api/warehouse/tasks/${encodeURIComponent(tripId)}/start`, {
-        body: { workerId: Number(workerId()) },
-      })
-      const session = sessionOf(dto)
-      sessions.set(tripId, session)
-      return session
-    },
+    fetchSession,
 
-    async fetchLoading(tripId) {
-      const session = sessions.get(tripId)
-      if (session === undefined) throw new ApiError('LOADING_NOT_STARTED', { params: { tripId } })
-      return session
-    },
-
-    async confirmPlacement(tripId, placementId) {
-      const current = sessions.get(tripId)
-      if (current === undefined) throw new ApiError('LOADING_NOT_STARTED', { params: { tripId } })
+    async start(tripId) {
       try {
-        const dto = await client().post<ConfirmDto>(`/api/warehouse/placements/${encodeURIComponent(placementId)}/confirm`, {
-          query: { workerId: workerId() },
-        })
-        const next = applyNext(current, placementId, dto.nextPlacement)
-        sessions.set(tripId, next)
-        return next
+        // Phiên luôn có bước soạn hàng, như màn web: kho đối chiếu từng kiện vào khu chờ trước khi xếp
+        return sessionOf(await client().post<StartLoadingDto>(`${tripPath(tripId)}/start`, { body: { staging: true } }))
       } catch (error) {
-        if (uncoded(error, 400) || uncoded(error, 409)) throw new ApiError('PLACEMENT_ALREADY_CONFIRMED', { status: isApiError(error) ? error.status : 400 })
+        // Đã bắt đầu ở thiết bị khác (hoặc lượt gọi trước mất phản hồi): mở lại phiên đó
+        if (hasCode(error, 'TRIP_ALREADY_LOADING')) return fetchSession(tripId)
         throw error
       }
     },
 
-    async recordDeviation(tripId, placementId, input) {
-      const current = sessions.get(tripId)
-      if (current === undefined) throw new ApiError('LOADING_NOT_STARTED', { params: { tripId } })
-      const dto = await client().post<DeviationDto>(`/api/warehouse/placements/${encodeURIComponent(placementId)}/deviation`, {
-        body: { ...input, reportedBy: Number(workerId()) },
-      })
-      const next = applyNext(current, placementId, dto.nextPlacement)
-      sessions.set(tripId, next)
-      return next
+    async stage(tripId, packageId, method) {
+      const result = await translated(client().post<StagingDto | null>(`${stagingPath(tripId, packageId)}/confirm`, { body: { method } }))
+      return { session: await fetchSession(tripId), alreadyStaged: result?.alreadyStaged === true }
     },
 
-    async completeLoading(tripId) {
-      const dto = await client().post<CompleteDto>(`/api/warehouse/tasks/${encodeURIComponent(tripId)}/complete`)
-      sessions.delete(tripId)
-      return {
-        tripId: String(dto.tripId),
-        tripCode: dto.tripCode ?? tripId,
-        packageCount: dto.totalPackages ?? 0,
-        deviationCount: dto.totalDeviations ?? 0,
-      }
+    stageManually: (tripId, packageId, input) =>
+      writeThenRead(tripId, () => client().post(`${stagingPath(tripId, packageId)}/manual`, { body: manualBody(input) })),
+
+    reportShortage: (tripId, packageId) => writeThenRead(tripId, () => client().post(`${stagingPath(tripId, packageId)}/shortage`)),
+
+    confirm: (tripId, placementId) =>
+      writeThenRead(tripId, () => client().post(`${placementPath(placementId)}/confirm`), 'PLACEMENT_ALREADY_CONFIRMED'),
+
+    confirmManually: (tripId, placementId, input) =>
+      writeThenRead(tripId, () => client().post(`${placementPath(placementId)}/manual`, { body: manualBody(input) })),
+
+    deviation: (tripId, placementId, input) =>
+      writeThenRead(
+        tripId,
+        () =>
+          client().post(`${placementPath(placementId)}/deviation`, {
+            body: {
+              actualPosX: Math.round(input.x),
+              actualPosY: Math.round(input.y),
+              actualPosZ: Math.round(input.z),
+              reason: input.reason.trim(),
+            },
+          }),
+        'DEVIATION_ALREADY_RECORDED',
+      ),
+
+    async damaged(tripId, placementId) {
+      const result = await translated(client().post<DamageDto>(`${placementPath(placementId)}/damaged`))
+      if (result.outcome === 'REPLANNED') return { outcome: 'replanned', resting: result.restingCount ?? 0 }
+      return { outcome: 'leftOut', session: await fetchSession(tripId) }
     },
 
-    async scanPackage(code) {
-      try {
-        const dto = await client().get<ScanDto>(`/api/packages/scan/${encodeURIComponent(code.trim())}`)
-        return {
-          id: String(dto.id),
-          code: dto.packageCode ?? String(dto.id),
-          status: dto.status ?? '',
-          destination: dto.destination ?? '',
-          weightKg: dto.actualWeightKg ?? undefined,
-          tripCode: dto.trip?.name ?? undefined,
-          stopNumber: dto.stop?.number ?? undefined,
-          stopName: dto.stop?.name ?? undefined,
-        } satisfies PackageLookup
-      } catch (error) {
-        if (uncoded(error, 404)) throw new ApiError('PACKAGE_LOOKUP_UNKNOWN', { status: 404, params: { code } })
-        throw error
-      }
-    },
+    // Máy chủ cũ báo còn kiện chưa xử lý bằng 400 không kèm mã
+    complete: (tripId) =>
+      writeThenRead(tripId, () => withStatusCode(client().post(`${tripPath(tripId)}/complete`), { 400: 'INCOMPLETE_LOADING' })),
+
+    seal: (tripId, sealNumber) =>
+      writeThenRead(tripId, () => client().post(`${tripPath(tripId)}/seal`, { body: { sealNumber: sealNumber.trim() } })),
   }
 }

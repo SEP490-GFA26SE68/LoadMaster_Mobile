@@ -11,8 +11,8 @@ import { colors, space } from '@/theme/tokens'
 
 type DamagedSheetProps = {
   readonly open: boolean
-  /** Kiện của bước đang hỏi. */
-  readonly placement: Pick<ScenePlacement, 'id' | 'name' | 'stop'>
+  /** Kiện của bước đang hỏi: mã in trên nhãn, tên, số điểm giao (`null` khi nguồn không trả — phiên máy chủ). */
+  readonly placement: Pick<ScenePlacement, 'id' | 'name'> & { readonly stop: number | null }
   /** Số kiện tựa lên nó **trong phương án** (trừ kiện cũng đã bị bỏ lại kho). */
   readonly resting: number
   readonly pending: boolean
@@ -29,7 +29,7 @@ type DamagedSheetProps = {
  */
 export function DamagedSheet({ open, placement, resting, pending, failure, onClose, onConfirm }: DamagedSheetProps) {
   const t = useT()
-  const stop = t('common.stop', { number: placement.stop })
+  const stop = placement.stop === null ? null : t('common.stop', { number: placement.stop })
   return (
     <Sheet
       open={open}
@@ -52,10 +52,12 @@ export function DamagedSheet({ open, placement, resting, pending, failure, onClo
           {placement.id}
         </AppText>
         <AppText color={colors.text2}>{placement.name}</AppText>
-        <View accessible accessibilityLabel={stop} style={styles.stop}>
-          <StopDot number={placement.stop} />
-          <AppText variant="label">{stop}</AppText>
-        </View>
+        {placement.stop === null ? null : (
+          <View accessible accessibilityLabel={stop ?? undefined} style={styles.stop}>
+            <StopDot number={placement.stop} />
+            <AppText variant="label">{stop}</AppText>
+          </View>
+        )}
       </View>
       {failure === null ? null : <Banner tone="danger">{failure}</Banner>}
     </Sheet>
