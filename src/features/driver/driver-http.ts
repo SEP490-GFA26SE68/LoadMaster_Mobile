@@ -1,29 +1,21 @@
-import { api, ApiError, currentUserId, isApiError, type ApiClient } from '@/data/http'
+import { api, ApiError, currentUserId, type ApiClient } from '@/data/http'
 
 import type { DriverApi } from './driver-api'
-import {
-  packageOfCode,
-  stopScreenOf,
-  tripRowOf,
-  type CompleteStopDto,
-  type CurrentStopDto,
-  type DriverTripDto,
-  type LocationPointDto,
-  type RoutePlanDetailDto,
-} from './driver-http-mapping'
-import type { DriverTripRow, DriverTripScreen, TripHead, VerifyVia } from './driver-model'
+import type { CompleteStopDto, CurrentStopDto, DriverTripDto, LocationPointDto, RoutePlanDetailDto } from './driver-http-dto'
+import { myTripsOf, shownStatusOf, tripRowOf } from './driver-http-mapping'
+import { deliveryPackageOf, isUnloaded, packageOfCode, stopScreenOf, withUnloaded } from './driver-http-stop'
+import { coded, HTTP_DRIVER_CAPABILITIES, refused, unsupported } from './driver-http-support'
+import type { DriverTripRow, DriverTripScreen, StopKey, TripHead } from './driver-model'
 
 /*
- * Nguồn backend của màn tài xế. Backend hiện có: chuyến đang vận chuyển của tài xế, điểm giao hiện tại kèm kiện cần dỡ, ghi dỡ một kiện,
- * hoàn tất điểm, gửi vị trí điện thoại, báo sự cố trên đường. Chưa có: xuất phát, "Đã đến", xác nhận tay, sự cố theo kiện, thông báo —
- * `capabilities` tắt để màn ẩn nút, gọi tới là `NOT_SUPPORTED`.
+ * Nguồn backend của màn tài xế (như `driver-backend-api.ts` của web): "Chuyến của tôi", xuất phát ở thẻ chuyến, "Đã đến", dỡ (quét / gõ mã
+ * hoặc xác nhận tay), nhận kiện ở điểm nhận dọc đường, sự cố theo kiện, sự cố trên đường, hoàn tất điểm, vị trí điện thoại. Giờ đến và tiến
+ * độ từng kiện đọc lại từ `current-stop` sau mỗi lệnh ghi; adapter chỉ giữ lần đọc gần nhất (để đổi mã quét được thành mã kiện), theo người
+ * đang đăng nhập. Chưa có ở backend: yêu cầu nhận hàng của tài xế, xác nhận tay ở điểm nhận, thông báo — `capabilities` tắt, gọi tới là
+ * `NOT_SUPPORTED`.
  *
- * Điều backend chưa trả thì adapter tự giữ trong lần mở app này, theo người đang đăng nhập: kiện nào của điểm hiện tại đã dỡ, chuyến nào
- * vừa giao xong (chuyến đã giao rời khỏi danh sách). Mở lại app thì quét lại kiện đã dỡ: backend báo trùng và adapter ghi nhận lại.
- *
- * Lỗi của từng lệnh đổi sang mã có câu ở nhánh `backendErrors`. Lỗi ném bằng `AppException` kèm tên `ErrorCode` trong phong bì; lỗi
- * có handler riêng (dỡ trùng 409, sai điểm 400, điểm chưa xong 400) — và mọi lỗi của backend trước khi gắn mã — chỉ có mã HTTP. Mỗi lệnh
- * nhận cả hai dạng.
+ * Lỗi ném bằng `AppException` mang tên `ErrorCode` trong phong bì: mã có câu ở `backendErrors` thì giữ nguyên; vài mã đổi sang câu nêu mã
+ * kiện hay tên điểm. Backend cũ trả lỗi không kèm mã: mỗi lệnh đọc theo mã HTTP.
  */
 
 type Memory = {
@@ -31,27 +23,9 @@ type Memory = {
   readonly trips: Map<string, DriverTripRow>
   /** Điểm hiện tại của lần đọc gần nhất theo chuyến: để đổi mã quét được thành mã kiện. */
   readonly stops: Map<string, CurrentStopDto>
-  /** Kiện đã dỡ theo điểm (`stopId`). */
-  readonly unloaded: Map<string, Map<string, VerifyVia | undefined>>
-  /** Chuyến vừa giao xong: không còn trong danh sách nhưng vẫn mở được màn tổng kết. */
-  readonly finished: Map<string, TripHead>
 }
 
-const emptyMemory = (): Memory => ({ trips: new Map(), stops: new Map(), unloaded: new Map(), finished: new Map() })
-
-/**
- * Backend từ chối với mã HTTP `status`: phản hồi không kèm mã nghiệp vụ (client đặt mã chung `SERVER_ERROR`), hoặc kèm đúng mã `code`
- * của `ErrorCode` gây ra nó.
- */
-const refused = (error: unknown, status: number, code?: string): error is ApiError =>
-  isApiError(error) && error.status === status && (error.code === 'SERVER_ERROR' || error.code === code)
-
-/** Backend báo mã nghiệp vụ `code` (`AppException`). */
-const coded = (error: unknown, code: string): error is ApiError => isApiError(error) && error.code === code
-
-const unsupported = async (): Promise<never> => {
-  throw new ApiError('NOT_SUPPORTED')
-}
+const emptyMemory = (): Memory => ({ trips: new Map(), stops: new Map() })
 
 type HttpDriverDeps = {
   readonly client?: () => ApiClient
@@ -62,7 +36,7 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
   let owner: string | null = null
   let memory = emptyMemory()
 
-  /** Dữ liệu tự giữ thuộc về người đang đăng nhập: đổi người là quên hết. */
+  /** Lần đọc gần nhất thuộc về người đang đăng nhập: đổi người là quên hết. */
   function mine(): Memory {
     const id = userId()
     if (id !== owner) {
@@ -83,14 +57,18 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     return { id: tripId, code: mine().trips.get(tripId)?.code ?? tripId, name: undefined }
   }
 
+  const notInTransit = (tripId: string, status?: number) => new ApiError('TRIP_NOT_IN_TRANSIT', { status, params: { tripId: headOf(tripId).code } })
+
   // GET /api/driver/trips
-  async function listTrips(): Promise<DriverTripRow[]> {
-    const dtos = await client().get<readonly DriverTripDto[] | null>('/api/driver/trips', { query: { driverId: driverId() } })
-    const rows = (dtos ?? []).map(tripRowOf).filter((row) => row.status === 'IN_TRANSIT')
+  async function listTrips(): Promise<DriverTripDto[]> {
+    const dtos = (await client().get<readonly DriverTripDto[] | null>('/api/driver/trips', { query: { driverId: driverId() } })) ?? []
     const { trips } = mine()
     trips.clear()
-    for (const row of rows) trips.set(row.id, row)
-    return rows
+    for (const dto of dtos) {
+      const status = shownStatusOf(dto)
+      if (status !== undefined) trips.set(String(dto.tripId), tripRowOf(dto, status))
+    }
+    return [...dtos]
   }
 
   // GET /api/driver/trips/{id}/current-stop
@@ -98,6 +76,12 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     const dto = await client().get<CurrentStopDto>(`/api/driver/trips/${encodeURIComponent(tripId)}/current-stop`)
     mine().stops.set(tripId, dto)
     return dto
+  }
+
+  /** Điểm `stop` theo lần đọc gần nhất; đọc lại khi chưa có hoặc điểm hiện tại đã khác. */
+  async function stopOf(tripId: string, stop: StopKey): Promise<CurrentStopDto> {
+    const cached = mine().stops.get(tripId)
+    return cached !== undefined && String(cached.stopId) === stop.ref ? cached : currentStop(tripId)
   }
 
   // GET /api/trips/{id}/route-plans/active — bản đồ / chỉ dẫn; không có thì màn điểm giao vẫn mở, không vẽ tuyến
@@ -109,107 +93,130 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     }
   }
 
-  function unloadedAt(stopId: string): Map<string, VerifyVia | undefined> {
-    const { unloaded } = mine()
-    const entries = unloaded.get(stopId) ?? new Map<string, VerifyVia | undefined>()
-    unloaded.set(stopId, entries)
-    return entries
-  }
-
   /**
-   * Chỉ chuyến đang vận chuyển của chính tài xế mới mở được (backend đọc điểm hiện tại của chuyến nào cũng được, kể cả chuyến đã huỷ).
-   * Chuyến vừa giao xong trong lần mở app này thì mở màn tổng kết — backend chưa có số liệu tổng kết.
+   * Chỉ mở chuyến có trong danh sách của chính tài xế (backend đọc điểm hiện tại của chuyến nào cũng được), nên đọc danh sách trước: chuyến
+   * đã giao mở màn tổng kết (backend chưa có số liệu tổng kết); chuyến chưa rời kho, đã huỷ hay không còn của mình thì không mở.
    */
   async function fetchTripScreen(tripId: string): Promise<DriverTripScreen> {
-    const settled = currentStop(tripId).then(
-      (dto) => ({ dto }),
-      (error: unknown) => ({ error }),
-    )
-    const [rows, current, plan] = await Promise.all([listTrips(), settled, activePlan(tripId)])
-    const row = rows.find((entry) => entry.id === tripId)
-    if (row === undefined) {
-      const finished = mine().finished.get(tripId)
-      if (finished !== undefined) return { kind: 'completed', trip: finished, summary: undefined }
-      throw new ApiError('TRIP_NOT_IN_TRANSIT', { params: { tripId: headOf(tripId).code } })
-    }
+    const dto = (await listTrips()).find((entry) => String(entry.tripId) === tripId)
     const trip = headOf(tripId)
-    if ('error' in current) {
+    if (dto?.status === 'DELIVERED') return { kind: 'completed', trip, summary: undefined }
+    if (dto?.status !== 'IN_TRANSIT') throw notInTransit(tripId)
+    const plan = activePlan(tripId)
+    let stop: CurrentStopDto
+    try {
+      stop = await currentStop(tripId)
+    } catch (error) {
       // Chuyến vừa bị xoá ở máy chủ giữa hai lượt đọc
-      if (coded(current.error, 'TRIP_NOT_FOUND')) throw new ApiError('TRIP_NOT_IN_TRANSIT', { status: 404, params: { tripId: trip.code } })
+      if (coded(error, 'TRIP_NOT_FOUND')) throw notInTransit(tripId, 404)
       // Chuyến đang vận chuyển mà không còn điểm nào chưa hoàn tất: chuyến không có điểm giao
-      if (refused(current.error, 404, 'NO_PENDING_DELIVERY_STOP')) return { kind: 'noStops', trip }
-      throw current.error
+      if (refused(error, 404, 'NO_PENDING_DELIVERY_STOP')) return { kind: 'noStops', trip }
+      throw error
     }
-    const { dto } = current
-    return { kind: 'stop', trip, screen: stopScreenOf(dto, row.stopCount, unloadedAt(String(dto.stopId)), plan) }
+    return { kind: 'stop', trip, screen: stopScreenOf(stop, dto.stopCount ?? 0, await plan) }
   }
 
   return {
-    capabilities: {
-      depart: false,
-      arrive: false,
-      manualConfirm: false,
-      deliveryIssues: false,
-      tripExceptions: true,
-      pickups: false,
-      gps: true,
-      notifications: false,
-      gpsLocalOnly: false,
-    },
+    capabilities: HTTP_DRIVER_CAPABILITIES,
 
     async fetchMyTrips() {
-      const rows = await listTrips()
-      return { groups: { inTransit: rows, loaded: [], preparing: [], recent: [] }, refreshMs: null }
+      return { groups: myTripsOf(await listTrips()), refreshMs: null }
     },
 
     fetchTripScreen,
 
-    // POST /api/driver/packages/{id}/unload
-    async confirmUnload(tripId, { stop, method, code }) {
-      const cached = mine().stops.get(tripId)
-      const dto = cached !== undefined && String(cached.stopId) === stop.ref ? cached : await currentStop(tripId)
-      const pkg = packageOfCode(dto, code)
-      if (pkg === undefined) throw new ApiError('PACKAGE_CODE_UNKNOWN', { params: { code: code.trim() } })
-      const id = String(pkg.packageId)
-      const { label } = pkg
-      const unloaded = unloadedAt(String(dto.stopId))
-      if (unloaded.has(id)) throw new ApiError('PACKAGE_ALREADY_UNLOADED', { params: { code: label } })
+    // POST /api/driver/trips/{id}/start
+    async startDelivery(tripId) {
       try {
-        await client().post(`/api/driver/packages/${pkg.packageId}/unload`, { query: { driverId: driverId() } })
+        await client().post(`/api/driver/trips/${encodeURIComponent(tripId)}/start`)
       } catch (error) {
-        // DuplicateUnloadException
-        if (refused(error, 409)) {
-          // Đã dỡ từ trước (lần mở app trước, hoặc máy khác): ghi nhận để danh sách kiện đúng trở lại
-          unloaded.set(id, unloaded.get(id))
-          throw new ApiError('PACKAGE_ALREADY_UNLOADED', { status: 409, params: { code: label } })
-        }
-        // WrongStopException
-        if (refused(error, 400)) throw new ApiError('PACKAGE_NOT_AT_STOP', { status: 400, params: { code: label } })
+        // Kho chưa xếp xong (thẻ đã mờ nút, nhưng kho có thể vừa mở lại phiên xếp)
+        if (refused(error, 409, 'LOADING_NOT_COMPLETED')) throw new ApiError('LOADING_NOT_COMPLETED', { status: 409 })
         throw error
       }
-      unloaded.set(id, method)
-      return { id }
+    },
+
+    // POST /api/driver/stops/{id}/arrive
+    async arriveAtStop(tripId, stop) {
+      try {
+        await client().post(`/api/driver/stops/${encodeURIComponent(stop.ref)}/arrive`)
+      } catch (error) {
+        // Đã báo đến từ trước (máy khác, hoặc lượt bấm trước mất phản hồi): lần đọc lại mang giờ đến của máy chủ
+        if (coded(error, 'DELIVERY_STOP_ALREADY_ARRIVED')) return
+        if (refused(error, 400, 'GPS_TRIP_NOT_IN_TRANSIT') || coded(error, 'TRIP_NOT_FOUND')) throw notInTransit(tripId, error.status)
+        throw error
+      }
+    },
+
+    // POST /api/driver/packages/{id}/unload — điểm nhận: POST /api/driver/pickup-packages/{id}/pick
+    async confirmUnload(tripId, { stop, code }) {
+      const dto = await stopOf(tripId, stop)
+      const pkg = packageOfCode(dto, code)
+      if (pkg.kind === 'unknown') throw new ApiError('PACKAGE_CODE_UNKNOWN', { params: { code: code.trim() } })
+      if (pkg.kind === 'ambiguous') throw new ApiError('UNLOAD_CODE_AMBIGUOUS', { params: { code: code.trim(), count: pkg.count } })
+      const { packageId, label } = pkg
+      if (pkg.pickup) {
+        if (isUnloaded(dto, packageId)) throw new ApiError('PICKUP_PACKAGE_ALREADY_PICKED', { status: 409 })
+        await client().post(`/api/driver/pickup-packages/${packageId}/pick`)
+      } else {
+        if (isUnloaded(dto, packageId)) throw new ApiError('PACKAGE_ALREADY_UNLOADED', { params: { code: label } })
+        try {
+          await client().post(`/api/driver/packages/${packageId}/unload`, { query: { driverId: driverId() } })
+        } catch (error) {
+          // Đã dỡ ở máy khác sau lần đọc gần nhất: lần đọc lại (sau mỗi lệnh ghi) cho thấy kiện đã dỡ
+          if (refused(error, 409, 'DUPLICATE_UNLOAD')) throw new ApiError('PACKAGE_ALREADY_UNLOADED', { status: 409, params: { code: label } })
+          if (refused(error, 400, 'WRONG_DELIVERY_STOP')) throw new ApiError('PACKAGE_NOT_AT_STOP', { status: 400, params: { code: label } })
+          throw error
+        }
+      }
+      // Lần gõ kế tiếp trước khi màn đọc lại điểm cũng thấy kiện này đã xong
+      mine().stops.set(tripId, withUnloaded(dto, packageId))
+      return { id: String(packageId) }
+    },
+
+    // POST /api/driver/packages/{id}/manual-unload
+    async confirmUnloadManually(tripId, { stop, itemId, reason, note }) {
+      const pkg = deliveryPackageOf(await stopOf(tripId, stop), itemId)
+      // Kiện nhận ở điểm nhận: backend chưa có xác nhận tay
+      if (pkg === undefined) throw new ApiError('NOT_SUPPORTED')
+      try {
+        await client().post(`/api/driver/packages/${pkg.packageId}/manual-unload`, { body: { reason, note: note ?? null } })
+      } catch (error) {
+        if (coded(error, 'DUPLICATE_UNLOAD')) throw new ApiError('PACKAGE_ALREADY_UNLOADED', { status: error.status, params: { code: pkg.label } })
+        if (coded(error, 'WRONG_DELIVERY_STOP')) throw new ApiError('PACKAGE_NOT_AT_STOP', { status: error.status, params: { code: pkg.label } })
+        throw error
+      }
+      mine().stops.delete(tripId)
+      return { id: String(pkg.packageId) }
+    },
+
+    // POST /api/driver/packages/{id}/issues
+    async reportDeliveryIssue(tripId, { stop, itemId, kind, note }) {
+      const pkg = deliveryPackageOf(await stopOf(tripId, stop), itemId)
+      if (pkg === undefined) throw new ApiError('PACKAGE_NOT_AT_STOP', { params: { code: itemId } })
+      try {
+        await client().post(`/api/driver/packages/${pkg.packageId}/issues`, { body: { kind: kind.toUpperCase(), note: note ?? null } })
+      } catch (error) {
+        if (coded(error, 'WRONG_DELIVERY_STOP')) throw new ApiError('PACKAGE_NOT_AT_STOP', { status: error.status, params: { code: pkg.label } })
+        throw error
+      }
+      // Khách từ chối: máy chủ bỏ dấu đã dỡ của kiện — lần đọc lại cho thấy
+      mine().stops.delete(tripId)
     },
 
     // POST /api/driver/stops/{id}/complete
     async completeStop(tripId, stop) {
-      let result: CompleteStopDto
       try {
-        result = await client().post<CompleteStopDto>(`/api/driver/stops/${encodeURIComponent(stop.ref)}/complete`, {
-          query: { driverId: driverId() },
-        })
+        await client().post<CompleteStopDto>(`/api/driver/stops/${encodeURIComponent(stop.ref)}/complete`, { query: { driverId: driverId() } })
       } catch (error) {
-        // IncompleteStopException
-        if (refused(error, 400)) {
+        if (coded(error, 'MANUAL_CONFIRM_PENDING')) throw new ApiError('STOP_MANUAL_CONFIRM_PENDING', { status: error.status })
+        if (refused(error, 400, 'INCOMPLETE_STOP_UNLOAD')) {
           const name = mine().stops.get(tripId)?.stopName ?? String(stop.number)
           throw new ApiError('STOP_NOT_COMPLETABLE', { status: 400, params: { name } })
         }
         throw error
       }
-      const { stops, unloaded, finished } = mine()
-      if (result.tripCompleted) finished.set(tripId, headOf(tripId))
-      stops.delete(tripId)
-      unloaded.delete(stop.ref)
+      mine().stops.delete(tripId)
     },
 
     // POST /api/driver/location
@@ -219,9 +226,7 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
         return { recordedAt: point.recordedAt }
       } catch (error) {
         // Chuyến không còn chạy, hoặc vừa bị xoá ở máy chủ
-        if (refused(error, 400, 'GPS_TRIP_NOT_IN_TRANSIT') || coded(error, 'TRIP_NOT_FOUND')) {
-          throw new ApiError('TRIP_NOT_IN_TRANSIT', { status: error.status, params: { tripId: headOf(tripId).code } })
-        }
+        if (refused(error, 400, 'GPS_TRIP_NOT_IN_TRANSIT') || coded(error, 'TRIP_NOT_FOUND')) throw notInTransit(tripId, error.status)
         throw error
       }
     },
@@ -229,10 +234,7 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     // Điện thoại gửi thẳng vị trí lên backend: không có công tắc nào ở máy chủ để bật / tắt
     async setDriverGps() {},
 
-    startDelivery: unsupported,
-    arriveAtStop: unsupported,
-    confirmUnloadManually: unsupported,
-    reportDeliveryIssue: unsupported,
+    // POST /api/driver/trips/{id}/exceptions
     async reportTripException(tripId, input) {
       const result = await client().post<{ id?: string }>(`/api/driver/trips/${encodeURIComponent(tripId)}/exceptions`, {
         body: input,

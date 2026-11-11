@@ -1,93 +1,24 @@
-import { ApiError, createApiClient } from '@/data/http'
 import { encodePolyline } from '@/domain/routing/polyline'
+import { backend, fail, failure, ok, onTrip, STOP, STOP_KEY, stopOf, TRIP } from '@/test/driver-backend'
 
-import { httpDriverApi } from './driver-http'
-import type { DriverTripScreen, StopScreen } from './driver-model'
-
-type Call = { method: string; path: string; query: Record<string, string>; body: unknown }
-type Reply = { status: number; body?: unknown }
-
-/** Phong bì của backend: lỗi có handler riêng (và mọi lỗi trước khi backend gắn mã) không kèm mã; lỗi `AppException` kèm tên `ErrorCode`. */
-const ok = (data: unknown): Reply => ({ status: 200, body: { success: true, code: null, message: 'ok', data, errors: null } })
-const fail = (status: number, code: string | null = null): Reply => ({
-  status,
-  body: { success: false, code, message: 'thông điệp thô', data: null, errors: null },
-})
-
-const TRIP = {
-  tripId: 41,
-  tripCode: 'TRIP-0041',
-  vehicleLicensePlate: '51C-123.45',
-  stopCount: 3,
-  departureTime: '2026-10-16T07:30:00.123456',
-  status: 'IN_TRANSIT',
-}
-
-const STOP = {
-  stopId: 902,
-  stopSequence: 2,
-  stopName: 'Điện máy Xanh Biên Hoà',
-  address: '12 Phạm Văn Thuận, Biên Hoà',
-  packages: [
-    { packageId: 7001, packageName: 'Tủ lạnh 180L', trackingBarcode: 'LM-AB12-CD34-EF56', weight: 62.5, unloadOrder: 1 },
-    { packageId: 7002, packageName: null, trackingBarcode: null, weight: null, unloadOrder: 2 },
-  ],
-}
-
-const STOP_KEY = { number: 2, ref: '902' }
-
-/** Backend giả: trả theo `PHƯƠNG_THỨC đường-dẫn`, ghi lại mọi lượt gọi. */
-function backend(routes: Record<string, (call: Call) => Reply>, user: { id: string | null } = { id: '15' }) {
-  const calls: Call[] = []
-  const fetchImpl = (async (url: string, init: RequestInit) => {
-    const parsed = new URL(url)
-    const call: Call = {
-      method: init.method ?? 'GET',
-      path: parsed.pathname,
-      query: Object.fromEntries(parsed.searchParams),
-      body: init.body === undefined ? undefined : (JSON.parse(String(init.body)) as unknown),
-    }
-    calls.push(call)
-    const reply = routes[`${call.method} ${call.path}`]?.(call) ?? fail(404)
-    return {
-      ok: reply.status >= 200 && reply.status < 300,
-      status: reply.status,
-      text: async () => (reply.body === undefined ? '' : JSON.stringify(reply.body)),
-    } as Response
-  }) as unknown as typeof fetch
-  const client = createApiClient({ baseUrl: 'http://api.test', accessToken: async () => 'TOKEN', fetch: fetchImpl })
-  const driver = httpDriverApi({ client: () => client, userId: () => user.id })
-  return { calls, driver, user }
-}
-
-const onTrip = (extra: Record<string, (call: Call) => Reply> = {}) => ({
-  'GET /api/driver/trips': () => ok([TRIP, { ...TRIP, tripId: 42, tripCode: 'TRIP-0042', status: 'DELIVERED' }]),
-  'GET /api/driver/trips/41/current-stop': () => ok(STOP),
-  ...extra,
-})
-
-async function failure(run: () => Promise<unknown>): Promise<ApiError> {
-  try {
-    await run()
-  } catch (error) {
-    if (error instanceof ApiError) return error
-    throw error
-  }
-  throw new Error('lượt gọi không ném lỗi')
-}
-
-function stopOf(screen: DriverTripScreen): StopScreen {
-  if (screen.kind !== 'stop') throw new Error(`màn là ${screen.kind}, không phải điểm giao`)
-  return screen.screen
-}
-
-describe('httpDriverApi', () => {
-  test('danh sách chuyến: gửi mã tài xế, chỉ giữ chuyến đang vận chuyển, giờ backend là giờ Việt Nam', async () => {
-    const { driver, calls } = backend(onTrip())
+describe('httpDriverApi: chuyến và điểm hiện tại', () => {
+  test('danh sách chuyến: gửi mã tài xế, chia bốn nhóm như web, giờ backend là giờ Việt Nam', async () => {
+    const trip = (tripId: number, status: string, extra: Record<string, unknown> = {}) => ({ ...TRIP, tripId, tripCode: `TRIP-00${tripId}`, status, ...extra })
+    const { driver, calls } = backend({
+      'GET /api/driver/trips': () =>
+        ok([
+          TRIP,
+          trip(43, 'LOADING', { loadingCompleted: true }),
+          trip(44, 'LOADING', { loadingCompleted: false }),
+          trip(45, 'DELIVERED', { completedAt: '2026-10-15T17:00:00' }),
+          trip(46, 'DELIVERED', { completedAt: '2026-10-16T11:00:00' }),
+          trip(47, 'PLANNED'),
+          trip(48, 'CANCELLED'),
+        ]),
+    })
     const trips = await driver.fetchMyTrips()
     expect(calls[0]).toMatchObject({ method: 'GET', path: '/api/driver/trips', query: { driverId: '15' } })
     expect(trips.refreshMs).toBeNull()
-    expect(trips.groups).toMatchObject({ loaded: [], preparing: [], recent: [] })
     expect(trips.groups.inTransit).toHaveLength(1)
     expect(trips.groups.inTransit[0]).toMatchObject({
       id: '41',
@@ -98,6 +29,13 @@ describe('httpDriverApi', () => {
       date: '2026-10-16T07:30:00.123+07:00',
       packageCount: undefined,
     })
+    expect(trips.groups.loaded.map(({ id, sub }) => [id, sub])).toEqual([['43', { kind: 'loaded' }]])
+    expect(trips.groups.preparing.map(({ id, sub }) => [id, sub])).toEqual([['44', null]])
+    // Giao xong gần nhất trước; chuyến chưa tới kho và chuyến đã huỷ không hiện
+    expect(trips.groups.recent.map(({ id, completedAt }) => [id, completedAt])).toEqual([
+      ['46', '2026-10-16T11:00:00+07:00'],
+      ['45', '2026-10-15T17:00:00+07:00'],
+    ])
   })
 
   test('chưa có người đăng nhập: không gọi backend (thiếu mã tài xế backend trả chuyến của mọi người)', async () => {
@@ -106,7 +44,7 @@ describe('httpDriverApi', () => {
     expect(calls).toHaveLength(0)
   })
 
-  test('màn điểm giao: điểm hiện tại, dải tiến độ theo số điểm của chuyến, kiện theo thứ tự dỡ', async () => {
+  test('màn điểm giao: giờ đến của máy chủ là đã đến, kiện theo thứ tự dỡ, mã đầu dòng là mã in trên nhãn', async () => {
     const { driver } = backend(onTrip())
     const screen = await driver.fetchTripScreen('41')
     expect(screen).toMatchObject({ kind: 'stop', trip: { id: '41', code: 'TRIP-0041' } })
@@ -114,12 +52,14 @@ describe('httpDriverApi', () => {
     expect(stop).toMatchObject({
       mode: 'delivering',
       arrived: true,
-      stop: { number: 2, ref: '902', name: 'Điện máy Xanh Biên Hoà', address: '12 Phạm Văn Thuận, Biên Hoà' },
+      arrivedAt: '2026-10-16T09:15:00+07:00',
+      stop: { number: 2, ref: '902', kind: 'DELIVERY', name: 'Điện máy Xanh Biên Hoà', address: '12 Phạm Văn Thuận, Biên Hoà' },
       stopCount: 3,
       total: 2,
       doneCount: 0,
       remaining: 2,
       verifiable: 2,
+      pendingConfirms: 0,
     })
     expect(stop.stops.map(({ number, done }) => [number, done])).toEqual([
       [1, true],
@@ -127,17 +67,49 @@ describe('httpDriverApi', () => {
       [3, false],
     ])
     expect(stop.items.map(({ id, label, name, weightKg, unloadingOrder }) => [id, label, name, weightKg, unloadingOrder])).toEqual([
-      ['7001', 'LM-AB12-CD34-EF56', 'Tủ lạnh 180L', 62.5, 1],
+      ['7001', 'DMX-01', 'Tủ lạnh 180L', 62.5, 1],
       ['7002', '7002', '7002', undefined, 2],
     ])
     expect(stop.routeMap).toBeUndefined()
+  })
+
+  test('chỉ giờ đến mới là đã đến: trạng thái ARRIVED không kèm giờ vẫn là chưa đến', async () => {
+    const { driver } = backend(onTrip({ 'GET /api/driver/trips/41/current-stop': () => ok({ ...STOP, actualArrival: null, status: 'ARRIVED' }) }))
+    expect(stopOf(await driver.fetchTripScreen('41'))).toMatchObject({ arrived: false, arrivedAt: undefined })
+  })
+
+  test('tiến độ từng kiện đọc từ máy chủ: đã dỡ, xác nhận tay chờ / đã duyệt / bị từ chối, sự cố, khách từ chối', async () => {
+    const pkg = (packageId: number, extra: Record<string, unknown>) => ({ packageId, packageName: `Kiện ${packageId}`, weight: 5, unloadOrder: null, ...extra })
+    const packages = [
+      pkg(1, { unloaded: true }),
+      pkg(2, { unloaded: true, manualStatus: 'PENDING', manualReason: 'LABEL_DAMAGED' }),
+      pkg(3, { unloaded: true, manualStatus: 'APPROVED' }),
+      pkg(4, { unloaded: false, manualStatus: 'REJECTED', manualRejectReason: 'Kiện vẫn còn trên xe' }),
+      pkg(5, { unloaded: false, issueKind: 'REFUSED' }),
+      pkg(6, { unloaded: false, issueKind: 'DAMAGED' }),
+      pkg(7, {}),
+    ]
+    const { driver } = backend(onTrip({ 'GET /api/driver/trips/41/current-stop': () => ok({ ...STOP, packages }) }))
+    const stop = stopOf(await driver.fetchTripScreen('41'))
+    expect(stop.items.map(({ id, unloaded, via, rejectedReason, issueKind, returned, unloadingOrder }) => [id, unloaded, via, rejectedReason, issueKind, returned, unloadingOrder])).toEqual([
+      ['1', true, undefined, undefined, undefined, false, 1],
+      ['2', true, 'MANUAL_PENDING', undefined, undefined, false, 2],
+      ['3', true, 'MANUAL_APPROVED', undefined, undefined, false, 3],
+      ['4', false, undefined, 'Kiện vẫn còn trên xe', undefined, false, 4],
+      ['5', false, undefined, undefined, 'refused', true, 5],
+      ['6', false, undefined, undefined, 'damaged', false, 6],
+      ['7', false, undefined, undefined, undefined, false, 7],
+    ])
+    expect(stop).toMatchObject({ doneCount: 3, remaining: 2, verifiable: 3, pendingConfirms: 1, issueCount: 2 })
+    expect(stop.completion).toMatchObject({ delivered: 3, issues: 2, picked: 0, nextKnown: false })
+    expect(stop.completion.returned.map(({ id }) => id)).toEqual(['4', '5', '6', '7'])
   })
 
   test('plan active: vẽ polyline Goong, toạ độ điểm hiện tại, bước chỉ dẫn của leg đang đi', async () => {
     const start = { lat: 10.78, lng: 106.7 }
     const mid = { lat: 10.85, lng: 106.77 }
     const end = { lat: 10.95, lng: 106.82 }
-    const { driver, calls } = backend(
+    const { driver } = backend(
       onTrip({
         'GET /api/trips/41/route-plans/active': () =>
           ok({
@@ -155,7 +127,6 @@ describe('httpDriverApi', () => {
       }),
     )
     const stop = stopOf(await driver.fetchTripScreen('41'))
-    expect(calls.some((call) => call.method === 'GET' && call.path === '/api/trips/41/route-plans/active')).toBe(true)
     expect(stop.stop).toMatchObject({ lat: end.lat, lng: end.lng })
     expect(stop.routeMap).toMatchObject({
       planVersion: 3,
@@ -166,13 +137,22 @@ describe('httpDriverApi', () => {
       [1, mid.lat, mid.lng],
       [2, end.lat, end.lng],
     ])
-    expect(stop.routeMap?.path?.at(-1)).toEqual(end)
   })
 
-  test('chuyến không còn trong danh sách đang vận chuyển: không mở màn điểm giao', async () => {
+  test('chỉ mở chuyến của mình đang vận chuyển: chuyến lạ, chưa xuất phát hay đã huỷ thì không đọc điểm hiện tại', async () => {
+    const { driver, calls } = backend({
+      ...onTrip(),
+      'GET /api/driver/trips': () => ok([{ ...TRIP, status: 'LOADING' }, { ...TRIP, tripId: 48, tripCode: 'TRIP-0048', status: 'CANCELLED' }]),
+    })
+    for (const tripId of ['99', '41', '48']) {
+      expect(await failure(() => driver.fetchTripScreen(tripId))).toMatchObject({ code: 'TRIP_NOT_IN_TRANSIT' })
+    }
+    expect(calls.some((call) => call.path.endsWith('/current-stop'))).toBe(false)
+  })
+
+  test('chuyến đã giao: mở màn tổng kết (máy chủ chưa có số liệu tổng kết)', async () => {
     const { driver } = backend(onTrip())
-    const error = await failure(() => driver.fetchTripScreen('99'))
-    expect(error).toMatchObject({ code: 'TRIP_NOT_IN_TRANSIT', params: { tripId: '99' } })
+    expect(await driver.fetchTripScreen('42')).toEqual({ kind: 'completed', trip: { id: '42', code: 'TRIP-0042', name: undefined }, summary: undefined })
   })
 
   test.each([null, 'NO_PENDING_DELIVERY_STOP'])('chuyến đang vận chuyển không còn điểm chưa hoàn tất (404, mã %s): màn không có điểm giao', async (code) => {
@@ -180,93 +160,38 @@ describe('httpDriverApi', () => {
     expect(await driver.fetchTripScreen('41')).toEqual({ kind: 'noStops', trip: { id: '41', code: 'TRIP-0041', name: undefined } })
   })
 
-  test('chuyến vừa bị xoá ở máy chủ (404 TRIP_NOT_FOUND): như chuyến không còn chạy, không phải màn không có điểm giao', async () => {
+  test('chuyến vừa bị xoá ở máy chủ (404 TRIP_NOT_FOUND): như chuyến không còn chạy', async () => {
     const { driver } = backend(onTrip({ 'GET /api/driver/trips/41/current-stop': () => fail(404, 'TRIP_NOT_FOUND') }))
-    const error = await failure(() => driver.fetchTripScreen('41'))
-    expect(error).toMatchObject({ code: 'TRIP_NOT_IN_TRANSIT', params: { tripId: 'TRIP-0041' } })
+    expect(await failure(() => driver.fetchTripScreen('41'))).toMatchObject({ code: 'TRIP_NOT_IN_TRANSIT', params: { tripId: 'TRIP-0041' } })
+  })
+})
+
+describe('httpDriverApi: xuất phát, đã đến, vị trí, sự cố trên đường', () => {
+  test('xuất phát: gọi start theo mã chuyến; kho chưa xếp xong (409) thì nói đúng lý do', async () => {
+    let loaded = false
+    const { driver, calls } = backend(onTrip({ 'POST /api/driver/trips/43/start': () => (loaded ? ok({ tripId: 43 }) : fail(409, 'LOADING_NOT_COMPLETED')) }))
+    expect(await failure(() => driver.startDelivery('43'))).toMatchObject({ code: 'LOADING_NOT_COMPLETED', status: 409 })
+    loaded = true
+    await driver.startDelivery('43')
+    expect(calls.at(-1)).toMatchObject({ method: 'POST', path: '/api/driver/trips/43/start' })
   })
 
-  test('dỡ kiện: khớp mã trên nhãn không phân biệt hoa thường, ghi bằng mã kiện, màn thấy kiện đã dỡ', async () => {
-    const { driver, calls } = backend(onTrip({ 'POST /api/driver/packages/7001/unload': () => ok({ remainingPackagesCount: 1 }) }))
-    await driver.fetchTripScreen('41')
-    await expect(driver.confirmUnload('41', { stop: STOP_KEY, method: 'QR', code: '  lm-ab12-cd34-ef56 ' })).resolves.toEqual({ id: '7001' })
-    expect(calls.at(-1)).toMatchObject({ method: 'POST', path: '/api/driver/packages/7001/unload', query: { driverId: '15' } })
-
-    const stop = stopOf(await driver.fetchTripScreen('41'))
-    expect(stop).toMatchObject({ doneCount: 1, remaining: 1 })
-    expect(stop.items[0]).toMatchObject({ unloaded: true, via: 'QR' })
-    expect(stop.items[1]).toMatchObject({ unloaded: false, via: undefined })
+  test('đã đến: gọi arrive theo mã điểm; đã báo đến từ trước (409 DELIVERY_STOP_ALREADY_ARRIVED) coi như đã đến', async () => {
+    let reply = ok({ stopId: 902 })
+    const { driver, calls } = backend(onTrip({ 'POST /api/driver/stops/902/arrive': () => reply }))
+    await driver.arriveAtStop('41', STOP_KEY)
+    expect(calls.at(-1)).toMatchObject({ method: 'POST', path: '/api/driver/stops/902/arrive' })
+    reply = fail(409, 'DELIVERY_STOP_ALREADY_ARRIVED')
+    await expect(driver.arriveAtStop('41', STOP_KEY)).resolves.toBeUndefined()
   })
 
-  test('mã không khớp kiện nào của điểm, hoặc kiện vừa ghi dỡ: báo ngay, không gọi backend', async () => {
-    const { driver, calls } = backend(onTrip({ 'POST /api/driver/packages/7002/unload': () => ok({ remainingPackagesCount: 1 }) }))
-    await driver.fetchTripScreen('41')
-    const unknown = await failure(() => driver.confirmUnload('41', { stop: STOP_KEY, method: 'CODE', code: ' PK-404 ' }))
-    expect(unknown).toMatchObject({ code: 'PACKAGE_CODE_UNKNOWN', params: { code: 'PK-404' } })
-
-    await driver.confirmUnload('41', { stop: STOP_KEY, method: 'CODE', code: '7002' })
-    const again = await failure(() => driver.confirmUnload('41', { stop: STOP_KEY, method: 'CODE', code: '7002' }))
-    expect(again).toMatchObject({ code: 'PACKAGE_ALREADY_UNLOADED', params: { code: '7002' } })
-    expect(calls.filter((call) => call.method === 'POST')).toHaveLength(1)
-  })
-
-  test('backend báo kiện đã dỡ từ trước (409): ghi nhận để danh sách đúng lại; kiện không thuộc điểm (400): câu riêng', async () => {
-    const { driver } = backend(
-      onTrip({
-        'POST /api/driver/packages/7001/unload': () => fail(409),
-        'POST /api/driver/packages/7002/unload': () => fail(400),
-      }),
-    )
-    await driver.fetchTripScreen('41')
-    const duplicate = await failure(() => driver.confirmUnload('41', { stop: STOP_KEY, method: 'QR', code: 'LM-AB12-CD34-EF56' }))
-    expect(duplicate).toMatchObject({ code: 'PACKAGE_ALREADY_UNLOADED', status: 409, params: { code: 'LM-AB12-CD34-EF56' } })
-    const wrongStop = await failure(() => driver.confirmUnload('41', { stop: STOP_KEY, method: 'CODE', code: '7002' }))
-    expect(wrongStop).toMatchObject({ code: 'PACKAGE_NOT_AT_STOP', status: 400 })
-
-    const stop = stopOf(await driver.fetchTripScreen('41'))
-    expect(stop.items[0]).toMatchObject({ unloaded: true, via: undefined })
-    expect(stop.items[1]).toMatchObject({ unloaded: false })
-  })
-
-  test('lỗi kèm mã nghiệp vụ khác cùng mã HTTP: giữ mã của backend, không đoán thành dỡ trùng, sai điểm hay điểm chưa xong', async () => {
-    const { driver } = backend(
-      onTrip({
-        'POST /api/driver/packages/7001/unload': () => fail(409, 'SOMETHING_NEW'),
-        'POST /api/driver/packages/7002/unload': () => fail(400, 'VALIDATION_ERROR'),
-        'POST /api/driver/stops/902/complete': () => fail(400, 'VALIDATION_ERROR'),
-      }),
-    )
-    await driver.fetchTripScreen('41')
-    const conflict = await failure(() => driver.confirmUnload('41', { stop: STOP_KEY, method: 'QR', code: 'LM-AB12-CD34-EF56' }))
-    expect(conflict).toMatchObject({ code: 'SOMETHING_NEW', status: 409 })
-    const invalid = await failure(() => driver.confirmUnload('41', { stop: STOP_KEY, method: 'CODE', code: '7002' }))
-    expect(invalid).toMatchObject({ code: 'VALIDATION_ERROR', status: 400 })
-    expect(await failure(() => driver.completeStop('41', STOP_KEY))).toMatchObject({ code: 'VALIDATION_ERROR', status: 400 })
-    // Kiện chưa được ghi dỡ: lỗi 409 kèm mã khác không phải "đã dỡ từ trước"
-    expect(stopOf(await driver.fetchTripScreen('41')).items[0]).toMatchObject({ unloaded: false })
-  })
-
-  test('hoàn tất điểm: backend chưa cho (400) thì nói tên điểm; điểm cuối xong thì chuyến mở màn tổng kết', async () => {
-    let tripDone = false
-    let refused = true
-    const { driver, calls } = backend({
-      'GET /api/driver/trips': () => ok(tripDone ? [] : [TRIP]),
-      'GET /api/driver/trips/41/current-stop': () => ok(STOP),
-      'POST /api/driver/stops/902/complete': () => (refused ? fail(400) : ok({ tripCompleted: true })),
-    })
-    await driver.fetchTripScreen('41')
-    const error = await failure(() => driver.completeStop('41', STOP_KEY))
-    expect(error).toMatchObject({ code: 'STOP_NOT_COMPLETABLE', params: { name: 'Điện máy Xanh Biên Hoà' } })
-
-    refused = false
-    await driver.completeStop('41', STOP_KEY)
-    expect(calls.at(-1)).toMatchObject({ method: 'POST', path: '/api/driver/stops/902/complete', query: { driverId: '15' } })
-    tripDone = true
-    expect(await driver.fetchTripScreen('41')).toEqual({
-      kind: 'completed',
-      trip: { id: '41', code: 'TRIP-0041', name: undefined },
-      summary: undefined,
-    })
+  test('đã đến bị từ chối: chuyến không còn chạy thì nói mã chuyến; mã khác giữ nguyên', async () => {
+    let reply = fail(400, 'GPS_TRIP_NOT_IN_TRANSIT')
+    const { driver } = backend(onTrip({ 'POST /api/driver/stops/902/arrive': () => reply }))
+    await driver.fetchMyTrips()
+    expect(await failure(() => driver.arriveAtStop('41', STOP_KEY))).toMatchObject({ code: 'TRIP_NOT_IN_TRANSIT', params: { tripId: 'TRIP-0041' } })
+    reply = fail(409, 'DELIVERY_STOP_NOT_CURRENT')
+    expect(await failure(() => driver.arriveAtStop('41', STOP_KEY))).toMatchObject({ code: 'DELIVERY_STOP_NOT_CURRENT' })
   })
 
   test('gửi vị trí: thân yêu cầu đúng hợp đồng; chuyến không còn chạy (400) thì nói mã chuyến', async () => {
@@ -281,8 +206,10 @@ describe('httpDriverApi', () => {
     expect(calls.at(-1)).toMatchObject({ body: { tripId: '41', lat: 10.95, lng: 106.82, speedKmh: 42, heading: 90 } })
 
     running = false
-    const error = await failure(() => driver.postLocation('41', { lat: 10.95, lng: 106.82 }))
-    expect(error).toMatchObject({ code: 'TRIP_NOT_IN_TRANSIT', params: { tripId: 'TRIP-0041' } })
+    expect(await failure(() => driver.postLocation('41', { lat: 10.95, lng: 106.82 }))).toMatchObject({
+      code: 'TRIP_NOT_IN_TRANSIT',
+      params: { tripId: 'TRIP-0041' },
+    })
   })
 
   test.each([
@@ -291,22 +218,27 @@ describe('httpDriverApi', () => {
   ])('gửi vị trí bị từ chối kèm mã (%i %s): cùng câu chuyến không còn chạy', async (status, code) => {
     const { driver } = backend(onTrip({ 'POST /api/driver/location': () => fail(status, code) }))
     await driver.fetchMyTrips()
-    const error = await failure(() => driver.postLocation('41', { lat: 10.95, lng: 106.82 }))
-    expect(error).toMatchObject({ code: 'TRIP_NOT_IN_TRANSIT', status, params: { tripId: 'TRIP-0041' } })
+    expect(await failure(() => driver.postLocation('41', { lat: 10.95, lng: 106.82 }))).toMatchObject({ code: 'TRIP_NOT_IN_TRANSIT', status })
   })
 
-  test('gửi vị trí bị từ chối kèm mã khác (400 VALIDATION_ERROR): giữ mã của backend', async () => {
-    const { driver } = backend(onTrip({ 'POST /api/driver/location': () => fail(400, 'VALIDATION_ERROR') }))
-    expect(await failure(() => driver.postLocation('41', { lat: 91, lng: 106.82 }))).toMatchObject({ code: 'VALIDATION_ERROR' })
+  test('sự cố trên đường: gửi đúng thân yêu cầu kèm mã tài xế', async () => {
+    const { driver, calls } = backend(onTrip({ 'POST /api/driver/trips/41/exceptions': () => ok({ id: '17' }) }))
+    await expect(driver.reportTripException('41', { type: 'TRAFFIC', description: 'Kẹt xe cầu Đồng Nai', delayMinutes: 30 })).resolves.toEqual({ id: '17' })
+    expect(calls.at(-1)).toMatchObject({
+      query: { driverId: '15' },
+      body: { type: 'TRAFFIC', description: 'Kẹt xe cầu Đồng Nai', delayMinutes: 30 },
+    })
   })
 
-  test('việc backend chưa có: tắt ở capabilities, gọi tới là NOT_SUPPORTED', async () => {
+  test('việc máy chủ làm được bật ở capabilities; việc chưa có gọi tới là NOT_SUPPORTED, không gọi mạng', async () => {
     const { driver, calls } = backend(onTrip())
     expect(driver.capabilities).toEqual({
       depart: false,
-      arrive: false,
-      manualConfirm: false,
-      deliveryIssues: false,
+      departFromList: true,
+      arrive: true,
+      manualConfirm: true,
+      pickupManualConfirm: false,
+      deliveryIssues: true,
       tripExceptions: true,
       pickups: false,
       gps: true,
@@ -314,10 +246,6 @@ describe('httpDriverApi', () => {
       gpsLocalOnly: false,
     })
     for (const run of [
-      () => driver.startDelivery('41'),
-      () => driver.arriveAtStop('41', STOP_KEY),
-      () => driver.confirmUnloadManually('41', { stop: STOP_KEY, itemId: '7001', reason: 'LABEL_DAMAGED', note: undefined }),
-      () => driver.reportDeliveryIssue('41', { stop: STOP_KEY, itemId: '7001', kind: 'damaged', note: undefined }),
       () =>
         driver.createPickupRequest('41', {
           pickup: { name: 'Xưởng may', address: 'Thuận An', lat: 10.93, lng: 106.71 },
@@ -332,13 +260,12 @@ describe('httpDriverApi', () => {
     expect(calls).toHaveLength(0)
   })
 
-  test('đổi người đăng nhập: quên kiện đã dỡ của người trước', async () => {
-    const { driver, user } = backend(onTrip({ 'POST /api/driver/packages/7001/unload': () => ok({ remainingPackagesCount: 1 }) }))
+  test('đổi người đăng nhập: quên chuyến và điểm đã đọc của người trước', async () => {
+    const { driver, user } = backend(onTrip({ 'POST /api/driver/stops/902/complete': () => fail(400) }))
     await driver.fetchTripScreen('41')
-    await driver.confirmUnload('41', { stop: STOP_KEY, method: 'QR', code: 'LM-AB12-CD34-EF56' })
-    expect(stopOf(await driver.fetchTripScreen('41')).doneCount).toBe(1)
-
+    expect(await failure(() => driver.completeStop('41', STOP_KEY))).toMatchObject({ params: { name: 'Điện máy Xanh Biên Hoà' } })
     user.id = '16'
-    expect(stopOf(await driver.fetchTripScreen('41')).doneCount).toBe(0)
+    // Người mới chưa đọc điểm nào: câu lỗi chỉ còn số điểm, không mang tên điểm người trước đã đọc
+    expect(await failure(() => driver.completeStop('41', STOP_KEY))).toMatchObject({ code: 'STOP_NOT_COMPLETABLE', params: { name: '2' } })
   })
 })

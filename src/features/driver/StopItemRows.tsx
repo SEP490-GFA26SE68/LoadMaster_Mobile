@@ -63,12 +63,14 @@ export function PickupItemRow({ item, last }: { item: StopPickupItem; last: bool
   return (
     <View style={[styles.row, last && styles.last, item.done && styles.done]}>
       <AppText variant="label" style={styles.code}>
-        {item.id}
+        {item.label}
       </AppText>
-      <AppText color={colors.text2}>{`${item.name} · ${format.weight(item.weightKg)}`}</AppText>
-      <Line icon={Package} color={colors.text3}>
-        {t('driver.pickup.request', { id: item.requestId })}
-      </Line>
+      <AppText color={colors.text2}>{item.weightKg === undefined ? item.name : `${item.name} · ${format.weight(item.weightKg)}`}</AppText>
+      {item.requestId === '' ? null : (
+        <Line icon={Package} color={colors.text3}>
+          {t('driver.pickup.request', { id: item.requestId })}
+        </Line>
+      )}
       {item.done ? (
         <Line icon={CircleCheck} color={badgeTones.success.fg} strong>
           {item.via === undefined ? t(`driver.pickup.${item.role}.done`) : `${t(`driver.pickup.${item.role}.done`)} · ${t(`driver.pickup.via.${item.via}`)}`}

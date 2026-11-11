@@ -25,14 +25,17 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
   bằng chữ, sự cố cấp chuyến, tìm tuyến khác, duyệt / từ chối nhận hàng dọc đường; quản lý gia hạn sự cố đã chuyển lên); tab **Tổng
   quan** của quản lý (số liệu theo kỳ, đội xe, chuyến gần đây); chuông của hai vai trò. Tài xế tạo được yêu cầu nhận hàng dọc đường
   (tờ "Thêm" ở màn điểm giao). Chưa có: bản đồ, khung 3D, nối backend cho các màn này.
-- Nối backend: đăng nhập (Keycloak + `GET /api/users/me`) và năm endpoint của tài xế (danh sách chuyến, điểm hiện tại, dỡ kiện, hoàn
-  tất điểm, vị trí). Việc backend chưa có (xuất phát, đã đến, xác nhận tay, sự cố, thông báo) thì app ẩn nút khi chạy với backend.
+- Nối backend: đăng nhập (Keycloak + `GET /api/users/me`); tài xế chạy trọn trên máy chủ như bản web — "Chuyến của tôi" đủ bốn
+  nhóm, "Xuất phát" ngay ở thẻ chuyến (kho chưa xếp xong thì nút mờ kèm lý do), "Đã đến điểm n", dỡ bằng quét QR hoặc gõ mã (mã QR, mã
+  vạch, mã kho, mã bên gửi khi duy nhất), xác nhận tay chờ điều phối viên duyệt, báo sự cố theo kiện, sự cố trên đường, nhận kiện ở điểm
+  nhận dọc đường, hoàn tất điểm, vị trí GPS. Giờ đến và tiến độ từng kiện đọc lại từ máy chủ, nên mở lại app vẫn đúng. Máy chủ chưa có:
+  thông báo, yêu cầu nhận hàng của tài xế, xác nhận tay ở điểm nhận, số liệu tổng kết chuyến — app ẩn phần đó.
 - Ngày 16/10 đã chạy bản debug trên máy ảo Android 16: với kho mẫu — đăng nhập tài xế, xuất phát, đã đến điểm, dỡ kiện bằng gõ mã; với
   backend — bản đăng nhập qua trình duyệt cũ (đã thay bằng form trong app ngày 04/11, chưa chạy lại trên máy). **Chưa** chạy với backend
-  thật (đăng nhập trọn vòng, năm endpoint của tài xế), chưa kiểm camera QR, GPS thật, điện thoại thật và iOS; hai màn lỗi và toàn bộ
+  thật (đăng nhập trọn vòng, các endpoint của tài xế), chưa kiểm camera QR, GPS thật, điện thoại thật và iOS; hai màn lỗi và toàn bộ
   màn kho thêm sau ngày đó chưa chạy trên máy.
 
-Kiểm thử: 425 test (Jest, 53 suite), lint và kiểm kiểu sạch; đóng gói Android (`expo export`) chạy được.
+Kiểm thử: 462 test (Jest, 62 suite), lint và kiểm kiểu sạch; đóng gói Android (`expo export`) chạy được.
 
 ## Chạy
 
@@ -92,10 +95,9 @@ Cần backend và Keycloak của repo backend chạy trên máy tính (cổng 80
 
 4. **Chạy bản debug:** `pnpm android` (`expo run:android`; JDK 17 + Android SDK, xem AGENTS.md). Bản release chặn `http://`.
 
-Đăng nhập bằng tài khoản của realm. Tài khoản vai trò `DRIVER` vào màn tài xế và thấy chuyến **Đang vận chuyển** của xe mình được gán
-(backend tìm chuyến theo tài xế của xe). Nhánh `develop` của backend hiện đã bỏ `GET /api/driver/trips` (từ 19/10): tới khi endpoint này
-có lại, màn tài xế báo lỗi khi chạy với backend. Chỉ `auth` (bỏ `driver`): đăng nhập bằng backend, dữ liệu vẫn là kho mẫu của tài khoản
-dùng thử cùng vai trò.
+Đăng nhập bằng tài khoản của realm. Tài khoản vai trò `DRIVER` vào màn tài xế và thấy các chuyến được gán cho mình: Đang vận chuyển,
+Đang xếp hàng (xuất phát ở thẻ khi kho đã xếp xong) và đã giao gần đây; màn chỉ mở chuyến có trong danh sách của chính tài xế. Chỉ
+`auth` (bỏ `driver`): đăng nhập bằng backend, dữ liệu vẫn là kho mẫu của tài khoản dùng thử cùng vai trò.
 
 ## Logic dùng chung với bản web
 

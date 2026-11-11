@@ -26,10 +26,12 @@ một câu nói rõ (`features/auth/landing.ts`).
 
 **Trạng thái dữ liệu:** mặc định app chạy trên **kho dữ liệu mẫu trong máy** (cùng logic và seed với bản web). Kho mẫu không thay
 backend: bản web và máy khác không thấy gì trong đó. Mỗi feature nối backend riêng, khi backend có phần đó (mục 5). Đã nối được:
-đăng nhập (`auth`, Keycloak của backend — mục 6) và màn tài xế (`driver`, phần backend đã có; việc backend chưa có thì màn ẩn nút).
+đăng nhập (`auth`, Keycloak của backend — mục 6) và màn tài xế (`driver`, trọn luồng như web: xuất phát ở thẻ chuyến, đã đến, dỡ,
+xác nhận tay, sự cố, nhận kiện ở điểm nhận, hoàn tất điểm, GPS; việc backend chưa có thì màn ẩn nút).
 Màn kho (`warehouse`), Tra cứu kiện (`packages`) và các màn của điều phối viên, quản lý (`trips`, `monitoring`, `dashboard`) mới chạy
-trên kho mẫu: chưa có adapter `http`. Riêng việc tài xế tạo yêu cầu nhận hàng dọc đường: `driver-http.ts` từ chối `NOT_SUPPORTED`, màn
-ẩn mục đó. Cách chạy với backend: README.
+trên kho mẫu: chưa có adapter `http`. Tài xế trên backend chưa có: tạo yêu cầu nhận hàng dọc đường, xác nhận tay ở điểm nhận
+(`pickupManualConfirm`), thông báo, số liệu tổng kết — `driver-http.ts` từ chối `NOT_SUPPORTED` hoặc màn ẩn phần đó.
+Cách chạy với backend: README.
 
 Luật chung, giữ từ bản web:
 
@@ -264,8 +266,9 @@ màn / component  →  hook Query của feature  →  features/<tên>/<tên>-api
     `GPS_TRIP_NOT_IN_TRANSIT` = chuyến không còn chạy), câu ở nhánh `backendErrors`; lỗi kèm mã khác đi thẳng.
 13. Endpoint cần mã người dùng (backend hiện nhận mã tài xế ở tham số) đọc `currentUserId()` của `src/data/http`, nối với
     `backendUserId()` của adapter đăng nhập — **không** đọc từ state React: query của màn con chạy trước effect của `AuthProvider`.
-14. Điều màn cần mà backend chưa trả (kiện nào của điểm đã dỡ, chuyến vừa giao xong) thì adapter `http` giữ trong bộ nhớ của lần mở
-    app, theo người đang đăng nhập — đổi người là xoá; không cất xuống máy.
+14. Tiến độ (giờ đến, kiện đã dỡ, xác nhận tay, sự cố) đọc lại từ backend sau mỗi lệnh ghi — adapter `http` không tự giữ tiến độ.
+    Nó chỉ giữ lần đọc gần nhất (để đổi mã quét được thành mã kiện) trong bộ nhớ của lần mở app, theo người đang đăng nhập — đổi người
+    là xoá; không cất xuống máy.
 
 Trước khi viết adapter `http` cho một feature: đọc controller và DTO thật ở repo backend (nhánh `develop`), không đoán dạng dữ
 liệu. Backend lệch với hợp đồng của app thì ghi vào issue và hỏi nhóm backend, không uốn màn theo.

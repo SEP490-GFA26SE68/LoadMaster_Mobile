@@ -105,6 +105,7 @@ function stopScreen(trip: Trip, view: DeliveryView, stops: readonly StopDelivery
     })),
     pickupItems: view.pickupItems.map(({ item, done, verification }) => ({
       id: item.id,
+      label: item.id,
       name: item.name,
       weightKg: item.weightKg,
       requestId: item.requestId,

@@ -25,6 +25,7 @@ export const driver = {
     viewSummary: 'View summary',
     openLabel: '{action} {tripId}',
     waitingLoading: 'The warehouse is staging / loading — you cannot depart yet, preview only.',
+    departNote: 'The warehouse has not finished loading — you can depart once loading is complete.',
     recheck: {
       one: 'The dispatcher rejected {count} manual confirmation: open the trip to check the package again.',
       other: 'The dispatcher rejected {count} manual confirmations: open the trip to check the packages again.',

@@ -130,8 +130,10 @@ export function mockDriverApi(): DriverApi {
   return {
     capabilities: {
       depart: true,
+      departFromList: false,
       arrive: true,
       manualConfirm: true,
+      pickupManualConfirm: true,
       deliveryIssues: true,
       tripExceptions: true,
       pickups: true,
