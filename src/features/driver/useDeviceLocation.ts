@@ -2,6 +2,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import * as Location from 'expo-location'
 import { useEffect, useState } from 'react'
 
+import { isApiError } from '@/data/http'
+
 import { postLocation, setDriverGps } from './driver-api'
 import type { LocationRequest } from './driver-model'
 import { locationInput } from './location-input'
@@ -9,6 +11,20 @@ import { driverKeys } from './useDriverQueries'
 
 /** Nhịp gửi vị trí của điện thoại tài xế: 30 giây, bằng nhịp ghi vị trí của kho (như web). */
 export const GPS_SEND_INTERVAL_MS = 30_000
+
+/** Gửi lỗi vì mạng hay máy chủ tạm thời: thử lại sau 30, 60 rồi tối đa 120 giây, vẫn giữ GPS bật. */
+export const GPS_RETRY_MAX_MS = 120_000
+
+/** Lỗi đi qua được khi thử lại: mất mạng, hết giờ, máy chủ lỗi hoặc quá tải. Lỗi khác (chuyến không còn chạy, nguồn từ chối) tắt GPS. */
+export function isTransientGpsError(error: unknown): boolean {
+  if (!isApiError(error)) return false
+  if (error.code === 'NETWORK_ERROR' || error.code === 'TIMEOUT' || error.code === 'SERVER_ERROR') return true
+  const status = error.status ?? 0
+  return status >= 500 || status === 408 || status === 429
+}
+
+/** Lần thử lại thứ `failures` cách lần lỗi bao lâu. */
+export const gpsRetryDelayMs = (failures: number) => Math.min(GPS_SEND_INTERVAL_MS * 2 ** Math.max(0, failures - 1), GPS_RETRY_MAX_MS)
 
 /** Vì sao GPS thật đang tắt: tài xế tắt, chưa được cấp quyền, định vị của máy tắt, mất tín hiệu, hoặc nguồn dữ liệu từ chối điểm vị trí. */
 export type GpsStopReason = 'user' | 'denied' | 'servicesOff' | 'lost' | 'error'
@@ -19,11 +35,13 @@ export type DeviceLocationState =
   | { readonly status: 'requesting' }
   /** Đang gửi; `sentAt` là giờ nguồn ghi điểm vị trí gần nhất. */
   | { readonly status: 'active'; readonly sentAt: string }
+  /** Vẫn bật nhưng lần gửi gần nhất lỗi tạm thời; `sentAt` là lần gửi được gần nhất (nếu có). */
+  | { readonly status: 'retrying'; readonly sentAt?: string; readonly error: unknown }
 
 /**
  * "Dùng GPS thật" của tài xế (như `useDeviceLocation` của web, dùng `expo-location`). Bật: kiểm định vị của máy, xin quyền vị trí khi dùng
  * app, báo nguồn dữ liệu (kho mẫu cho đồng hồ mô phỏng chạy theo giờ thật), theo dõi vị trí, gửi điểm đầu tiên ngay rồi vị trí mới nhất mỗi
- * 30 giây. Tài xế tắt, chưa được cấp quyền, định vị tắt, mất tín hiệu hoặc nguồn từ chối điểm vị trí: thôi theo dõi, báo nguồn, kèm lý do
+ * 30 giây; mất mạng hay máy chủ lỗi tạm thời thì giữ bật và thử lại giãn dần (`gpsRetryDelayMs`). Tài xế tắt, chưa được cấp quyền, định vị tắt, mất tín hiệu hoặc nguồn từ chối điểm vị trí: thôi theo dõi, báo nguồn, kèm lý do
  * để màn nói ra. Rời màn chuyến cũng dừng như vậy. App chỉ gửi vị trí khi đang mở — không theo dõi nền.
  */
 export function useDeviceLocation(tripId: string) {
@@ -38,6 +56,9 @@ export function useDeviceLocation(tripId: string) {
     let announced = false
     let subscription: Location.LocationSubscription | null = null
     let timer: ReturnType<typeof setInterval> | null = null
+    let failures = 0
+    let retryAt = 0
+    let lastSentAt: string | undefined
 
     const stop = (reason: GpsStopReason, error?: unknown) => {
       if (stopped) return
@@ -47,15 +68,24 @@ export function useDeviceLocation(tripId: string) {
     }
     const send = () => {
       const point = latest
-      if (point === null || stopped) return
+      if (point === null || stopped || Date.now() < retryAt) return
       postLocation(tripId, point).then(
         ({ recordedAt }) => {
           if (stopped) return
+          failures = 0
+          retryAt = 0
+          lastSentAt = recordedAt
           setState({ status: 'active', sentAt: recordedAt })
           // Giờ đến dự kiến của các điểm tính lại từ vị trí mới
           void client.invalidateQueries({ queryKey: driverKeys.all })
         },
-        (error: unknown) => stop('error', error),
+        (error: unknown) => {
+          if (stopped) return
+          if (!isTransientGpsError(error)) return stop('error', error)
+          failures += 1
+          retryAt = Date.now() + gpsRetryDelayMs(failures)
+          setState({ status: 'retrying', sentAt: lastSentAt, error })
+        },
       )
     }
 

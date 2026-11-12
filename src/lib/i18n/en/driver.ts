@@ -215,6 +215,7 @@ export const driver = {
     localOnly: 'No position server yet: the position from this phone is only kept in the sample data on this device.',
     requesting: 'Waiting for location permission and a GPS signal…',
     sent: 'Position sent at {time}. Sent again every 30 seconds.',
+    retrying: 'Could not send your position — retrying.',
     simulated: 'The vehicle position is simulated again.',
     stopped: {
       user: 'Real GPS is off.',

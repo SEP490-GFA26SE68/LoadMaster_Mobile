@@ -12,7 +12,7 @@ import { useDeviceLocation, type DeviceLocationState } from './useDeviceLocation
 /**
  * Công tắc "Dùng GPS thật" trên màn điểm giao khi chuyến Đang vận chuyển (như `DriverGpsToggle` của web). Một hàng 56 px: nhãn, nhãn nguồn
  * vị trí ("GPS" khi đang gửi; "Mô phỏng" khi không — chỉ với kho mẫu, nơi có xe mô phỏng) và công tắc; cả hàng là một công tắc cho trình đọc
- * màn hình. Dưới là một dòng trạng thái — đang chờ quyền, đã gửi lúc nào, hoặc vì sao đã tắt — kèm nút mở Cài đặt khi thiếu quyền hay
+ * màn hình. Dưới là một dòng trạng thái — đang chờ quyền, đã gửi lúc nào, đang thử gửi lại, hoặc vì sao đã tắt — kèm nút mở Cài đặt khi thiếu quyền hay
  * định vị tắt. Với kho mẫu có thêm câu nói vị trí chỉ lưu trên máy này. Rời màn chuyến là dừng theo dõi (`useDeviceLocation`).
  */
 export function GpsToggle({ tripId, localOnly }: { tripId: string; localOnly: boolean }) {
@@ -55,7 +55,11 @@ function GpsStatus({ state, localOnly }: { state: DeviceLocationState; localOnly
   if (state.status !== 'off') {
     return (
       <AppText color={colors.text2} accessibilityLiveRegion="polite">
-        {state.status === 'requesting' ? t('driver.gps.requesting') : t('driver.gps.sent', { time: format.time(state.sentAt) })}
+        {state.status === 'requesting'
+          ? t('driver.gps.requesting')
+          : state.status === 'retrying'
+            ? t('driver.gps.retrying')
+            : t('driver.gps.sent', { time: format.time(state.sentAt) })}
       </AppText>
     )
   }
