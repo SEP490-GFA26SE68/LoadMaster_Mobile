@@ -4,7 +4,7 @@ import type { DriverApi } from './driver-api'
 import type { CompleteStopDto, CurrentStopDto, DriverTripDto, LocationPointDto, RoutePlanDetailDto } from './driver-http-dto'
 import { myTripsOf, shownStatusOf, tripRowOf } from './driver-http-mapping'
 import { deliveryPackageOf, isUnloaded, packageOfCode, stopScreenOf, withUnloaded } from './driver-http-stop'
-import { coded, HTTP_DRIVER_CAPABILITIES, refused, unsupported } from './driver-http-support'
+import { coded, HTTP_DRIVER_CAPABILITIES, refused, SERVER_REFRESH_MS, unsupported } from './driver-http-support'
 import type { DriverTripRow, DriverTripScreen, StopKey, TripHead } from './driver-model'
 
 /*
@@ -120,7 +120,9 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     capabilities: HTTP_DRIVER_CAPABILITIES,
 
     async fetchMyTrips() {
-      return { groups: myTripsOf(await listTrips()), refreshMs: null }
+      const groups = myTripsOf(await listTrips())
+      const active = groups.inTransit.length + groups.loaded.length + groups.preparing.length > 0
+      return { groups, refreshMs: active ? SERVER_REFRESH_MS : null }
     },
 
     fetchTripScreen,

@@ -2,6 +2,9 @@ import { ApiError, isApiError } from '@/data/http'
 
 import type { DriverCapabilities } from './driver-model'
 
+/** Máy chủ không báo nhịp đọc lại: màn chuyến còn việc (đang soạn, xếp, giao) đọc lại mỗi 30 giây để thấy tiến độ ghi từ nơi khác. */
+export const SERVER_REFRESH_MS = 30_000
+
 /**
  * Việc tài xế làm được khi nguồn là máy chủ: xuất phát ở thẻ chuyến (máy chủ không mở màn điểm giao trước khi xe chạy), "Đã đến", dỡ và
  * xác nhận tay ở điểm giao, nhận kiện ở điểm nhận (không xác nhận tay — máy chủ chưa có), sự cố theo kiện và sự cố trên đường, vị trí điện
