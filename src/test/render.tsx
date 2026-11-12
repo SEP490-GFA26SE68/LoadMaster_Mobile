@@ -43,7 +43,12 @@ export async function signInAs(email: string): Promise<User> {
   return user
 }
 
-/** Xoá kho khoá giả giữa các test (`src/test/setup.ts`). */
+/** Cho kho khoá giả từ chối đọc và / hoặc ghi, tới lần `clearStored()` kế tiếp. */
+export function failStored(...ops: readonly ('read' | 'write')[]): void {
+  ;(globalThis as { failStoredForTest?: (ops: readonly ('read' | 'write')[]) => void }).failStoredForTest?.(ops)
+}
+
+/** Xoá kho khoá giả giữa các test (`src/test/setup.ts`), kể cả lỗi đặt bằng `failStored()`. */
 export function clearStored(): void {
   ;(globalThis as { clearStoredForTest?: () => void }).clearStoredForTest?.()
 }

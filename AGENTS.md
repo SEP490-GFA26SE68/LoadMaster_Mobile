@@ -289,7 +289,8 @@ liệu. Backend lệch với hợp đồng của app thì ghi vào issue và h�
 - `features/auth/auth-adapter.ts` là hợp đồng đăng nhập: `signIn(email, mật khẩu)` — form email và mật khẩu **ngay trong app** cho cả
   kho mẫu lẫn Keycloak của backend, không mở trình duyệt. Phần còn lại của app chỉ biết `useAuth()`.
 - Phiên cất trong kho khoá của máy (`expo-secure-store`) dưới dạng một chuỗi do adapter quyết định. Token không bao giờ nằm trong
-  state của màn, log hay cache Query.
+  state của màn, log hay cache Query. Đọc / ghi phiên chỉ qua `features/auth/session-store.ts`; kho khoá từ chối thì ghi log và báo
+  người dùng: không đọc được lúc mở app → câu trên màn đăng nhập; không cất được → hộp báo "mở lại app sẽ phải đăng nhập lại".
 - Ma trận quyền chép từ web (`features/auth/permissions.ts`): hỏi quyền bằng `useCan()`. Tab và route làm việc nằm sau quyền
   (`Tabs.Protected` / `Stack.Protected`); backend vẫn kiểm lại ở máy chủ.
 - **Tab theo vai trò** (`features/auth/landing.ts`, như `NAV_ITEMS` của web): `ROLE_TABS` là phạm vi app của từng vai trò, theo thứ tự

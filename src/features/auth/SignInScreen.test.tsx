@@ -1,10 +1,10 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react-native'
-import { Text } from 'react-native'
+import { Alert, Text } from 'react-native'
 
 import { ApiError } from '@/data/http'
 import { resetMockDb } from '@/data/mock-db'
 import { DEMO_ACCOUNTS, SEED_PASSWORD } from '@/lib/mock-db'
-import { clearStored, renderApp } from '@/test/render'
+import { clearStored, failStored, renderApp } from '@/test/render'
 import type { User } from '@/types/user'
 
 import type { AuthAdapter, AuthSession } from './auth-adapter'
@@ -249,5 +249,38 @@ describe('màn đăng nhập khi đăng nhập dùng Keycloak của backend', ()
     expect(await screen.findByRole('button', { name: 'Đăng nhập' })).toBeOnTheScreen()
     expect(screen.getByLabelText('Email').props.value).toBe(EMAIL)
     expect(screen.queryByText(/Đã đặt mật khẩu mới/)).toBeNull()
+  })
+})
+
+describe('kho khoá của máy từ chối phiên đăng nhập', () => {
+  beforeEach(() => {
+    resetMockDb()
+    clearStored()
+    jest.spyOn(console, 'warn').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  test('mở app không đọc được phiên đã cất: vào màn đăng nhập kèm lý do, ẩn được câu đó', async () => {
+    failStored('read')
+    await renderApp(<Gate />)
+    expect(await screen.findByText('Không đọc được phiên đăng nhập đã lưu trên máy này. Hãy đăng nhập lại.')).toBeOnTheScreen()
+    expect(console.warn).toHaveBeenCalled()
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Ẩn thông báo' }))
+    expect(screen.queryByText(/Không đọc được phiên đăng nhập/)).toBeNull()
+  })
+
+  test('đăng nhập xong mà không cất được phiên: vẫn vào app, hộp báo phải đăng nhập lại lần mở sau', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {})
+    failStored('write')
+    await renderApp(<Gate />)
+    await fireEvent.changeText(await screen.findByLabelText('Email'), driver?.email ?? '')
+    await fireEvent.changeText(screen.getByLabelText('Mật khẩu'), SEED_PASSWORD)
+    await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập' }))
+    expect(await screen.findByText(/^đã vào: .+ \(driver\)$/)).toBeOnTheScreen()
+    expect(alert).toHaveBeenCalledWith('Chưa lưu được phiên đăng nhập', expect.stringMatching(/mở lại app sẽ phải đăng nhập lại/))
   })
 })
