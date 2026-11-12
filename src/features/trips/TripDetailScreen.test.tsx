@@ -109,7 +109,7 @@ test('yêu cầu giao vào chuyến: hạn và ưu tiên ở điểm, điểm tr
 
 test('kho đang xếp: banner khoá, tiến độ xếp, tài xế kèm số điện thoại', async () => {
   await renderDetail(LOADING_TRIP, MANAGER_EMAIL)
-  expect(await screen.findByText('Kho đang xếp hàng theo phương án đã duyệt nên xe, điểm giao và kiện đã khoá.')).toBeOnTheScreen()
+  expect(await screen.findByText('Kho đang xếp hàng theo phương án đã duyệt nên chuyến đã khoá, không sửa được nữa.')).toBeOnTheScreen()
   expect(screen.getByText(/^Đã xếp 110 \/ \d+ kiện/)).toBeOnTheScreen()
   expect(screen.getByLabelText('Tài xế: Đặng Hoài Nam · 0907 890 123')).toBeOnTheScreen()
   await settle()

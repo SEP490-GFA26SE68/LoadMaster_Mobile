@@ -1,6 +1,6 @@
 {
-  "syncedOn": "2026-11-11",
-  "digest": "d99768a14d4efe5791a5d7fc042ec31eea1afa99e699361c6c980c2e14ed648c",
+  "syncedOn": "2026-11-12",
+  "digest": "ff28606a49eb684cc6c3500c6f7f36345224b746b036198791fb63ccd8f49ba6",
   "files": [
     "components/map/coordinates.ts",
     "components/map/place-search.ts",
