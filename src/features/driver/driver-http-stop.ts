@@ -2,6 +2,7 @@ import type { DeliveryIssueKind } from '@/lib/mock-db'
 
 import type { CurrentStopDto, RoutePlanDetailDto, StopPackageDto } from './driver-http-dto'
 import { routeMapOf, vnInstant } from './driver-http-mapping'
+import { SERVER_REFRESH_MS } from './driver-http-support'
 import type { DriverTripStop, StopItem, StopPickupItem, StopScreen, VerifyVia } from './driver-model'
 
 /*
@@ -210,7 +211,8 @@ export function stopScreenOf(dto: CurrentStopDto, tripStopCount: number, plan: R
     },
     names: Object.fromEntries([...items, ...pickupItems].map((item) => [item.id, item.name])),
     hasPickupStops: false,
-    refreshMs: null,
+    // màn điểm giao chỉ có khi chuyến đang vận chuyển
+    refreshMs: SERVER_REFRESH_MS,
     routeMap,
   }
 }

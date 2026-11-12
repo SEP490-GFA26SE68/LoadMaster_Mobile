@@ -18,7 +18,7 @@ describe('httpDriverApi: chuyến và điểm hiện tại', () => {
     })
     const trips = await driver.fetchMyTrips()
     expect(calls[0]).toMatchObject({ method: 'GET', path: '/api/driver/trips', query: { driverId: '15' } })
-    expect(trips.refreshMs).toBeNull()
+    expect(trips.refreshMs).toBe(30_000)
     expect(trips.groups.inTransit).toHaveLength(1)
     expect(trips.groups.inTransit[0]).toMatchObject({
       id: '41',
@@ -36,6 +36,11 @@ describe('httpDriverApi: chuyến và điểm hiện tại', () => {
       ['46', '2026-10-16T11:00:00+07:00'],
       ['45', '2026-10-15T17:00:00+07:00'],
     ])
+  })
+
+  test('chỉ còn chuyến đã giao: danh sách không đọc lại theo nhịp', async () => {
+    const { driver } = backend({ 'GET /api/driver/trips': () => ok([{ ...TRIP, status: 'DELIVERED', completedAt: '2026-10-16T11:00:00' }]) })
+    expect((await driver.fetchMyTrips()).refreshMs).toBeNull()
   })
 
   test('chưa có người đăng nhập: không gọi backend (thiếu mã tài xế backend trả chuyến của mọi người)', async () => {
