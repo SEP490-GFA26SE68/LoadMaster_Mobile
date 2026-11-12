@@ -39,6 +39,11 @@ export const auth = {
     confirmMismatch: 'The two passwords do not match',
     submit: 'Set password',
   },
+  sessionStore: {
+    unreadable: 'The sign-in saved on this device could not be read. Please sign in again.',
+    notSavedTitle: 'Sign-in not saved',
+    notSaved: 'This device would not save your sign-in. You can keep working, but you will need to sign in again next time you open the app.',
+  },
   passwordToggle: {
     show: 'Show password',
     hide: 'Hide password',

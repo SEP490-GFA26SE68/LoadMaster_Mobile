@@ -70,7 +70,7 @@ export function StopMoreActions({ trip, delivering, onExceptionReported }: StopM
             body: (
               <View style={styles.rows}>
                 {canException ? (
-                  <Button
+                  <Button write
                     variant="secondary"
                     icon={TrafficCone}
                     style={styles.row}
@@ -82,7 +82,7 @@ export function StopMoreActions({ trip, delivering, onExceptionReported }: StopM
                   </Button>
                 ) : null}
                 {canPickup ? (
-                  <Button
+                  <Button write
                     variant="secondary"
                     icon={PackagePlus}
                     style={styles.row}

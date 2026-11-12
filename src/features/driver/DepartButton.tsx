@@ -42,7 +42,7 @@ export function DepartButton({
           {dataErrorMessage(start.error, t)}
         </Banner>
       ) : null}
-      <Button
+      <Button write
         variant={primary ? 'primary' : 'secondary'}
         loading={start.isPending}
         disabled={blockedReason !== undefined}

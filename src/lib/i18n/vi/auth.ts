@@ -41,6 +41,12 @@ export const auth = {
     confirmMismatch: 'Hai mật khẩu chưa giống nhau',
     submit: 'Đặt mật khẩu',
   },
+  /** Kho khoá của máy từ chối đọc / cất phiên (`features/auth/session-store.ts`). */
+  sessionStore: {
+    unreadable: 'Không đọc được phiên đăng nhập đã lưu trên máy này. Hãy đăng nhập lại.',
+    notSavedTitle: 'Chưa lưu được phiên đăng nhập',
+    notSaved: 'Máy không cho lưu phiên đăng nhập. Bạn vẫn làm việc được, nhưng mở lại app sẽ phải đăng nhập lại.',
+  },
   passwordToggle: {
     show: 'Hiện mật khẩu',
     hide: 'Ẩn mật khẩu',

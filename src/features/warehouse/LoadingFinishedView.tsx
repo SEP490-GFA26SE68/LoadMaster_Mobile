@@ -50,7 +50,7 @@ export function LoadingFinishedView({ trip, plan }: LoadingFinishedViewProps) {
 
   const footer = entry.open ? undefined : (
     <>
-      {needsSeal ? <Button onPress={entry.start}>{t('warehouse.seal.submit')}</Button> : null}
+      {needsSeal ? <Button write onPress={entry.start}>{t('warehouse.seal.submit')}</Button> : null}
       <Button variant={needsSeal ? 'secondary' : 'primary'} onPress={leave}>
         {t('warehouse.backToList')}
       </Button>

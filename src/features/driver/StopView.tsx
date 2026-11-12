@@ -76,12 +76,12 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
 
       <View style={styles.actions}>
         {arrived && screen.verifiable > 0 ? (
-          <Button variant="secondary" icon={ScanLine} onPress={() => verify.setOpen(true)}>
+          <Button write variant="secondary" icon={ScanLine} onPress={() => verify.setOpen(true)}>
             {t(pickupStop ? 'driver.pickup.scanOpen' : 'driver.scan.open')}
           </Button>
         ) : null}
         {arrived && capabilities.deliveryIssues && items.length > 0 ? (
-          <Button variant="secondary" icon={TriangleAlert} onPress={() => setIssue(opened)}>
+          <Button write variant="secondary" icon={TriangleAlert} onPress={() => setIssue(opened)}>
             {t('driver.issue.report')}
           </Button>
         ) : null}

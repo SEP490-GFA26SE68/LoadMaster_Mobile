@@ -88,7 +88,7 @@ export function ManualConfirmForm({ candidates, pending, onSubmit }: { candidate
           />
         )}
       />
-      <Button loading={pending} onPress={() => void submit()}>
+      <Button write loading={pending} onPress={() => void submit()}>
         {t('verify.manualSubmit')}
       </Button>
     </View>

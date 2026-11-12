@@ -2,9 +2,11 @@ import type { LucideIcon } from 'lucide-react-native'
 import type { ReactNode } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, type PressableProps, type ViewStyle } from 'react-native'
 
+import { useT } from '@/lib/i18n'
 import { colors, radius, space, TOUCH } from '@/theme/tokens'
 
 import { AppText } from './AppText'
+import { useWritesBlocked } from './OfflineGate'
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'skySolid'
 
@@ -28,10 +30,15 @@ export type ButtonProps = Omit<PressableProps, 'children' | 'style'> & {
   icon?: LucideIcon
   /** Icon sau chữ: mũi tên "đi tiếp". */
   trailingIcon?: LucideIcon
+  /** Nút gửi lệnh ghi (hoặc mở bước ghi): màn trong `OfflineGate` mà máy mất mạng thì nút mờ, gợi ý nói lý do. */
+  write?: boolean
 }
 
 /** Nút cao 56 (vùng chạm tối thiểu của app). Nhấn chỉ đổi màu nền: không phóng to, không nhấc lên. */
-export function Button({ children, variant = 'primary', loading = false, disabled = false, style, icon: Icon, trailingIcon: TrailingIcon, ...rest }: ButtonProps) {
+export function Button({ children, variant = 'primary', loading = false, disabled: disabledProp = false, write = false, style, icon: Icon, trailingIcon: TrailingIcon, accessibilityHint, ...rest }: ButtonProps) {
+  const t = useT()
+  const offline = useWritesBlocked() && write
+  const disabled = Boolean(disabledProp) || offline
   const look = LOOKS[variant]
   const blocked = disabled || loading
   const color = disabled ? colors.textDisabled : look.text
@@ -40,6 +47,7 @@ export function Button({ children, variant = 'primary', loading = false, disable
       accessibilityRole="button"
       accessibilityState={{ disabled: blocked, busy: loading }}
       disabled={blocked}
+      accessibilityHint={offline ? t('common.offline.writeBlocked') : accessibilityHint}
       {...rest}
       style={({ pressed }) => [styles.base, look.rest, pressed && look.pressed, disabled && styles.disabled, style]}>
       {loading ? <ActivityIndicator color={look.text} /> : Icon === undefined ? null : <Icon color={color} size={20} strokeWidth={1.5} />}

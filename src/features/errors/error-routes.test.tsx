@@ -179,7 +179,7 @@ describe('màn lỗi chung', () => {
     expect(await screen.findByRole('header', { name: 'Đăng nhập' })).toBeOnTheScreen()
     expect(pathname()).toBe('/sign-in')
     // Mở lại app không khôi phục phiên rồi đưa người dùng về đúng màn đang lỗi
-    expect(await readStored(SESSION_KEY)).toBeNull()
+    expect(await readStored(SESSION_KEY)).toEqual({ ok: true, value: null })
   })
 
   test('màn đăng nhập ném lỗi: chỉ có "Thử lại" — màn chính của người chưa đăng nhập là chính màn đó, chưa có phiên để đăng xuất', async () => {

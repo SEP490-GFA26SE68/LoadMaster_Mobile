@@ -49,7 +49,7 @@ export function ServerFinishedView({ tripId, session }: { tripId: string; sessio
 
   const footer = open ? undefined : (
     <>
-      {seal === undefined ? <Button onPress={startEntry}>{t('warehouse.seal.submit')}</Button> : null}
+      {seal === undefined ? <Button write onPress={startEntry}>{t('warehouse.seal.submit')}</Button> : null}
       <Button variant={seal === undefined ? 'secondary' : 'primary'} onPress={leave}>
         {t('warehouse.backToList')}
       </Button>

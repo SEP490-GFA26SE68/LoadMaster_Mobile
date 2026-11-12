@@ -2,6 +2,7 @@ import type { GeoPoint } from '@/domain/routing'
 import { stopColor, stopForeground } from '@/lib/stops'
 import { colors } from '@/theme/tokens'
 
+import { MAPLIBRE_CSS, MAPLIBRE_JS } from './maplibre-dist.generated'
 import { goongStyleUrl } from './map-style'
 
 export type RouteMapPoint = GeoPoint & { readonly id: string; readonly number: number; readonly name: string }
@@ -49,17 +50,17 @@ export function routeMapPayload(view: RouteMapView, key?: string): RouteMapPaylo
   }
 }
 
-const MAPLIBRE_JS = 'https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js'
-const MAPLIBRE_CSS = 'https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css'
-
-/** HTML MapLibre: nền Goong, lớp tuyến GeoJSON, mốc kho / điểm / xe. Không tải Google Maps. */
+/**
+ * HTML MapLibre: nền Goong, lớp tuyến GeoJSON, mốc kho / điểm / xe. Không tải Google Maps. MapLibre (JS + CSS) nằm **ngay trong trang**,
+ * đóng gói cùng app (`scripts/vendor-maplibre.mjs`): không gọi CDN, nên mạng yếu chỉ mất nền Goong, tuyến và mốc vẫn vẽ.
+ */
 export function routeMapHtml(payload: RouteMapPayload): string {
   const json = JSON.stringify(payload).replace(/</g, '\\u003c')
   return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
-<link rel="stylesheet" href="${MAPLIBRE_CSS}"/>
+<style>${MAPLIBRE_CSS}</style>
 <style>
   html,body,#map{margin:0;height:100%;background:${payload.background}}
   .pin{width:28px;height:28px;border:2px solid #fff;box-shadow:0 1px 2px rgba(14,28,33,.2);display:grid;place-items:center;font:700 11px/1 system-ui,sans-serif}
@@ -71,7 +72,7 @@ export function routeMapHtml(payload: RouteMapPayload): string {
 </style>
 </head><body>
 <div id="map"></div>
-<script src="${MAPLIBRE_JS}"></script>
+<script>${MAPLIBRE_JS}</script>
 <script>
 (function(){
   var data=${json};

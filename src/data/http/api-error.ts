@@ -37,3 +37,13 @@ export function codeOfStatus(status: number): TransportErrorCode {
   if (status === 403) return 'UNAUTHORIZED'
   return 'SERVER_ERROR'
 }
+
+/**
+ * Lỗi có thể qua được khi gọi lại: mất mạng, hết giờ, máy chủ lỗi hoặc quá tải. Lỗi nghiệp vụ, phiên, quyền thì gọi lại vẫn vậy.
+ * Dùng cho thử lại truy vấn đọc (`data/query-client.ts`) và gửi lại vị trí GPS.
+ */
+export function isTransientError(error: unknown): boolean {
+  if (!isApiError(error)) return false
+  if (error.code === 'NETWORK_ERROR' || error.code === 'TIMEOUT' || error.code === 'SERVER_ERROR') return true
+  return error.status >= 500 || error.status === 408 || error.status === 429
+}

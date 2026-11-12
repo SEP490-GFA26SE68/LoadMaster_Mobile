@@ -10,6 +10,6 @@ module.exports = defineConfig([
     rules: { "import/no-unresolved": "off" },
   },
   {
-    ignores: ["dist/**", ".expo/**"],
+    ignores: ["dist/**", ".expo/**", "src/**/*.generated.ts"],
   }
 ]);

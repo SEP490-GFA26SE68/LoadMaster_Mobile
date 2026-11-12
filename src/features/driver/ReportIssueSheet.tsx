@@ -59,7 +59,7 @@ export function ReportIssueSheet({ open, onClose, stopNumber, items, pending, on
           <Button variant="secondary" style={styles.flex} disabled={pending} onPress={onClose}>
             {t('driver.issue.cancel')}
           </Button>
-          <Button style={styles.flex} loading={pending} onPress={() => void submit()}>
+          <Button write style={styles.flex} loading={pending} onPress={() => void submit()}>
             {t('driver.issue.submit')}
           </Button>
         </>

@@ -46,7 +46,7 @@ export const StagingRow = memo(function StagingRow({ item, reported, first, last
         ) : null}
       </View>
       {reported || onReport === undefined ? null : (
-        <Button
+        <Button write
           variant="secondary"
           icon={PackageX}
           style={styles.action}

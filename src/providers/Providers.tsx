@@ -1,18 +1,17 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useState, type ReactNode } from 'react'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { useEffect, useState, type ReactNode } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
+import { connectNetworkStatus } from '@/data/network'
+import { createQueryClient } from '@/data/query-client'
 import { AuthProvider } from '@/features/auth/AuthProvider'
 import { I18nProvider } from '@/lib/i18n'
-
-/** Lỗi của lượt gọi dữ liệu là lỗi có mã (luật nghiệp vụ, phiên, mạng): thử lại ngầm không sửa được, để màn hiện câu và nút thử lại. */
-function createQueryClient(): QueryClient {
-  return new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
-}
 
 /** Mọi provider của app, theo thứ tự phụ thuộc: vùng an toàn → cache truy vấn → ngôn ngữ → phiên đăng nhập. */
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(createQueryClient)
+  // Trạng thái mạng của máy cho cache truy vấn (thử lại khi có mạng lại) và cho dải "Mất kết nối" của màn tài xế, kho
+  useEffect(() => connectNetworkStatus(), [])
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>

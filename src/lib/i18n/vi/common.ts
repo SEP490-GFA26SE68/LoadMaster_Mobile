@@ -9,6 +9,11 @@ export const common = {
   back: 'Quay lại',
   close: 'Đóng',
   dismiss: 'Ẩn thông báo',
+  /** Máy mất mạng khi feature của màn đọc ghi backend (`OfflineGate`): dải dưới tiêu đề và lý do của nút ghi đang mờ. */
+  offline: {
+    banner: 'Mất kết nối. Màn đang hiện dữ liệu đã tải; thao tác ghi tạm khoá tới khi có mạng lại.',
+    writeBlocked: 'Mất kết nối — chờ có mạng lại để ghi.',
+  },
   stop: 'Điểm {number}',
   /** Liên từ nối hai phần tử cuối của danh sách khi máy không có `Intl.ListFormat` (Hermes): "A, B và C" (`lib/format.ts`). */
   listAnd: 'và',

@@ -60,7 +60,7 @@ export function ServerShortageSheet({ tripId, placement, onClose }: ServerShorta
           <Button variant="secondary" style={styles.flex} disabled={report.isPending} onPress={close}>
             {t('warehouse.missingDialog.cancel')}
           </Button>
-          <Button icon={PackageX} style={styles.flex} loading={report.isPending} onPress={() => void confirm(packageId)}>
+          <Button write icon={PackageX} style={styles.flex} loading={report.isPending} onPress={() => void confirm(packageId)}>
             {t('warehouse.missingDialog.confirm')}
           </Button>
         </>

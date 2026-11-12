@@ -43,7 +43,7 @@ export function CompleteStopSheet({ open, onClose, screen, pending, failure, onC
           <Button variant="secondary" style={styles.flex} disabled={pending} onPress={onClose}>
             {t('driver.completeConfirm.cancel')}
           </Button>
-          <Button style={styles.flex} loading={pending} onPress={onConfirm}>
+          <Button write style={styles.flex} loading={pending} onPress={onConfirm}>
             {t('driver.completeConfirm.confirm')}
           </Button>
         </>

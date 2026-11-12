@@ -9,12 +9,12 @@ import { dataConfig, FEATURES } from '@/data/config'
 import { ApiError, createApiClient } from '@/data/http'
 import { getMockDb } from '@/data/mock-db'
 import { DEMO_ACCOUNTS } from '@/lib/mock-db'
-import { writeStored } from '@/lib/storage'
 
-import { SESSION_KEY, type AuthAdapter } from './auth-adapter'
+import type { AuthAdapter } from './auth-adapter'
 import { createMockAuth } from './auth-mock'
 import { createKeycloakAuth, type StandIn } from './keycloak-auth'
 import { createKeycloakOAuth } from './keycloak-oauth'
+import { saveSession } from './session-store'
 
 // GET /api/users/me — gọi bằng token vừa có, trước khi phiên vào app (client chung `api()` lấy token của phiên đang mở)
 function readProfile(accessToken: string): Promise<unknown> {
@@ -43,7 +43,7 @@ function keycloakAuth(): AuthAdapter {
   return createKeycloakAuth({
     oauth: createKeycloakOAuth(dataConfig.keycloak),
     readProfile,
-    persist: (saved) => writeStored(SESSION_KEY, saved),
+    persist: saveSession,
     ...(usesMockData ? { standIn: mockStandIn } : {}),
   })
 }

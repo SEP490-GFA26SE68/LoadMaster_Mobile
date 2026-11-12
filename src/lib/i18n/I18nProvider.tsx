@@ -26,8 +26,9 @@ export function I18nProvider({ children, initialLocale }: { children: ReactNode;
   useEffect(() => {
     if (initialLocale !== undefined) return
     let cancelled = false
+    // Kho khoá từ chối thì giữ tiếng Việt: lựa chọn ngôn ngữ không đáng một lời báo
     void readStored(LOCALE_STORAGE_KEY).then((stored) => {
-      if (!cancelled && isLocale(stored)) setLocaleState(stored)
+      if (!cancelled && stored.ok && isLocale(stored.value)) setLocaleState(stored.value)
     })
     return () => {
       cancelled = true

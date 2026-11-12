@@ -93,7 +93,7 @@ function StartButton({ row, primary }: { row: ServerWarehouseTrip; primary: bool
   return (
     <>
       {failure === null ? null : <Banner tone="danger">{failure}</Banner>}
-      <Button
+      <Button write
         variant={primary ? 'primary' : 'secondary'}
         loading={start.isPending}
         accessibilityLabel={t('warehouseTrips.openLabel', { action: label, tripId: row.code })}
