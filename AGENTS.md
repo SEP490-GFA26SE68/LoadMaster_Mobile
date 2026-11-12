@@ -59,6 +59,10 @@ expo-crypto                 — polyfill crypto.getRandomValues cho logic chép 
 expo-camera                 — quét mã QR trên nhãn kiện
 react-native-svg            — hình 2D của màn kho (sơ đồ thùng nhìn từ trên, hình hướng đặt)
 expo-location               — vị trí xe khi tài xế bật GPS
+react-native-webview        — bản đồ tuyến của tài xế: MapLibre GL JS trong WebView, nền Goong
+maplibre-gl (devDependency) — khoá đúng một version; `scripts/vendor-maplibre.mjs` (postinstall, đầu `check` / `start`…) chép JS + CSS thành chuỗi trong
+                              `features/driver/maplibre-dist.generated.ts` (không commit) và trang HTML của bản đồ chèn thẳng chuỗi đó:
+                              không gọi CDN — mạng yếu chỉ mất nền Goong, tuyến và mốc vẫn vẽ. Bundle tăng khoảng 0,85 MB
 jest-expo + @testing-library/react-native v14 — test
 ```
 
@@ -86,6 +90,7 @@ pnpm android              # build bản debug rồi cài lên máy / máy ảo A
 pnpm web                  # xem thử trên trình duyệt — chỉ để dev, không phải sản phẩm
 pnpm check                # dấu file chép từ web + lint + kiểm kiểu + test: chạy trước khi báo xong việc
 pnpm sync:web             # chép lại logic từ bản web (mục 4)
+pnpm vendor:maplibre      # sinh lại MapLibre đóng gói vào app (tự chạy sau pnpm install; chạy tay khi đổi version maplibre-gl)
 pnpm dlx expo-doctor      # kiểm cấu hình và version các gói
 ```
 

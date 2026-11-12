@@ -1,5 +1,6 @@
 import { colors } from '@/theme/tokens'
 
+import { MAPLIBRE_CSS, MAPLIBRE_JS } from './maplibre-dist.generated'
 import { GOONG_STYLE_URL } from './map-style'
 import { routeLine, routeMapHtml, routeMapPayload } from './route-map-html'
 
@@ -25,4 +26,13 @@ test('không khoá: payload không có styleUrl, HTML vẫn vẽ tuyến bằng 
   expect(payload.primary).toBe(colors.primary)
   expect(payload.line).toEqual([[106.7, 10.78], [106.82, 10.95]])
   expect(routeMapHtml(payload)).not.toContain(`${GOONG_STYLE_URL}?api_key=`)
+})
+
+test('MapLibre nằm ngay trong trang: không tải script hay CSS từ mạng', () => {
+  const html = routeMapHtml(routeMapPayload({ depot, stops }, undefined))
+  expect(html).toContain(MAPLIBRE_JS)
+  expect(html).toContain(MAPLIBRE_CSS)
+  expect(html).not.toMatch(/<script[^>]+src=/)
+  expect(html).not.toMatch(/<link[^>]+href=/)
+  expect(html).not.toContain('cdn.jsdelivr.net')
 })
