@@ -1,11 +1,13 @@
 // Chép phần logic thuần của bản web sang app mobile. Bản web là nguồn chuẩn: file liệt kê ở `src/web-mirror.json` KHÔNG sửa ở mobile.
 //
-//   pnpm sync:web           chép lại từ ../LoadMaster/src (hoặc biến WEB_SRC)
+//   pnpm sync:web           chép lại từ ../LoadMaster/src (hoặc biến WEB_SRC); từ chối khi bản web chậm hơn nhánh của nó trên máy chủ
+//                           (theo lần fetch gần nhất) — thêm `--force` để vẫn chép
 //   pnpm sync:web:check     chỉ so với bản web, thoát mã 1 khi bản web đã khác bản đang có
 //   pnpm sync:web:verify    không cần repo web: thoát mã 1 khi có file trong danh sách bị sửa tay (chạy trong `pnpm check` và CI)
 //
 // File mobile phải viết riêng (web dùng `import.meta`, Web Worker, BroadcastChannel) nằm ở scripts/web-overrides/<cùng đường dẫn>
 // và được chép đè sau cùng.
+import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
@@ -158,6 +160,31 @@ if (process.argv.includes('--verify')) {
 
 if (!existsSync(WEB_SRC)) {
   console.error(`Không thấy mã nguồn bản web ở ${WEB_SRC}. Đặt biến WEB_SRC trỏ tới thư mục src của repo web.`)
+  process.exit(1)
+}
+
+/** Nhánh, commit và số commit bản web còn thiếu so với nhánh theo dõi; `null` khi WEB_SRC không nằm trong repo git. */
+function webRevision() {
+  const git = (...args) => execFileSync('git', ['-C', WEB_SRC, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()
+  try {
+    const revision = { branch: git('rev-parse', '--abbrev-ref', 'HEAD'), head: git('rev-parse', '--short', 'HEAD'), behind: 0 }
+    try {
+      revision.behind = Number(git('rev-list', '--count', 'HEAD..@{u}'))
+    } catch {
+      // nhánh không theo dõi nhánh nào trên máy chủ (worktree của một việc): không so được
+    }
+    return revision
+  } catch {
+    return null
+  }
+}
+
+const revision = webRevision()
+if (revision) console.log(`Bản web: ${revision.branch} @ ${revision.head} (${WEB_SRC})`)
+if (revision?.behind && !process.argv.includes('--check') && !process.argv.includes('--force')) {
+  console.error(
+    `Bản web ở ${WEB_SRC} chậm ${revision.behind} commit so với nhánh trên máy chủ. Kéo bản web về (git pull) hoặc đặt WEB_SRC tới bản mới; thêm --force để vẫn chép.`,
+  )
   process.exit(1)
 }
 
