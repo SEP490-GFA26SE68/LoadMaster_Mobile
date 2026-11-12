@@ -58,7 +58,7 @@ export function StagingStepView({ trip, plan }: StagingStepViewProps) {
       leading={<SessionExitButton />}
       below={<StepHeader kind="staging" staged={progress.staged} total={progress.total} />}
       footer={
-        <Button icon={ScanLine} disabled={verify.pending} onPress={() => verify.setOpen(true)}>
+        <Button write icon={ScanLine} disabled={verify.pending} onPress={() => verify.setOpen(true)}>
           {t('warehouse.scan.open')}
         </Button>
       }>

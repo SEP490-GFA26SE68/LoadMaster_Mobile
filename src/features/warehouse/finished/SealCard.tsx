@@ -49,7 +49,7 @@ export function SealCard({ seal, editable, failure, onChange }: SealCardProps) {
         <AppText color={colors.text2}>{t('warehouse.seal.none')}</AppText>
       )}
       {seal === undefined ? null : editable ? (
-        <Button variant="secondary" onPress={onChange}>
+        <Button write variant="secondary" onPress={onChange}>
           {t('warehouse.seal.change')}
         </Button>
       ) : (

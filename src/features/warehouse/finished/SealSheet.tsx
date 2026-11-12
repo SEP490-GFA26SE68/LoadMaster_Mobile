@@ -62,7 +62,7 @@ export function SealSheet({ open, initial, pending, failure, onCancel, onSubmit 
           <Button variant="secondary" style={styles.flex} disabled={pending} onPress={onCancel}>
             {t('common.back')}
           </Button>
-          <Button style={styles.flex} loading={pending} onPress={() => void submit()}>
+          <Button write style={styles.flex} loading={pending} onPress={() => void submit()}>
             {t('warehouse.seal.submit')}
           </Button>
         </>

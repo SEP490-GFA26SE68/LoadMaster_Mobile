@@ -3,7 +3,7 @@ import { createApiClient, type ApiClient } from './api-client'
 import { ApiError } from './api-error'
 
 export { createApiClient, type ApiClient, type RequestOptions } from './api-client'
-export { ApiError, isApiError } from './api-error'
+export { ApiError, isApiError, isTransientError } from './api-error'
 
 type AuthLink = {
   readonly accessToken: () => Promise<string | null>

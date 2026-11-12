@@ -57,7 +57,7 @@ export function MissingPackageSheet({ tripId, item, onClose }: MissingPackageShe
           <Button variant="secondary" style={styles.flex} disabled={report.isPending} onPress={close}>
             {t('warehouse.missingDialog.cancel')}
           </Button>
-          <Button icon={PackageX} style={styles.flex} loading={report.isPending} onPress={() => void confirm(item.id)}>
+          <Button write icon={PackageX} style={styles.flex} loading={report.isPending} onPress={() => void confirm(item.id)}>
             {t('warehouse.missingDialog.confirm')}
           </Button>
         </>

@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { colors, CONTENT_MAX_WIDTH, space, TOUCH } from '@/theme/tokens'
 
 import { AppText } from './AppText'
+import { OfflineStrip } from './OfflineGate'
 
 export type ScreenProps = {
   title: string
@@ -41,6 +42,8 @@ export function Screen({ title, leading, actions, below, scroll = false, refresh
         </View>
         {below === undefined ? null : <View style={styles.below}>{below}</View>}
       </View>
+      {/* Mất mạng ở màn đọc ghi backend: dải nằm ngoài vùng cuộn để luôn thấy */}
+      <OfflineStrip />
       {scroll ? (
         // Lần chạm đi theo cây React, xuyên qua `Modal`: thiếu "handled" thì khi bàn phím đang mở, mọi nút của màn và của tờ trượt
         // (`Sheet`) đặt trong màn đều phải bấm hai lần — lần đầu chỉ đóng bàn phím

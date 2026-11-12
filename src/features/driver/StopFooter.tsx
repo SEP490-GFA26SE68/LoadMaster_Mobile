@@ -59,11 +59,11 @@ export function StopFooter({ screen, actions, capabilities, verifyPending }: Sto
   const next = footerStep(screen, capabilities)
   const step =
     next === null ? null : next === 'depart' ? (
-      <Button loading={actions.starting} onPress={actions.startDelivery}>
+      <Button write loading={actions.starting} onPress={actions.startDelivery}>
         {t('driver.start')}
       </Button>
     ) : next === 'arrive' ? (
-      <Button icon={MapPinCheck} loading={actions.arriving} onPress={actions.arrive}>
+      <Button write icon={MapPinCheck} loading={actions.arriving} onPress={actions.arrive}>
         {t('driver.arrive', { number: stop.number })}
       </Button>
     ) : (
@@ -71,7 +71,7 @@ export function StopFooter({ screen, actions, capabilities, verifyPending }: Sto
         {pendingConfirms > 0 ? (
           <Banner tone="warning">{t(pickupStop ? 'driver.pickup.blocked' : 'driver.confirms.blocked', { count: pendingConfirms })}</Banner>
         ) : null}
-        <Button
+        <Button write
           trailingIcon={ArrowRight}
           disabled={!completable || actions.completing}
           onPress={() => {

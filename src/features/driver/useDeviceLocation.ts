@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import * as Location from 'expo-location'
 import { useEffect, useState } from 'react'
 
-import { isApiError } from '@/data/http'
+import { isTransientError } from '@/data/http'
 
 import { postLocation, setDriverGps } from './driver-api'
 import type { LocationRequest } from './driver-model'
@@ -16,12 +16,7 @@ export const GPS_SEND_INTERVAL_MS = 30_000
 export const GPS_RETRY_MAX_MS = 120_000
 
 /** Lỗi đi qua được khi thử lại: mất mạng, hết giờ, máy chủ lỗi hoặc quá tải. Lỗi khác (chuyến không còn chạy, nguồn từ chối) tắt GPS. */
-export function isTransientGpsError(error: unknown): boolean {
-  if (!isApiError(error)) return false
-  if (error.code === 'NETWORK_ERROR' || error.code === 'TIMEOUT' || error.code === 'SERVER_ERROR') return true
-  const status = error.status ?? 0
-  return status >= 500 || status === 408 || status === 429
-}
+export const isTransientGpsError: (error: unknown) => boolean = isTransientError
 
 /** Lần thử lại thứ `failures` cách lần lỗi bao lâu. */
 export const gpsRetryDelayMs = (failures: number) => Math.min(GPS_SEND_INTERVAL_MS * 2 ** Math.max(0, failures - 1), GPS_RETRY_MAX_MS)

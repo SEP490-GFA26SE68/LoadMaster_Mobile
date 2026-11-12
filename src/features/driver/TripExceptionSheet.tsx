@@ -91,7 +91,7 @@ export function useTripExceptionForm({ tripCode, report, onCancel, onReported }:
         <Button variant="secondary" style={styles.flex} disabled={report.isPending} onPress={onCancel}>
           {t('tripException.cancel')}
         </Button>
-        <Button style={styles.flex} loading={report.isPending} onPress={() => void submit()}>
+        <Button write style={styles.flex} loading={report.isPending} onPress={() => void submit()}>
           {t('tripException.submit')}
         </Button>
       </>

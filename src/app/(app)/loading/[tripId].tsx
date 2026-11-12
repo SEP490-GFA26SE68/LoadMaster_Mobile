@@ -1,5 +1,6 @@
 import { useLocalSearchParams } from 'expo-router'
 
+import { OfflineGate } from '@/components/OfflineGate'
 import { ServerLoadingSessionScreen } from '@/features/warehouse/server/ServerLoadingSessionScreen'
 import { LoadingSessionScreen } from '@/features/warehouse/LoadingSessionScreen'
 import { useWarehouseCapabilities } from '@/features/warehouse/useWarehouseQueries'
@@ -12,5 +13,9 @@ import { useWarehouseCapabilities } from '@/features/warehouse/useWarehouseQueri
 export default function LoadingRoute() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>()
   const { backend } = useWarehouseCapabilities()
-  return backend ? <ServerLoadingSessionScreen key={tripId} tripId={tripId} /> : <LoadingSessionScreen key={tripId} tripId={tripId} />
+  return (
+    <OfflineGate feature="warehouse">
+      {backend ? <ServerLoadingSessionScreen key={tripId} tripId={tripId} /> : <LoadingSessionScreen key={tripId} tripId={tripId} />}
+    </OfflineGate>
+  )
 }

@@ -42,6 +42,8 @@ jest.mock('expo-crypto', () => ({
 jest.mock('expo-camera', () => jest.requireActual<typeof import('./native-mocks')>('./native-mocks').expoCamera)
 jest.mock('expo-location', () => jest.requireActual<typeof import('./native-mocks')>('./native-mocks').expoLocation)
 jest.mock('expo-router', () => jest.requireActual<typeof import('./native-mocks')>('./native-mocks').expoRouter)
+// Trạng thái mạng: bản giả của chính gói (luôn có mạng); test mất mạng đặt thẳng `onlineManager.setOnline(false)`
+jest.mock('@react-native-community/netinfo', () => jest.requireActual('@react-native-community/netinfo/jest/netinfo-mock.js'))
 jest.mock('react-native-webview', () => {
   const { createElement } = jest.requireActual<typeof import('react')>('react')
   const { View } = jest.requireActual<typeof import('react-native')>('react-native')

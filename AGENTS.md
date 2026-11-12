@@ -59,6 +59,7 @@ expo-crypto                 — polyfill crypto.getRandomValues cho logic chép 
 expo-camera                 — quét mã QR trên nhãn kiện
 react-native-svg            — hình 2D của màn kho (sơ đồ thùng nhìn từ trên, hình hướng đặt)
 expo-location               — vị trí xe khi tài xế bật GPS
+@react-native-community/netinfo — máy có mạng hay không: `onlineManager` của Query và dải "Mất kết nối" (module native — cần dựng lại development build)
 react-native-webview        — bản đồ tuyến của tài xế: MapLibre GL JS trong WebView, nền Goong
 maplibre-gl (devDependency) — khoá đúng một version; `scripts/vendor-maplibre.mjs` (postinstall, đầu `check` / `start`…) chép JS + CSS thành chuỗi trong
                               `features/driver/maplibre-dist.generated.ts` (không commit) và trang HTML của bản đồ chèn thẳng chuỗi đó:
@@ -285,6 +286,14 @@ màn / component  →  hook Query của feature  →  features/<tên>/<tên>-api
     hoặc giao) tự đọc lại mỗi 30 giây (`SERVER_REFRESH_MS`) để thấy việc ghi từ nơi khác.
 15. GPS thật: gửi vị trí lỗi vì mất mạng, hết giờ hay máy chủ lỗi (`isTransientGpsError`) thì giữ bật, báo "đang thử lại" và gửi lại
     giãn dần 30 → 60 → 120 giây; lỗi khác (chuyến không còn chạy, nguồn từ chối) mới tắt kèm lý do.
+16. **Mất mạng** (`src/data/network.ts`, `src/data/query-client.ts`): NetInfo báo cho `onlineManager` của Query — chỉ tin `isConnected`
+    (máy chủ có thể nằm trong mạng nội bộ không ra Internet). Truy vấn đọc gặp lỗi tạm thời (`isTransientError`: mất mạng, hết giờ, 5xx,
+    408, 429) thử lại tối đa 2 lần; lỗi nghiệp vụ, phiên, quyền thì không. Khoá của feature đọc backend chạy `networkMode: 'online'` —
+    mất mạng thì truy vấn dừng, giữ dữ liệu đã tải, có mạng lại thì đọc lại; khoá của kho mẫu chạy `always`. **Lệnh ghi không thử lại
+    và không có hàng đợi ghi khi mất mạng.** Màn làm việc của tài xế, kho và Tra cứu kiện bọc trong `OfflineGate` (ở file route): feature
+    đọc ghi backend mà máy mất mạng thì `Screen` hiện dải "Mất kết nối" dưới dải trời và mọi `Button write` (nút gửi lệnh ghi hoặc mở
+    bước ghi, kể cả trong tờ trượt) mờ, gợi ý cho trình đọc màn hình nói lý do. Nút ghi mới ở các màn đó phải mang `write`. Chống ghi
+    trùng giữ như cũ: nút khoá trong lúc gửi, và 409 "đã làm rồi" (đã đến, đã dỡ, đã nhận) tính là xong.
 
 Trước khi viết adapter `http` cho một feature: đọc controller và DTO thật ở repo backend (nhánh `develop`), không đoán dạng dữ
 liệu. Backend lệch với hợp đồng của app thì ghi vào issue và hỏi nhóm backend, không uốn màn theo.

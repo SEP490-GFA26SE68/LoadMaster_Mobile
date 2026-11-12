@@ -47,7 +47,7 @@ export const ServerStagingRow = memo(function ServerStagingRow({ row, first, las
         )}
       </View>
       {waiting === null ? (
-        <Button
+        <Button write
           variant="secondary"
           icon={PackageX}
           style={styles.action}

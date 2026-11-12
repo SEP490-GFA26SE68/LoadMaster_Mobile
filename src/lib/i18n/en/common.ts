@@ -8,6 +8,10 @@ export const common = {
   back: 'Back',
   close: 'Close',
   dismiss: 'Dismiss',
+  offline: {
+    banner: 'No connection. This screen shows the data already loaded; saving is paused until you are back online.',
+    writeBlocked: 'No connection — wait until you are back online to save.',
+  },
   stop: 'Stop {number}',
   listAnd: 'and',
   deliveryIssueKinds: { damaged: 'Damaged', missing: 'Missing', refused: 'Refused by customer', other: 'Other' },

@@ -65,7 +65,7 @@ export function PackageLookupCard({ item, justFound, onFound, onBack }: PackageL
           <View style={styles.flags}>
             <AppText color={actions.confirmFound ? colors.text : colors.text2}>{actions.confirmFound ? t('lookup.found.prompt') : t('lookup.flagNote')}</AppText>
             {actions.confirmFound ? (
-              <Button
+              <Button write
                 variant="secondary"
                 icon={CircleCheck}
                 loading={found.isPending}

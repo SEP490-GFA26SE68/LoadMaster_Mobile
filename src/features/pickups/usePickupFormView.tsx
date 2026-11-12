@@ -65,7 +65,7 @@ export function usePickupFormView({ tripCode, create, onClose }: PickupFormOptio
         <Button variant="secondary" style={styles.flex} disabled={create.isPending} onPress={onClose}>
           {t('pickups.dialog.cancel')}
         </Button>
-        <Button style={styles.flex} loading={create.isPending} onPress={() => void submit()}>
+        <Button write style={styles.flex} loading={create.isPending} onPress={() => void submit()}>
           {t('pickups.dialog.submit')}
         </Button>
       </>

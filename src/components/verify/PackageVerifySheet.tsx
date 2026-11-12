@@ -165,7 +165,7 @@ function CodeForm({ pending, onSubmit }: { pending: boolean; onSubmit: (code: st
           />
         )}
       />
-      <Button loading={pending} onPress={() => void submit()}>
+      <Button write loading={pending} onPress={() => void submit()}>
         {t('verify.codeSubmit')}
       </Button>
     </View>

@@ -39,7 +39,7 @@ export function ServerStagingView({ tripId, session }: { tripId: string; session
       leading={<SessionExitButton />}
       below={<StepHeader kind="staging" staged={view.staged} total={view.total} />}
       footer={
-        <Button icon={ScanLine} disabled={verify.pending} onPress={() => verify.setOpen(true)}>
+        <Button write icon={ScanLine} disabled={verify.pending} onPress={() => verify.setOpen(true)}>
           {t('warehouse.scan.open')}
         </Button>
       }>

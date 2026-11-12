@@ -98,7 +98,7 @@ export function ServerLoadingView({ tripId, session, onStopped }: ServerLoadingV
       {current === undefined ? (
         <>
           {failure === null ? null : <Banner tone="danger">{failure}</Banner>}
-          <Button
+          <Button write
             disabled={blocked}
             loading={complete.isPending}
             accessibilityHint={blocked ? t('serverWarehouse.session.manualBlocked', { count: session.pendingManual }) : undefined}
@@ -108,10 +108,10 @@ export function ServerLoadingView({ tripId, session, onStopped }: ServerLoadingV
         </>
       ) : (
         <View style={styles.row}>
-          <Button variant="secondary" icon={PackageX} disabled={busy} style={styles.secondary} onPress={() => start(() => setAsking(current.id))}>
+          <Button write variant="secondary" icon={PackageX} disabled={busy} style={styles.secondary} onPress={() => start(() => setAsking(current.id))}>
             {t('warehouse.damaged.open')}
           </Button>
-          <Button icon={ScanLine} disabled={busy} style={styles.primary} onPress={() => start(() => verify.setOpen(true))}>
+          <Button write icon={ScanLine} disabled={busy} style={styles.primary} onPress={() => start(() => verify.setOpen(true))}>
             {t('serverWarehouse.session.verify')}
           </Button>
         </View>
@@ -151,7 +151,7 @@ export function ServerLoadingView({ tripId, session, onStopped }: ServerLoadingV
                 : t('serverWarehouse.session.manualRejectedNoReason')}
             </Banner>
           )}
-          <Button variant="secondary" icon={Move3d} disabled={busy} onPress={() => start(() => setDeviating(current.id))}>
+          <Button write variant="secondary" icon={Move3d} disabled={busy} onPress={() => start(() => setDeviating(current.id))}>
             {t('serverWarehouse.session.deviate')}
           </Button>
         </ServerPlacementCard>

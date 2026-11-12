@@ -63,7 +63,7 @@ export function CompleteAction({ tripId, pendingConfirms, busy }: CompleteAction
           </Banner>
         </View>
       )}
-      <Button disabled={blocked || busy} loading={complete.isPending} accessibilityHint={reason} onPress={handleComplete}>
+      <Button write disabled={blocked || busy} loading={complete.isPending} accessibilityHint={reason} onPress={handleComplete}>
         {t('warehouse.complete')}
       </Button>
     </>

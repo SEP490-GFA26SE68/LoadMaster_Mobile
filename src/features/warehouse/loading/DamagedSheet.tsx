@@ -42,7 +42,7 @@ export function DamagedSheet({ open, placement, resting, pending, failure, onClo
           <Button variant="secondary" style={styles.flex} disabled={pending} onPress={onClose}>
             {t('warehouse.damaged.cancel')}
           </Button>
-          <Button style={styles.flex} loading={pending} onPress={() => onConfirm(placement.id)}>
+          <Button write style={styles.flex} loading={pending} onPress={() => onConfirm(placement.id)}>
             {t('warehouse.damaged.confirm')}
           </Button>
         </>

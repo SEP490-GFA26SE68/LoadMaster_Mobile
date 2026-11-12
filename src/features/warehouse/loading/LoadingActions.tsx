@@ -51,10 +51,10 @@ export function LoadingActions({ current, session, verify, manualAllowed, restin
   return (
     <>
       <View style={styles.row}>
-        <Button variant="secondary" icon={PackageX} disabled={busy} style={styles.secondary} onPress={openDamaged}>
+        <Button write variant="secondary" icon={PackageX} disabled={busy} style={styles.secondary} onPress={openDamaged}>
           {t('warehouse.damaged.open')}
         </Button>
-        <Button icon={ScanLine} disabled={busy} style={styles.primary} onPress={() => verify.setOpen(true)}>
+        <Button write icon={ScanLine} disabled={busy} style={styles.primary} onPress={() => verify.setOpen(true)}>
           {t('warehouse.scan.open')}
         </Button>
       </View>

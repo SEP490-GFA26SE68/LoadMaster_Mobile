@@ -77,7 +77,7 @@ export function ServerDeviationSheet({ tripId, placement, step, onClose }: Serve
           <Button variant="secondary" style={styles.flex} disabled={record.isPending} onPress={onClose}>
             {t('serverWarehouse.deviation.cancel')}
           </Button>
-          <Button style={styles.flex} loading={record.isPending} onPress={() => void submit()}>
+          <Button write style={styles.flex} loading={record.isPending} onPress={() => void submit()}>
             {t('serverWarehouse.deviation.submit')}
           </Button>
         </>
