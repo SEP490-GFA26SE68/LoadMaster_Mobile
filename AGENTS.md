@@ -276,7 +276,10 @@ màn / component  →  hook Query của feature  →  features/<tên>/<tên>-api
     `backendUserId()` của adapter đăng nhập — **không** đọc từ state React: query của màn con chạy trước effect của `AuthProvider`.
 14. Tiến độ (giờ đến, kiện đã dỡ, xác nhận tay, sự cố) đọc lại từ backend sau mỗi lệnh ghi — adapter `http` không tự giữ tiến độ.
     Nó chỉ giữ lần đọc gần nhất (để đổi mã quét được thành mã kiện) trong bộ nhớ của lần mở app, theo người đang đăng nhập — đổi người
-    là xoá; không cất xuống máy.
+    là xoá; không cất xuống máy. Máy chủ không báo nhịp đọc lại, nên màn điểm giao và "Chuyến của tôi" (khi còn chuyến đang soạn, xếp
+    hoặc giao) tự đọc lại mỗi 30 giây (`SERVER_REFRESH_MS`) để thấy việc ghi từ nơi khác.
+15. GPS thật: gửi vị trí lỗi vì mất mạng, hết giờ hay máy chủ lỗi (`isTransientGpsError`) thì giữ bật, báo "đang thử lại" và gửi lại
+    giãn dần 30 → 60 → 120 giây; lỗi khác (chuyến không còn chạy, nguồn từ chối) mới tắt kèm lý do.
 
 Trước khi viết adapter `http` cho một feature: đọc controller và DTO thật ở repo backend (nhánh `develop`), không đoán dạng dữ
 liệu. Backend lệch với hợp đồng của app thì ghi vào issue và hỏi nhóm backend, không uốn màn theo.

@@ -228,6 +228,7 @@ export const driver = {
     localOnly: 'Chưa có máy chủ vị trí: vị trí từ điện thoại chỉ lưu trong dữ liệu mẫu trên máy này.',
     requesting: 'Đang chờ quyền vị trí và tín hiệu GPS…',
     sent: 'Đã gửi vị trí lúc {time}. Gửi lại mỗi 30 giây.',
+    retrying: 'Chưa gửi được vị trí — đang thử lại.',
     /** Vị trí xe sau khi thôi dùng GPS — chỉ nói khi nguồn dữ liệu tự mô phỏng xe. */
     simulated: 'Vị trí xe về mô phỏng.',
     stopped: {
