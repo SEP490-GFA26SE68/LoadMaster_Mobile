@@ -53,8 +53,8 @@ export type ServerWarehouseApi = {
   stageManually(tripId: string, packageId: string, input: ServerManualInput): Promise<ServerLoadingSession>
   /** Báo một kiện chưa soạn là không tìm thấy: điều phối viên quyết tìm tiếp hay bỏ kiện. */
   reportShortage(tripId: string, packageId: string): Promise<ServerLoadingSession>
-  /** Xác nhận đã xếp đúng chỗ (mã đã được app đối chiếu với nhãn trước khi gửi). */
-  confirm(tripId: string, placementId: string): Promise<ServerLoadingSession>
+  /** Xác nhận đã xếp đúng chỗ (mã đã được app đối chiếu với nhãn trước khi gửi), kèm cách đối chiếu: quét QR hay gõ mã. */
+  confirm(tripId: string, placementId: string, method: 'QR' | 'CODE'): Promise<ServerLoadingSession>
   /** Xác nhận tay một kiện của bước xếp: tính là đã xếp, chờ điều phối viên duyệt. */
   confirmManually(tripId: string, placementId: string, input: ServerManualInput): Promise<ServerLoadingSession>
   /** Đã xếp kiện ở vị trí khác phương án: vị trí thật (cm nguyên) và lý do. */
@@ -115,8 +115,8 @@ export function reportServerShortage(tripId: string, packageId: string): Promise
 }
 
 // POST /api/warehouse/placements/{id}/confirm
-export function confirmServerPlacement(tripId: string, placementId: string): Promise<ServerLoadingSession> {
-  return adapter().confirm(tripId, placementId)
+export function confirmServerPlacement(tripId: string, placementId: string, method: 'QR' | 'CODE'): Promise<ServerLoadingSession> {
+  return adapter().confirm(tripId, placementId, method)
 }
 
 // POST /api/warehouse/placements/{id}/manual

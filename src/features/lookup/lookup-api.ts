@@ -1,15 +1,14 @@
 /**
- * Hàm → endpoint backend của Tra cứu kiện; mỗi nguồn là một adapter (`lookup-mock.ts` kho mẫu). Backend chưa có adapter: nguồn `packages`
- * là máy chủ thì tab Tra cứu kiện ẩn (`available: false`) và mọi hàm là `NOT_SUPPORTED` — không lấy kiện của kho mẫu.
- *   scanPackage         GET /api/packages/scan/{qrToken}
- *   lookupPackages      GET /api/packages/scan/{qrToken} · GET /api/packages?packageCode= · GET /api/packages/{id}
- *   chưa có ở BE: reportPackageFound (backend không có cờ kiện)
+ * Hàm → endpoint backend của Tra cứu kiện; mỗi nguồn là một adapter (`lookup-mock.ts` kho mẫu, `lookup-http.ts` máy chủ).
+ *   scanPackage         GET /api/packages/scan/{qrToken} · GET /api/packages/{id}
+ *   lookupPackages      GET /api/packages/scan/{qrToken} · GET /api/packages/{id} · GET /api/packages
+ *   reportPackageFound  POST /api/packages/{id}/found
  */
 import { createAdapter } from '@/data/adapter'
 import { isApiError } from '@/data/http/api-error'
-import { notSupported } from '@/lib/office-backend'
 import { isMockDbError, type Package, type PackageType } from '@/lib/mock-db'
 
+import { httpLookupApi } from './lookup-http'
 import { mockLookupApi } from './lookup-mock'
 
 /** Một kiện của màn Tra cứu kiện: kiện, loại kiện, và chuyến + điểm giao đang giữ kiện (nếu có). */
@@ -43,15 +42,7 @@ export type LookupApi = {
   reportPackageFound(token: string): Promise<Package>
 }
 
-/** Nguồn máy chủ: app chưa đọc kiện của máy chủ (`GET /api/packages/scan/{qrToken}`), nên không có tra cứu kiện. */
-const SERVER_SOURCE: LookupApi = {
-  capabilities: { available: false, reportFound: false },
-  scanPackage: notSupported,
-  lookupPackages: notSupported,
-  reportPackageFound: notSupported,
-}
-
-const adapter = createAdapter<LookupApi>('packages', { mock: mockLookupApi, http: () => SERVER_SOURCE })
+const adapter = createAdapter<LookupApi>('packages', { mock: mockLookupApi, http: () => httpLookupApi() })
 
 /** Lỗi "không khớp kiện nào" — kho mẫu và backend cùng mã `QR_UNKNOWN`. */
 export function isUnknownPackage(error: unknown): boolean {
@@ -63,17 +54,17 @@ export function lookupCapabilities(): LookupCapabilities {
   return adapter().capabilities
 }
 
-// GET /api/packages/scan/{qrToken}
+// GET /api/packages/scan/{qrToken} · GET /api/packages/{id}
 export function scanPackage(token: string): Promise<PackageLookup> {
   return adapter().scanPackage(token)
 }
 
-// GET /api/packages/scan/{qrToken} · GET /api/packages?packageCode= · GET /api/packages/{id}
+// GET /api/packages/scan/{qrToken} · GET /api/packages/{id} · GET /api/packages
 export function lookupPackages(code: string): Promise<PackageLookup[]> {
   return adapter().lookupPackages(code)
 }
 
-// chưa có ở BE
+// POST /api/packages/{id}/found
 export function reportPackageFound(token: string): Promise<Package> {
   return adapter().reportPackageFound(token)
 }

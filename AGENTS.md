@@ -31,8 +31,7 @@ xác nhận tay, sự cố, nhận kiện ở điểm nhận, hoàn tất điể
 `ServerLoadingSession` của web: danh sách `GET /api/warehouse/tasks`, bắt đầu kèm bước soạn, soạn — đối chiếu, xác nhận tay, báo
 thiếu —, xếp — đối chiếu, xác nhận tay, sai lệch vị trí, kiện hỏng —, hoàn tất, số seal; máy chủ giữ phiên nên mọi lệnh ghi đọc lại phiên);
 chuyến, giám sát và Tổng quan của điều phối viên, quản lý (`trips`, `monitoring`, `dashboard`). Việc backend chưa có thì màn ẩn theo bảng
-`capabilities` của từng feature (mục 5, luật 11), không lấy kho mẫu điền vào: Tra cứu kiện (`packages` là máy chủ thì tab ẩn — app chưa
-đọc kiện của máy chủ), chuông của kho và của hai vai trò văn phòng, khung vị trí kiện của phiên kho (vị trí ghi bằng số), yêu cầu giao và
+`capabilities` của từng feature (mục 5, luật 11), không lấy kho mẫu điền vào: chuông của kho và của hai vai trò văn phòng, khung vị trí kiện của phiên kho (vị trí ghi bằng số), yêu cầu giao và
 dòng phụ phương án của chuyến, nhận hàng dọc đường ở Giám sát; của tài xế: tạo yêu cầu nhận hàng, xác nhận tay ở điểm nhận
 (`pickupManualConfirm`), thông báo, số liệu tổng kết — `driver-http.ts` từ chối `NOT_SUPPORTED` hoặc màn ẩn phần đó.
 Cách chạy với backend: README.
@@ -152,7 +151,7 @@ src/
                        `ServerLoadingSessionScreen`) với hợp đồng riêng `warehouse-server-api.ts` → warehouse-http.ts — route chọn màn
                        theo `useWarehouseCapabilities().backend`; ← chép từ web: `warehouse-trips.ts`, `loading-session.ts`,
                        `describe-step.ts`, `server-loading.ts`
-    lookup/            Tra cứu kiện: quét hoặc gõ mã, thẻ kiện, báo đã tìm thấy kiện; adapter lookup-mock.ts (nguồn máy chủ: tab ẩn)
+    lookup/            Tra cứu kiện: quét hoặc gõ mã, thẻ kiện, báo đã tìm thấy kiện; adapter lookup-mock.ts, lookup-http.ts (máy chủ)
     errors/            màn lỗi chung `RouteErrorScreen` (là `ErrorBoundary` của route) và màn không tìm thấy `NotFoundScreen`
     notifications/     ← chép từ web: sự kiện nào báo cho ai
     viewer3d/          ← chép từ web: phần thuần (kiện theo điểm giao, thứ tự dỡ) — không có Three.js
@@ -296,7 +295,7 @@ liệu. Backend lệch với hợp đồng của app thì ghi vào issue và h�
   khoản. `hasTab` đòi cả hai: tab nằm trong `ROLE_TABS` của vai trò **và** vai trò có quyền của màn (`TAB_PERMISSION`). Có quyền mà màn
   của vai trò đó ở web thì không có tab: điều phối viên có `dashboard.view`, `packages.lookup` nhưng bảng điều khiển và tra cứu kiện của
   họ ở web. Tab mà nguồn dữ liệu chưa làm được việc của nó thì ẩn ở `(tabs)/_layout.tsx`: Tra cứu kiện khi
-  `useLookupCapabilities().available` sai (nguồn `packages` là máy chủ). Màn mới thêm tên vào `WORK_TABS` / `ROLE_TABS` và một dòng ở
+  `useLookupCapabilities().available` sai (hiện cả hai nguồn đều có). Màn mới thêm tên vào `WORK_TABS` / `ROLE_TABS` và một dòng ở
   `(tabs)/_layout.tsx`.
 - Sau khi đăng nhập mở màn chính của vai trò (`landingOf`: tab làm việc đầu tiên; vai trò không có tab làm việc nào — quản trị công ty,
   ba vai trò nền tảng — mở `/account`, kèm câu `scopeNote`). Màn đó phải là màn vai trò mở được (`landing.test.ts`).

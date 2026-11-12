@@ -45,8 +45,8 @@ export function useServerLoadVerify(
     setOpen(next)
   }
 
-  // Máy chủ ghi đã xếp không kèm cách đối chiếu: quét hay gõ mã như nhau
-  async function verify(_method: LabelVerifyMethod, code: string): Promise<boolean> {
+  // Máy chủ ghi cách đối chiếu (quét QR hay gõ mã) vào báo cáo chuyến
+  async function verify(method: LabelVerifyMethod, code: string): Promise<boolean> {
     setResult(null)
     if (current === undefined) return false
     if (!codeMatches(current, code)) {
@@ -54,7 +54,7 @@ export function useServerLoadVerify(
       return false
     }
     try {
-      await confirm.mutateAsync(current.id)
+      await confirm.mutateAsync({ placementId: current.id, method })
       setOpenState(false)
       onRecorded({ tone: 'success', message: t('serverWarehouse.session.confirmed', { name: current.name }) })
       return true

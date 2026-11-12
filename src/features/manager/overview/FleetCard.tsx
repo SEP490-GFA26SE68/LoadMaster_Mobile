@@ -9,10 +9,13 @@ import { badgeTones, colors, radius, space, type BadgeTone } from '@/theme/token
 
 import type { DashboardSummary } from '../dashboard-summary'
 
-const STATUSES: readonly VehicleStatus[] = ['available', 'in_use', 'maintenance']
+/** Xe Ngừng sử dụng (`retired`) là dòng xám riêng bên dưới, chỉ khi nguồn có số. */
+type ActiveStatus = Exclude<VehicleStatus, 'retired'>
+
+const STATUSES: readonly ActiveStatus[] = ['available', 'in_use', 'maintenance']
 
 /** Icon và nền nhạt theo nghĩa, như thẻ đội xe của web: sẵn sàng → xanh lá, vận hành → cyan, cần chú ý → hổ phách. Chữ luôn đi kèm. */
-const GLYPH: Readonly<Record<VehicleStatus, { icon: LucideIcon; tone: BadgeTone }>> = {
+const GLYPH: Readonly<Record<ActiveStatus, { icon: LucideIcon; tone: BadgeTone }>> = {
   available: { icon: CircleCheck, tone: 'success' },
   in_use: { icon: Truck, tone: 'cyan' },
   maintenance: { icon: Wrench, tone: 'warning' },

@@ -78,7 +78,7 @@ describe('httpWarehouseApi: xếp', () => {
     const { warehouse, calls } = warehouseBackend(
       onSession(sessionDto(), { 'POST /api/warehouse/placements/901/confirm': () => fail(400, 'STAGING_INCOMPLETE') }),
     )
-    expect(await failure(() => warehouse.confirm('51', '901'))).toMatchObject({ code: 'STAGING_NOT_READY', status: 400 })
+    expect(await failure(() => warehouse.confirm('51', '901', 'QR'))).toMatchObject({ code: 'STAGING_NOT_READY', status: 400 })
     expect(reads(calls)).toBe(0)
   })
 
@@ -88,7 +88,13 @@ describe('httpWarehouseApi: xếp', () => {
         'POST /api/warehouse/placements/901/confirm': () => fail(409, 'PLACEMENT_ALREADY_CONFIRMED'),
       }),
     )
-    await expect(warehouse.confirm('51', '901')).resolves.toMatchObject({ outcomes: { '901': 'confirmed' } })
+    await expect(warehouse.confirm('51', '901', 'QR')).resolves.toMatchObject({ outcomes: { '901': 'confirmed' } })
+  })
+
+  test('xác nhận đã xếp gửi cách đối chiếu: gõ mã là CODE', async () => {
+    const { warehouse, calls } = warehouseBackend(onSession(loadingDto(['PENDING', 'PENDING']), { 'POST /api/warehouse/placements/901/confirm': () => ok(null) }))
+    await warehouse.confirm('51', '901', 'CODE')
+    expect(calls.find((call) => call.path === '/api/warehouse/placements/901/confirm')?.body).toEqual({ method: 'CODE' })
   })
 
   test('sai lệch vị trí gửi cm nguyên và lý do đã cắt khoảng trắng', async () => {

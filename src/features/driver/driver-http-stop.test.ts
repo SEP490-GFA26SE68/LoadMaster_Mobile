@@ -12,7 +12,7 @@ describe('httpDriverApi: dỡ kiện bằng mã', () => {
     const { driver, calls } = backend(onTrip({ 'POST /api/driver/packages/7001/unload': unloadOk }))
     await driver.fetchTripScreen('41')
     await expect(driver.confirmUnload('41', { stop: STOP_KEY, method: 'CODE', code })).resolves.toEqual({ id: '7001' })
-    expect(calls.at(-1)).toMatchObject({ method: 'POST', path: '/api/driver/packages/7001/unload', query: { driverId: '15' } })
+    expect(calls.at(-1)).toMatchObject({ method: 'POST', path: '/api/driver/packages/7001/unload', query: { driverId: '15' }, body: { method: 'CODE' } })
   })
 
   test('mã của bên gửi trùng nhiều kiện của điểm: không đoán, nói số kiện trùng; mã lạ: báo ngay — cả hai không gọi ghi', async () => {
@@ -147,7 +147,7 @@ describe('httpDriverApi: điểm nhận dọc đường và hoàn tất điểm'
       ['8102', 'HG-2', 'Áo khoác', undefined, '', 'pick', true],
     ])
     await expect(driver.confirmUnload('41', { stop: PICKUP_KEY, method: 'QR', code: 'LM-QR-8101' })).resolves.toEqual({ id: '8101' })
-    expect(calls.at(-1)).toMatchObject({ method: 'POST', path: '/api/driver/pickup-packages/8101/pick' })
+    expect(calls.at(-1)).toMatchObject({ method: 'POST', path: '/api/driver/pickup-packages/8101/pick', body: { method: 'QR' } })
     expect(await failure(() => driver.confirmUnload('41', { stop: PICKUP_KEY, method: 'CODE', code: 'hg-1' }))).toMatchObject({
       code: 'PICKUP_PACKAGE_ALREADY_PICKED',
     })
