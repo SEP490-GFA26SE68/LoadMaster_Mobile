@@ -87,8 +87,8 @@ export function httpWarehouseApi({ client = api }: { readonly client?: () => Api
 
     reportShortage: (tripId, packageId) => writeThenRead(tripId, () => client().post(`${stagingPath(tripId, packageId)}/shortage`)),
 
-    confirm: (tripId, placementId) =>
-      writeThenRead(tripId, () => client().post(`${placementPath(placementId)}/confirm`), 'PLACEMENT_ALREADY_CONFIRMED'),
+    confirm: (tripId, placementId, method) =>
+      writeThenRead(tripId, () => client().post(`${placementPath(placementId)}/confirm`, { body: { method } }), 'PLACEMENT_ALREADY_CONFIRMED'),
 
     confirmManually: (tripId, placementId, input) =>
       writeThenRead(tripId, () => client().post(`${placementPath(placementId)}/manual`, { body: manualBody(input) })),

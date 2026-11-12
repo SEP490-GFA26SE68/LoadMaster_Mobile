@@ -149,7 +149,7 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     },
 
     // POST /api/driver/packages/{id}/unload — điểm nhận: POST /api/driver/pickup-packages/{id}/pick
-    async confirmUnload(tripId, { stop, code }) {
+    async confirmUnload(tripId, { stop, method, code }) {
       const dto = await stopOf(tripId, stop)
       const pkg = packageOfCode(dto, code)
       if (pkg.kind === 'unknown') throw new ApiError('PACKAGE_CODE_UNKNOWN', { params: { code: code.trim() } })
@@ -157,11 +157,11 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       const { packageId, label } = pkg
       if (pkg.pickup) {
         if (isUnloaded(dto, packageId)) throw new ApiError('PICKUP_PACKAGE_ALREADY_PICKED', { status: 409 })
-        await client().post(`/api/driver/pickup-packages/${packageId}/pick`)
+        await client().post(`/api/driver/pickup-packages/${packageId}/pick`, { body: { method } })
       } else {
         if (isUnloaded(dto, packageId)) throw new ApiError('PACKAGE_ALREADY_UNLOADED', { params: { code: label } })
         try {
-          await client().post(`/api/driver/packages/${packageId}/unload`, { query: { driverId: driverId() } })
+          await client().post(`/api/driver/packages/${packageId}/unload`, { query: { driverId: driverId() }, body: { method } })
         } catch (error) {
           // Đã dỡ ở máy khác sau lần đọc gần nhất: lần đọc lại (sau mỗi lệnh ghi) cho thấy kiện đã dỡ
           if (refused(error, 409, 'DUPLICATE_UNLOAD')) throw new ApiError('PACKAGE_ALREADY_UNLOADED', { status: 409, params: { code: label } })

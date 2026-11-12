@@ -88,7 +88,11 @@ export function useReportServerShortage(tripId: string) {
 }
 
 export function useConfirmServerPlacement(tripId: string) {
-  return useWrite(tripId, (placementId: string) => confirmServerPlacement(tripId, placementId), itself)
+  return useWrite(
+    tripId,
+    ({ placementId, method }: { placementId: string; method: 'QR' | 'CODE' }) => confirmServerPlacement(tripId, placementId, method),
+    itself,
+  )
 }
 
 export function useConfirmServerPlacementManually(tripId: string) {
