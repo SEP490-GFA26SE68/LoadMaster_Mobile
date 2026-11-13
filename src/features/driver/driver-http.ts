@@ -25,9 +25,14 @@ type Memory = {
   readonly trips: Map<string, DriverTripRow>
   /** Điểm hiện tại của lần đọc gần nhất theo chuyến: để đổi mã quét được thành mã kiện. */
   readonly stops: Map<string, CurrentStopDto>
+  /** Tuyến đang đi theo chuyến, kèm điểm hiện tại và lúc đọc: tuyến gần như không đổi nên không đọc lại theo nhịp 30 giây của màn. */
+  readonly plans: Map<string, { readonly plan: RoutePlanDetailDto; readonly stopId: number; readonly at: number }>
 }
 
-const emptyMemory = (): Memory => ({ trips: new Map(), stops: new Map() })
+const emptyMemory = (): Memory => ({ trips: new Map(), stops: new Map(), plans: new Map() })
+
+/** Tuyến đã đọc dùng lại chừng này lâu khi điểm hiện tại chưa đổi; sang điểm mới (hoàn tất điểm) thì đọc lại ngay. */
+export const ROUTE_REUSE_MS = 5 * 60_000
 
 type HttpDriverDeps = {
   readonly client?: () => ApiClient
@@ -113,6 +118,19 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
   }
 
   /**
+   * Tuyến cho điểm `stop`: dùng lại lần đọc trước khi vẫn là điểm đó và chưa quá `ROUTE_REUSE_MS`; không thì đọc lại (lần đọc `early`
+   * đã bắt đầu thì chờ nó). Đọc lỗi không giữ lại — lần sau đọc tiếp.
+   */
+  async function routeOf(tripId: string, stop: CurrentStopDto, early: Promise<RoutePlanDetailDto | null> | null): Promise<RoutePlanDetailDto | null> {
+    const cached = mine().plans.get(tripId)
+    if (early === null && cached !== undefined && cached.stopId === stop.stopId) return cached.plan
+    const plan = await (early ?? activePlan(tripId))
+    if (plan === null) mine().plans.delete(tripId)
+    else mine().plans.set(tripId, { plan, stopId: stop.stopId, at: Date.now() })
+    return plan
+  }
+
+  /**
    * Chỉ mở chuyến có trong danh sách của chính tài xế (backend đọc điểm hiện tại của chuyến nào cũng được), nên đọc danh sách trước: chuyến
    * đã giao mở màn tổng kết (backend chưa có số liệu tổng kết); chuyến chưa rời kho, đã huỷ hay không còn của mình thì không mở.
    */
@@ -121,7 +139,10 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     const trip = headOf(tripId)
     if (dto?.status === 'DELIVERED') return { kind: 'completed', trip, summary: undefined }
     if (dto?.status !== 'IN_TRANSIT') throw notInTransit(tripId)
-    const plan = activePlan(tripId)
+    const cached = mine().plans.get(tripId)
+    const reusable = cached !== undefined && Date.now() - cached.at < ROUTE_REUSE_MS
+    // Chưa có tuyến dùng lại được: đọc song song với điểm hiện tại
+    const early = reusable ? null : activePlan(tripId)
     const times = stopTimes(tripId)
     let stop: CurrentStopDto
     try {
@@ -133,7 +154,7 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       if (refused(error, 404, 'NO_PENDING_DELIVERY_STOP')) return { kind: 'noStops', trip }
       throw error
     }
-    return { kind: 'stop', trip, screen: stopScreenOf(stop, dto.stopCount ?? 0, await plan, await times) }
+    return { kind: 'stop', trip, screen: stopScreenOf(stop, dto.stopCount ?? 0, await routeOf(tripId, stop, early), await times) }
   }
 
   return {
