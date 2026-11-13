@@ -244,8 +244,11 @@ export type LocationRequest = { readonly lat: number; readonly lng: number; read
 /** Kiện vừa được ghi (dỡ hoặc nhận). */
 export type RecordedItem = { readonly id: string }
 
-/** Câu của một thông báo ở chuông tài xế: việc của chuyến mình, xác nhận tay của mình bị từ chối, trả lời yêu cầu hỗ trợ. */
-export type DriverNotificationKind = DriverNotice | 'manualRejected' | 'ticketReplied'
+/**
+ * Câu của một thông báo ở chuông tài xế: việc của chuyến mình, xác nhận tay của mình bị từ chối, trả lời yêu cầu hỗ trợ (máy chủ còn báo
+ * yêu cầu chỉ đổi trạng thái: `ticketUpdated`).
+ */
+export type DriverNotificationKind = DriverNotice | 'manualRejected' | 'ticketReplied' | 'ticketUpdated'
 
 export type DriverNotification = {
   readonly id: string
@@ -258,4 +261,6 @@ export type DriverNotification = {
   readonly tripId: string | undefined
   /** Chi tiết tài xế cần đọc: lý do, số kiện, mã kiện… (chỉ tham số của câu). */
   readonly details: Readonly<Record<string, string | number>>
+  /** Đã đọc theo máy chủ; vắng khi nguồn không giữ "đã đọc" (kho mẫu: màn giữ trong bộ nhớ, `notification-read.ts`). */
+  readonly read?: boolean
 }

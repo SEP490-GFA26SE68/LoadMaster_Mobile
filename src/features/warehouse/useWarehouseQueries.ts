@@ -13,6 +13,7 @@ import {
   fetchTripLabels,
   fetchWarehouseTrip,
   fetchWarehouseTrips,
+  markNotificationsRead,
   recordSeal,
   reportDamagedPackage,
   reportStagingShortage,
@@ -63,6 +64,15 @@ export function useWarehouseLabels(tripId: string) {
 export function useWarehouseNotifications() {
   const { notifications } = useWarehouseCapabilities()
   return useQuery({ queryKey: warehouseKeys.notifications, queryFn: fetchNotifications, enabled: notifications, staleTime: 0 })
+}
+
+/** Đánh dấu đã đọc ở máy chủ: danh sách máy chủ trả lại thay cho danh sách đang hiện, không đọc lại. */
+export function useMarkNotificationsReadMutation() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: (ids: readonly string[]) => markNotificationsRead(ids),
+    onSuccess: (list) => client.setQueryData(warehouseKeys.notifications, list),
+  })
 }
 
 /*

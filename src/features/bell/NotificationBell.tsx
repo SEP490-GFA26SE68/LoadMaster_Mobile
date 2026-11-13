@@ -15,7 +15,7 @@ import { useReadNotifications } from './notification-read'
 /**
  * Chuông ở dải trời (như chuông của web): mở màn Thông báo. Tài xế (`driver.operate`) đếm thông báo về chuyến của mình, nhân viên kho
  * (`warehouse.operate`) đếm thông báo của kho, điều phối viên và quản lý công ty (`trips.view`) đếm thông báo của văn phòng. Có thông báo
- * chưa đọc thì một chấm hổ phách ở góc — chỉ để nhìn, tên đọc của nút nói số chưa đọc. Vai trò khác, hoặc nguồn dữ liệu của vai trò chưa
+ * chưa đọc thì một chấm hổ phách ở góc (máy chủ giữ "đã đọc" thì theo máy chủ) — chỉ để nhìn, tên đọc của nút nói số chưa đọc. Vai trò khác, hoặc nguồn dữ liệu của vai trò chưa
  * có thông báo, thì không có chuông.
  */
 export function NotificationBell() {
@@ -44,12 +44,13 @@ function WarehouseBell() {
   return notifications ? <BellButton entries={query.data} /> : null
 }
 
-function BellButton({ entries }: { entries: readonly { readonly id: string }[] | undefined }) {
+/** Thông báo mang `read` khi nguồn (máy chủ) giữ "đã đọc"; vắng thì màn đọc dấu trong bộ nhớ. */
+function BellButton({ entries }: { entries: readonly { readonly id: string; readonly read?: boolean }[] | undefined }) {
   const t = useT()
   const router = useRouter()
   const { user } = useAuth()
   const read = useReadNotifications(user)
-  const unread = (entries ?? []).filter((entry) => !read.has(entry.id)).length
+  const unread = (entries ?? []).filter((entry) => !(entry.read ?? read.has(entry.id))).length
   return (
     <IconButton
       icon={Bell}

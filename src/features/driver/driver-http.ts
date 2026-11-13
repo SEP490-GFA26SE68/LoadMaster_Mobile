@@ -1,4 +1,5 @@
 import { api, ApiError, currentUserId, type ApiClient } from '@/data/http'
+import { driverNotificationsOf, fetchServerNotifications, markServerNotificationsRead } from '@/features/bell/server-notifications'
 
 import type { DriverApi } from './driver-api'
 import type { CompleteStopDto, CurrentStopDto, DriverTripDto, LocationPointDto, RoutePlanDetailDto } from './driver-http-dto'
@@ -11,8 +12,8 @@ import type { DriverTripRow, DriverTripScreen, StopKey, TripHead } from './drive
  * Nguồn backend của màn tài xế (như `driver-backend-api.ts` của web): "Chuyến của tôi", xuất phát ở thẻ chuyến, "Đã đến", dỡ (quét / gõ mã
  * hoặc xác nhận tay), nhận kiện ở điểm nhận dọc đường, sự cố theo kiện, sự cố trên đường, hoàn tất điểm, vị trí điện thoại. Giờ đến và tiến
  * độ từng kiện đọc lại từ `current-stop` sau mỗi lệnh ghi; adapter chỉ giữ lần đọc gần nhất (để đổi mã quét được thành mã kiện), theo người
- * đang đăng nhập. Chưa có ở backend: yêu cầu nhận hàng của tài xế, xác nhận tay ở điểm nhận, thông báo — `capabilities` tắt, gọi tới là
- * `NOT_SUPPORTED`.
+ * đang đăng nhập. Thông báo đọc chuông của máy chủ (máy chủ giữ "đã đọc"). Chưa có ở backend: yêu cầu nhận hàng của tài xế, xác nhận tay
+ * ở điểm nhận — `capabilities` tắt, gọi tới là `NOT_SUPPORTED`.
  *
  * Lỗi ném bằng `AppException` mang tên `ErrorCode` trong phong bì: mã có câu ở `backendErrors` thì giữ nguyên; vài mã đổi sang câu nêu mã
  * kiện hay tên điểm. Backend cũ trả lỗi không kèm mã: mỗi lệnh đọc theo mã HTTP.
@@ -245,6 +246,15 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       return { id: result.id ?? 'EXC-0' }
     },
     createPickupRequest: unsupported,
-    fetchNotifications: unsupported,
+
+    // GET /api/notifications
+    async fetchNotifications() {
+      return driverNotificationsOf(await fetchServerNotifications(client()), userId())
+    },
+
+    // POST /api/notifications/read
+    async markNotificationsRead(ids) {
+      return driverNotificationsOf(await markServerNotificationsRead(client(), ids), userId())
+    },
   }
 }

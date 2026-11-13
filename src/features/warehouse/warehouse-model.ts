@@ -37,7 +37,7 @@ export type VerifyCodeInput = { readonly method: LabelVerifyMethod; readonly cod
  * Câu của một thông báo ở chuông kho: xác nhận tay của mình bị từ chối, quyết định của điều phối viên với kiện mình báo thiếu (tìm tiếp
  * hoặc bỏ kiện), chuyến bị huỷ lúc đang xếp, trả lời yêu cầu hỗ trợ của mình.
  */
-export type WarehouseNotificationKind = 'manualRejected' | 'shortageKept' | 'shortageDropped' | 'cancelled' | 'ticketReplied'
+export type WarehouseNotificationKind = 'manualRejected' | 'shortageKept' | 'shortageDropped' | 'cancelled' | 'ticketReplied' | 'ticketUpdated'
 
 export type WarehouseNotification = {
   readonly id: string
@@ -50,4 +50,6 @@ export type WarehouseNotification = {
   readonly tripId: string | undefined
   /** Chi tiết kho cần đọc (chỉ tham số của câu): mã kiện, lý do, số kiện đã lên xe. */
   readonly details: Readonly<Record<string, string | number>>
+  /** Đã đọc theo máy chủ; vắng khi nguồn không giữ "đã đọc" (kho mẫu). */
+  readonly read?: boolean
 }

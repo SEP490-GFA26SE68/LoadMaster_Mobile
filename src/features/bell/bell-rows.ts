@@ -19,6 +19,8 @@ export type BellRow = {
   readonly target: string
   readonly details: readonly string[]
   readonly open: { readonly tripId: string; readonly href: Href; readonly hint?: string } | undefined
+  /** Đã đọc theo máy chủ; vắng khi nguồn không giữ "đã đọc" — màn đọc dấu trong bộ nhớ (`notification-read.ts`). */
+  readonly read?: boolean
 }
 
 /** Route của phiên soạn → xếp một chuyến ở màn kho (`app/(app)/loading/[tripId]`), như `operationHrefs` của web mở `/kho?chuyen=`. */
@@ -39,7 +41,7 @@ function detailLine(key: ParamKey, value: string | number, t: TFunction, format:
 }
 
 function targetLabel(entry: Entry, t: TFunction): string {
-  if (entry.kind === 'ticketReplied') return t('notifications.target.ticket', { id: entry.target.id })
+  if (entry.kind === 'ticketReplied' || entry.kind === 'ticketUpdated') return t('notifications.target.ticket', { id: entry.target.id })
   return entry.target.label === undefined
     ? t('notifications.target.trip', { id: entry.target.id })
     : t('notifications.target.tripNamed', { id: entry.target.id, name: entry.target.label })
@@ -49,6 +51,7 @@ function targetLabel(entry: Entry, t: TFunction): string {
 function driverSentence(entry: DriverNotification, t: TFunction): string {
   if (entry.kind === 'manualRejected') return t('notifications.manualRejected')
   if (entry.kind === 'ticketReplied') return t('notifications.ticketReplied')
+  if (entry.kind === 'ticketUpdated') return t('notifications.ticketUpdated')
   return t(`notifications.driver.${entry.kind}`)
 }
 
@@ -61,19 +64,25 @@ export function driverRow(entry: DriverNotification, t: TFunction, format: Forma
     target: targetLabel(entry, t),
     details: Object.entries(entry.details).flatMap(([key, value]) => (isDriverParam(key) ? [detailLine(key, value, t, format)] : [])),
     open: entry.tripId === undefined ? undefined : { tripId: entry.tripId, href: tripPath(entry.tripId) },
+    ...(entry.read === undefined ? {} : { read: entry.read }),
   }
 }
 
 /**
- * Câu của kho theo loại; mã kiện là mã ở danh sách soạn hàng. Xác nhận tay bị từ chối và chuyến đã huỷ nói đúng câu của màn phiên xếp
+ * Câu của kho theo loại; mã kiện là mã ở danh sách soạn hàng — máy chủ không ghi mã kiện báo thiếu, nên câu khi đó không nêu kiện. Xác nhận tay bị từ chối và chuyến đã huỷ nói đúng câu của màn phiên xếp
  * (nhánh `notifications.warehouse` lấy chúng từ nhánh `warehouse` chép từ web).
  */
 function warehouseSentence(entry: WarehouseNotification, t: TFunction): string {
-  const id = entry.details.packageInstanceId ?? ''
-  if (entry.kind === 'shortageKept') return t('notifications.warehouse.shortageKept', { id })
-  if (entry.kind === 'shortageDropped') return t('notifications.warehouse.shortageDropped', { id })
-  if (entry.kind === 'manualRejected') return t('notifications.warehouse.manualRejected', { id })
+  const id = entry.details.packageInstanceId
+  if (entry.kind === 'shortageKept') {
+    return id === undefined ? t('notifications.warehouse.shortageKeptUnnamed') : t('notifications.warehouse.shortageKept', { id })
+  }
+  if (entry.kind === 'shortageDropped') {
+    return id === undefined ? t('notifications.warehouse.shortageDroppedUnnamed') : t('notifications.warehouse.shortageDropped', { id })
+  }
+  if (entry.kind === 'manualRejected') return t('notifications.warehouse.manualRejected', { id: id ?? '' })
   if (entry.kind === 'ticketReplied') return t('notifications.ticketReplied')
+  if (entry.kind === 'ticketUpdated') return t('notifications.ticketUpdated')
   return t('notifications.warehouse.cancelled')
 }
 
@@ -108,5 +117,6 @@ export function warehouseRow(entry: WarehouseNotification, t: TFunction, format:
     target: targetLabel(entry, t),
     details: warehouseDetails(entry, t, format),
     open: entry.tripId === undefined ? undefined : { tripId: entry.tripId, href: loadingSessionRoute(entry.tripId) },
+    ...(entry.read === undefined ? {} : { read: entry.read }),
   }
 }

@@ -35,6 +35,9 @@ export const notifications = {
   warehouse: {
     shortageKept: 'The dispatcher chose to keep searching for package {id} — find it and bring it to the staging area',
     shortageDropped: 'The dispatcher dropped package {id} from the trip — staged packages stay in the staging area; continue once the new plan is approved',
+    shortageKeptUnnamed: 'The dispatcher chose to keep searching for the package you reported missing — find it and bring it to the staging area',
+    shortageDroppedUnnamed:
+      'The dispatcher dropped the package you reported missing from the trip — staged packages stay in the staging area; continue once the new plan is approved',
     manualRejected: warehouseScreen.confirms.rejected,
     cancelled: warehouseScreen.cancelledTitle,
     cancelledUnload: warehouseScreen.cancelledUnload,
@@ -42,6 +45,7 @@ export const notifications = {
   },
   manualRejected: 'The dispatcher rejected your manual confirmation — check the package again',
   ticketReplied: 'Support replied to your request',
+  ticketUpdated: 'Support updated your request',
   params: {
     reason: 'Reason',
     loaded: 'Loaded',

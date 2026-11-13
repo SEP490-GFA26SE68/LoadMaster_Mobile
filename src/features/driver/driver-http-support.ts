@@ -8,7 +8,7 @@ export const SERVER_REFRESH_MS = 30_000
 /**
  * Việc tài xế làm được khi nguồn là máy chủ: xuất phát ở thẻ chuyến (máy chủ không mở màn điểm giao trước khi xe chạy), "Đã đến", dỡ và
  * xác nhận tay ở điểm giao, nhận kiện ở điểm nhận (không xác nhận tay — máy chủ chưa có), sự cố theo kiện và sự cố trên đường, vị trí điện
- * thoại. Chưa có ở máy chủ: yêu cầu nhận hàng của tài xế, thông báo.
+ * thoại, chuông. Chưa có ở máy chủ: yêu cầu nhận hàng của tài xế.
  */
 export const HTTP_DRIVER_CAPABILITIES: DriverCapabilities = {
   depart: false,
@@ -20,7 +20,7 @@ export const HTTP_DRIVER_CAPABILITIES: DriverCapabilities = {
   tripExceptions: true,
   pickups: false,
   gps: true,
-  notifications: false,
+  notifications: true,
   gpsLocalOnly: false,
 }
 

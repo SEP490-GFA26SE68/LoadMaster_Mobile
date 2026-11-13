@@ -11,7 +11,9 @@
  *   postLocation            POST /api/driver/location
  *   reportTripException     POST /api/driver/trips/{id}/exceptions
  *   createPickupRequest     POST /api/trips/{id}/pickup-requests (tài xế chưa có quyền ở BE)
- *   chưa có ở BE: setDriverGps, fetchNotifications
+ *   fetchNotifications      GET  /api/notifications
+ *   markNotificationsRead   POST /api/notifications/read
+ *   chưa có ở BE: setDriverGps
  */
 import { createAdapter } from '@/data/adapter'
 import type { PickupRequestResult } from '@/features/pickups/pickup-model'
@@ -52,6 +54,8 @@ export type DriverApi = {
   setDriverGps(tripId: string, enabled: boolean): Promise<void>
   postLocation(tripId: string, location: LocationRequest): Promise<{ readonly recordedAt: string }>
   fetchNotifications(): Promise<DriverNotification[]>
+  /** Đánh dấu đã đọc ở nguồn giữ "đã đọc" (máy chủ: thông báo mang `read`); trả danh sách mới. Kho mẫu không giữ: `NOT_SUPPORTED`. */
+  markNotificationsRead(ids: readonly string[]): Promise<DriverNotification[]>
 }
 
 const adapter = createAdapter<DriverApi>('driver', { mock: mockDriverApi, http: () => httpDriverApi() })
@@ -121,7 +125,12 @@ export function postLocation(tripId: string, location: LocationRequest): Promise
   return adapter().postLocation(tripId, location)
 }
 
-// chưa có ở BE
+// GET /api/notifications
 export function fetchNotifications(): Promise<DriverNotification[]> {
   return adapter().fetchNotifications()
+}
+
+// POST /api/notifications/read
+export function markNotificationsRead(ids: readonly string[]): Promise<DriverNotification[]> {
+  return adapter().markNotificationsRead(ids)
 }

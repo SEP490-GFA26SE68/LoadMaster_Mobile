@@ -4,9 +4,11 @@
  * `NOT_SUPPORTED` — không có hàm nào lấy dữ liệu kho mẫu khi đăng nhập bằng máy chủ. `warehouseCapabilities` đọc được ở cả hai nguồn.
  *   chỉ có ở kho mẫu: fetchWarehouseTrips, fetchWarehouseTrip, startLoading, confirmStagingByQr, confirmStagingManually,
  *   reportStagingShortage, confirmLoadingByQr, confirmLoadingManually, reportDamagedPackage, completeLoading, recordSeal, fetchTripLabels
- *   chưa có ở BE: fetchNotifications
+ *   cả hai nguồn: fetchNotifications (máy chủ: GET /api/notifications), markNotificationsRead (chỉ máy chủ: POST /api/notifications/read)
  */
 import { createAdapter } from '@/data/adapter'
+import { api } from '@/data/http'
+import { fetchServerNotifications, markServerNotificationsRead, warehouseNotificationsOf } from '@/features/bell/server-notifications'
 import { notSupported } from '@/lib/office-backend'
 import type { ManualConfirmInput, ScanResult, StagingScanResult, Trip, TripLabel } from '@/lib/mock-db'
 
@@ -52,14 +54,16 @@ export type WarehouseApi = {
   /** Nhãn QR mọi kiện của chuyến: tên kiện cho câu báo sai kiện, mã của bên gửi cho ô gõ mã. */
   fetchTripLabels(tripId: string): Promise<TripLabel[]>
   fetchNotifications(): Promise<WarehouseNotification[]>
+  /** Đánh dấu đã đọc ở nguồn giữ "đã đọc" (máy chủ: thông báo mang `read`); trả danh sách mới. Kho mẫu không giữ: `NOT_SUPPORTED`. */
+  markNotificationsRead(ids: readonly string[]): Promise<WarehouseNotification[]>
 }
 
 /**
- * Nguồn máy chủ của hợp đồng kho mẫu: chỉ nói việc kho làm được — soạn (kèm xác nhận tay, báo thiếu), xếp, seal; chưa có thông báo —, mọi
- * hàm còn lại từ chối `NOT_SUPPORTED` vì màn đọc phiên của máy chủ qua `warehouse-server-api.ts`.
+ * Nguồn máy chủ của hợp đồng kho mẫu: nói việc kho làm được — soạn (kèm xác nhận tay, báo thiếu), xếp, seal, chuông — và đọc chuông của
+ * máy chủ; mọi hàm còn lại từ chối `NOT_SUPPORTED` vì màn đọc phiên của máy chủ qua `warehouse-server-api.ts`.
  */
 const SERVER_SOURCE: WarehouseApi = {
-  capabilities: { backend: true, manualConfirm: true, shortages: true, seal: true, notifications: false },
+  capabilities: { backend: true, manualConfirm: true, shortages: true, seal: true, notifications: true },
   fetchWarehouseTrips: notSupported,
   fetchWarehouseTrip: notSupported,
   startLoading: notSupported,
@@ -72,7 +76,10 @@ const SERVER_SOURCE: WarehouseApi = {
   completeLoading: notSupported,
   recordSeal: notSupported,
   fetchTripLabels: notSupported,
-  fetchNotifications: notSupported,
+  // GET /api/notifications
+  fetchNotifications: async () => warehouseNotificationsOf(await fetchServerNotifications(api())),
+  // POST /api/notifications/read
+  markNotificationsRead: async (ids) => warehouseNotificationsOf(await markServerNotificationsRead(api(), ids)),
 }
 
 const adapter = createAdapter<WarehouseApi>('warehouse', { mock: mockWarehouseApi, http: () => SERVER_SOURCE })
@@ -142,7 +149,12 @@ export function fetchTripLabels(tripId: string): Promise<TripLabel[]> {
   return adapter().fetchTripLabels(tripId)
 }
 
-// chưa có ở BE
+// GET /api/notifications
 export function fetchNotifications(): Promise<WarehouseNotification[]> {
   return adapter().fetchNotifications()
+}
+
+// POST /api/notifications/read
+export function markNotificationsRead(ids: readonly string[]): Promise<WarehouseNotification[]> {
+  return adapter().markNotificationsRead(ids)
 }
