@@ -5,6 +5,7 @@ import type { DriverApi } from './driver-api'
 import type { CompleteStopDto, CurrentStopDto, DriverTripDto, LocationPointDto, RoutePlanDetailDto } from './driver-http-dto'
 import { myTripsOf, shownStatusOf, tripRowOf } from './driver-http-mapping'
 import { deliveryPackageOf, isUnloaded, packageOfCode, stopScreenOf, withUnloaded } from './driver-http-stop'
+import { serverEtaSources, serverTripStops, tripStopsOf, type DriverTripStopsDto, type ServerTripStops } from './driver-http-stop-times'
 import { coded, HTTP_DRIVER_CAPABILITIES, refused, SERVER_REFRESH_MS, unsupported } from './driver-http-support'
 import type { DriverTripRow, DriverTripScreen, StopKey, TripHead } from './driver-model'
 
@@ -94,6 +95,23 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     }
   }
 
+  // GET /api/driver/trips/{id}/stops — giờ đến và hạn giao; không đọc được thì màn không có phần giờ
+  async function stopTimes(tripId: string): Promise<ServerTripStops | null> {
+    try {
+      return tripStopsOf(await client().get<DriverTripStopsDto>(`/api/driver/trips/${encodeURIComponent(tripId)}/stops`))
+    } catch {
+      return null
+    }
+  }
+
+  /** Thẻ chuyến kèm các điểm, giờ đến và hạn giao theo máy chủ (như `ServerMyTripStops` của web); không đọc được thì thẻ không có điểm. */
+  async function withStops(row: DriverTripRow): Promise<DriverTripRow> {
+    const times = await stopTimes(row.id)
+    if (times === null || times.stops.length === 0) return row
+    const stops = serverTripStops(times)
+    return { ...row, stops, etaSources: serverEtaSources(stops), etaFromServer: true }
+  }
+
   /**
    * Chỉ mở chuyến có trong danh sách của chính tài xế (backend đọc điểm hiện tại của chuyến nào cũng được), nên đọc danh sách trước: chuyến
    * đã giao mở màn tổng kết (backend chưa có số liệu tổng kết); chuyến chưa rời kho, đã huỷ hay không còn của mình thì không mở.
@@ -104,6 +122,7 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     if (dto?.status === 'DELIVERED') return { kind: 'completed', trip, summary: undefined }
     if (dto?.status !== 'IN_TRANSIT') throw notInTransit(tripId)
     const plan = activePlan(tripId)
+    const times = stopTimes(tripId)
     let stop: CurrentStopDto
     try {
       stop = await currentStop(tripId)
@@ -114,14 +133,17 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       if (refused(error, 404, 'NO_PENDING_DELIVERY_STOP')) return { kind: 'noStops', trip }
       throw error
     }
-    return { kind: 'stop', trip, screen: stopScreenOf(stop, dto.stopCount ?? 0, await plan) }
+    return { kind: 'stop', trip, screen: stopScreenOf(stop, dto.stopCount ?? 0, await plan, await times) }
   }
 
   return {
     capabilities: HTTP_DRIVER_CAPABILITIES,
 
     async fetchMyTrips() {
-      const groups = myTripsOf(await listTrips())
+      const all = myTripsOf(await listTrips())
+      // Chuyến đang chạy và chuyến xếp xong chờ xuất phát có danh sách điểm (như web); nhóm khác chưa có việc ở từng điểm
+      const [inTransit, loaded] = await Promise.all([Promise.all(all.inTransit.map(withStops)), Promise.all(all.loaded.map(withStops))])
+      const groups = { ...all, inTransit, loaded }
       const active = groups.inTransit.length + groups.loaded.length + groups.preparing.length > 0
       return { groups, refreshMs: active ? SERVER_REFRESH_MS : null }
     },

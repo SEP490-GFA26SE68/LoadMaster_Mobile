@@ -83,6 +83,8 @@ export type DriverTripRow = {
   readonly stops: readonly DriverTripStop[]
   /** Nguồn của các giờ đến dự kiến trong danh sách điểm (một dòng nguồn cho cả thẻ). */
   readonly etaSources: readonly EtaSource[]
+  /** Giờ đến do máy chủ tính: dòng nguồn không kèm MOCK RESULT. */
+  readonly etaFromServer?: true
 }
 
 export type DriverTrips = {
@@ -177,6 +179,8 @@ export type StopScreen = {
   readonly arrivedAt: string | undefined
   /** Giờ đến / hạn của điểm đang giao; vắng khi nguồn không có. */
   readonly timing: StopTiming | undefined
+  /** Giờ đến do máy chủ tính: dòng nguồn không kèm MOCK RESULT. */
+  readonly etaFromServer?: true
   readonly items: readonly StopItem[]
   readonly pickupItems: readonly StopPickupItem[]
   /** Kiện của điểm hỏng lúc xếp, bị bỏ lại kho. */

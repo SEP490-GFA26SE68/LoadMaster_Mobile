@@ -38,15 +38,18 @@ export function TimingChip({ timing }: { timing: Pick<StopTiming, 'arrival' | 'e
   return <Chip tone={DEADLINE_TONE[expected.status]} label={t(`common.deadlineStatuses.${expected.status}`)} />
 }
 
-/** Nguồn của giờ đến dự kiến kèm MOCK RESULT (giờ đến là ước lượng của mock): một dòng cho cả thẻ hay cả danh sách. */
-export function EtaSourceLine({ sources }: { sources: readonly EtaSource[] }) {
+/**
+ * Nguồn của giờ đến dự kiến: một dòng cho cả thẻ hay cả danh sách. Giờ đến là ước lượng của mock thì kèm MOCK RESULT; máy chủ tính thì
+ * không (`mock={false}`).
+ */
+export function EtaSourceLine({ sources, mock = true }: { sources: readonly EtaSource[]; mock?: boolean }) {
   const t = useT()
   const format = useFormat()
   if (sources.length === 0) return null
   return (
     <View style={styles.row}>
       <AppText color={colors.text3}>{format.list(sources.map((source) => t(`driver.timing.sources.${source}`)))}</AppText>
-      <MockResultTag />
+      {mock ? <MockResultTag /> : null}
     </View>
   )
 }
