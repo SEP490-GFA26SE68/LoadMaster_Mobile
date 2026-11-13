@@ -36,10 +36,12 @@ type EmailStepProps = {
   readonly reason: string | null
   readonly onSubmit: (email: string) => Promise<void>
   readonly onCancel: (email: string) => void
+  /** Chữ của nút thoát; vắng là "Về đăng nhập". */
+  readonly cancelLabel?: string
 }
 
 /** Bước 1: email nhận mã. */
-export function ResetEmailStep({ initialEmail, reason, onSubmit, onCancel }: EmailStepProps) {
+export function ResetEmailStep({ initialEmail, reason, onSubmit, onCancel, cancelLabel }: EmailStepProps) {
   const t = useT()
   const [error, setError] = useState<unknown>(null)
   const form = useForm<ResetEmailValues>({ resolver: zodResolver(resetEmailSchema), defaultValues: { email: initialEmail } })
@@ -77,7 +79,7 @@ export function ResetEmailStep({ initialEmail, reason, onSubmit, onCancel }: Ema
         {t('auth.forgot.sendCode')}
       </Button>
       <Button variant="secondary" onPress={() => onCancel(form.getValues('email').trim())}>
-        {t('auth.forgot.backToSignIn')}
+        {cancelLabel ?? t('auth.forgot.backToSignIn')}
       </Button>
     </>
   )
@@ -170,10 +172,12 @@ type PasswordStepProps = {
   readonly email: string
   readonly onSubmit: (password: string) => Promise<void>
   readonly onCancel: () => void
+  /** Chữ của nút thoát; vắng là "Về đăng nhập". */
+  readonly cancelLabel?: string
 }
 
 /** Bước 3: mật khẩu mới, nhập hai lần. */
-export function ResetPasswordStep({ email, onSubmit, onCancel }: PasswordStepProps) {
+export function ResetPasswordStep({ email, onSubmit, onCancel, cancelLabel }: PasswordStepProps) {
   const t = useT()
   const [error, setError] = useState<unknown>(null)
   const form = useForm<ResetPasswordValues>({ resolver: zodResolver(resetPasswordSchema), defaultValues: { password: '', confirm: '' } })
@@ -226,7 +230,7 @@ export function ResetPasswordStep({ email, onSubmit, onCancel }: PasswordStepPro
         {t('auth.forgot.submit')}
       </Button>
       <Button variant="secondary" onPress={onCancel}>
-        {t('auth.forgot.backToSignIn')}
+        {cancelLabel ?? t('auth.forgot.backToSignIn')}
       </Button>
     </>
   )

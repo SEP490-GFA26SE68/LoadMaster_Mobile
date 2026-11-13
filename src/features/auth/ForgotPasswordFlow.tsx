@@ -24,15 +24,17 @@ type ForgotPasswordFlowProps = {
   readonly initialEmail: string
   /** Đã đặt mật khẩu mới cho email này. */
   readonly onDone: (email: string) => void
-  /** Về màn đăng nhập, giữ email đang nhập. */
+  /** Về màn đăng nhập (hoặc màn đã mở bước này), giữ email đang nhập. */
   readonly onCancel: (email: string) => void
+  /** Chữ của nút thoát; vắng là "Về đăng nhập". */
+  readonly cancelLabel?: string
 }
 
 /**
  * Đặt lại mật khẩu qua mã gửi tới email, ngay trong màn đăng nhập: email → mã 6 số → mật khẩu mới. Phiên đặt lại hết hạn ở bước cuối thì
  * quay về bước đầu kèm lý do. Nút quay lại của Android lùi về bước đầu, rồi về màn đăng nhập.
  */
-export function ForgotPasswordFlow({ api, initialEmail, onDone, onCancel }: ForgotPasswordFlowProps) {
+export function ForgotPasswordFlow({ api, initialEmail, onDone, onCancel, cancelLabel }: ForgotPasswordFlowProps) {
   const t = useT()
   const { request, verify, reset } = usePasswordResetSteps(api)
   const [email, setEmail] = useState(initialEmail)
@@ -80,7 +82,7 @@ export function ForgotPasswordFlow({ api, initialEmail, onDone, onCancel }: Forg
   return (
     <AuthCard title={t('auth.forgot.title')}>
       <AppText color={colors.text2}>{t('auth.forgot.step', { step: STEP_NUMBER[step.kind] })}</AppText>
-      {step.kind === 'email' && <ResetEmailStep initialEmail={email} reason={step.reason} onSubmit={sendCode} onCancel={onCancel} />}
+      {step.kind === 'email' && <ResetEmailStep initialEmail={email} reason={step.reason} onSubmit={sendCode} onCancel={onCancel} cancelLabel={cancelLabel} />}
       {step.kind === 'code' && (
         <ResetCodeStep
           email={email}
@@ -91,7 +93,7 @@ export function ForgotPasswordFlow({ api, initialEmail, onDone, onCancel }: Forg
           onChangeEmail={() => setStep({ kind: 'email', reason: null })}
         />
       )}
-      {step.kind === 'password' && <ResetPasswordStep email={email} onSubmit={setPassword(step.resetToken)} onCancel={() => onCancel(email)} />}
+      {step.kind === 'password' && <ResetPasswordStep email={email} onSubmit={setPassword(step.resetToken)} onCancel={() => onCancel(email)} cancelLabel={cancelLabel} />}
     </AuthCard>
   )
 }
