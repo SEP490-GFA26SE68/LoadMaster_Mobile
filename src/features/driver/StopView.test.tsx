@@ -52,6 +52,17 @@ describe('việc phụ ở điểm giao', () => {
     expect(screen.queryByRole('button', { name: /Google/ })).toBeNull()
   })
 
+  test('xe chưa rời kho: không có câu chỉ đường "Còn … · …", bản đồ vẫn có; xuất phát rồi mới có', async () => {
+    await renderTrip()
+    expect(await screen.findByRole('button', { name: 'Xuất phát' })).toBeOnTheScreen()
+    expect(screen.getByLabelText(/^Bản đồ tuyến tới /)).toBeOnTheScreen()
+    expect(screen.queryByText(/^Còn .+ · /)).toBeNull()
+    expect(screen.queryByText(/^Đi tới /)).toBeNull()
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Xuất phát' }))
+    expect(await screen.findByText(/^(Còn .+ · |Đi tới )/)).toBeOnTheScreen()
+  })
+
   test('xe chưa rời kho: không có nút Thêm — hai việc trong tờ chỉ có khi xe đang chạy', async () => {
     await renderTrip()
     expect(await screen.findByRole('button', { name: 'Xuất phát' })).toBeOnTheScreen()

@@ -39,7 +39,8 @@ function instructionOf(next: NextGuidance | undefined, stopName: string, t: Retu
 }
 
 /**
- * Chỉ đường trong app: banner bước kế tiếp + bản đồ Goong (MapLibre). Không mở Google Maps.
+ * Chỉ đường trong app: banner bước kế tiếp + bản đồ Goong (MapLibre). Không mở Google Maps. Banner chỉ có khi xe đã xuất phát
+ * (`mode === 'delivering'`): trước đó vị trí là vị trí của kho, "Còn 0 m · Đi thẳng" là câu sai.
  */
 export function DriverNavigation({ screen }: { tripId: string; screen: StopScreen }) {
   const t = useT()
@@ -64,7 +65,8 @@ export function DriverNavigation({ screen }: { tripId: string; screen: StopScree
       ? { lat: screen.stop.lat, lng: screen.stop.lng }
       : screen.routeMap?.stops.find((stop) => stop.number === screen.stop.number)
 
-  const next = screen.arrived
+  const departed = screen.mode === 'delivering'
+  const next = screen.arrived || !departed
     ? undefined
     : (nextGuidance(steps, here) ?? (destination
       ? { instruction: '', maneuver: 'straight' as const, remainingMeters: remainingTo(destination, here) }
@@ -85,9 +87,11 @@ export function DriverNavigation({ screen }: { tripId: string; screen: StopScree
 
   return (
     <View accessibilityLabel={t('driver.guidance.title')} style={styles.wrap}>
-      <View style={styles.banner}>
-        <AppText variant="title">{banner}</AppText>
-      </View>
+      {departed ? (
+        <View style={styles.banner}>
+          <AppText variant="title">{banner}</AppText>
+        </View>
+      ) : null}
       {screen.routeMap?.planVersion !== undefined ? (
         <AppText color={colors.text3}>{t('driver.guidance.version', { version: screen.routeMap.planVersion })}</AppText>
       ) : null}
