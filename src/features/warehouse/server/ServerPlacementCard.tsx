@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { memo, type ReactNode } from 'react'
 import { StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
@@ -86,27 +86,37 @@ export function ServerPlacementList({ rows }: { rows: readonly ServerLoadingRow[
       </AppText>
       <View accessibilityRole="list">
         {rows.map(({ placement, state, manualPending }, index) => (
-          <View key={placement.id} style={[styles.row, index === rows.length - 1 && styles.lastRow]}>
-            <AppText color={colors.text3} style={[styles.code, styles.step]}>
-              {t('serverWarehouse.session.stepLabel', { step: index + 1 })}
-            </AppText>
-            <View style={styles.flex}>
-              <AppText variant={state === 'current' ? 'label' : 'body'} numberOfLines={2}>
-                {placement.name}
-              </AppText>
-              {manualPending ? (
-                <AppText variant="label" color={badgeTones.warning.fg}>
-                  {t('serverWarehouse.session.manualPending')}
-                </AppText>
-              ) : null}
-            </View>
-            <Chip tone={OUTCOME_TONE[state]} label={t(`serverWarehouse.session.outcomes.${state}`)} />
-          </View>
+          <PlacementRow key={placement.id} name={placement.name} step={index + 1} state={state} manualPending={manualPending} last={index === rows.length - 1} />
         ))}
       </View>
     </Card>
   )
 }
+
+type PlacementRowProps = { name: string; step: number; state: ServerPlacementState; manualPending: boolean; last: boolean }
+
+/** Một dòng của thứ tự xếp. `memo` theo giá trị: mỗi lần đối chiếu một kiện chỉ dòng của kiện đó (và kiện kế tiếp) vẽ lại. */
+const PlacementRow = memo(function PlacementRow({ name, step, state, manualPending, last }: PlacementRowProps) {
+  const t = useT()
+  return (
+    <View style={[styles.row, last && styles.lastRow]}>
+      <AppText color={colors.text3} style={[styles.code, styles.step]}>
+        {t('serverWarehouse.session.stepLabel', { step })}
+      </AppText>
+      <View style={styles.flex}>
+        <AppText variant={state === 'current' ? 'label' : 'body'} numberOfLines={2}>
+          {name}
+        </AppText>
+        {manualPending ? (
+          <AppText variant="label" color={badgeTones.warning.fg}>
+            {t('serverWarehouse.session.manualPending')}
+          </AppText>
+        ) : null}
+      </View>
+      <Chip tone={OUTCOME_TONE[state]} label={t(`serverWarehouse.session.outcomes.${state}`)} />
+    </View>
+  )
+})
 
 function Fact({ label, code = false, children }: { label: string; code?: boolean; children: ReactNode }) {
   return (
