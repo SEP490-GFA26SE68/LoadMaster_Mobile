@@ -75,7 +75,7 @@ function StopEta({ screen }: { screen: StopScreen }) {
           <TimingChip timing={timing} />
         </View>
       </View>
-      <EtaSourceLine sources={arrival === undefined && expected !== undefined ? [expected.source] : []} />
+      <EtaSourceLine sources={arrival === undefined && expected !== undefined ? [expected.source] : []} mock={!screen.etaFromServer} />
     </View>
   )
 }

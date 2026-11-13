@@ -1,4 +1,5 @@
 import { getMockDb } from '@/data/mock-db'
+import { notSupported } from '@/lib/office-backend'
 import { notificationWindowStart, operationHrefs, selectNotifications } from '@/features/notifications/notifications'
 import {
   loadingRemaining,
@@ -71,6 +72,7 @@ const DETAIL_PARAMS: Readonly<Record<WarehouseNotificationKind, readonly string[
   shortageDropped: ['packageInstanceId', 'packageCode'],
   cancelled: ['reason', 'loaded'],
   ticketReplied: [],
+  ticketUpdated: [],
 }
 
 function detailsOf(event: AuditEvent, kind: WarehouseNotificationKind): Readonly<Record<string, string | number>> {
@@ -151,5 +153,7 @@ export function mockWarehouseApi(): WarehouseApi {
       return sessionDb().listTripLabels(tripId)
     },
     fetchNotifications,
+    // "Đã đọc" của kho mẫu là trạng thái giao diện trong bộ nhớ (`notification-read.ts`)
+    markNotificationsRead: notSupported,
   }
 }

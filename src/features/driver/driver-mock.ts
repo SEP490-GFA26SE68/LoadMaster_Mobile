@@ -6,6 +6,7 @@ import {
   operationHrefs,
   selectNotifications,
 } from '@/features/notifications/notifications'
+import { ApiError } from '@/data/http'
 import { MockDbError, vnDate, type AuditEvent, type MockDb, type TripMonitoring } from '@/lib/mock-db'
 import type { User } from '@/types/user'
 
@@ -92,7 +93,7 @@ function notificationKind(event: AuditEvent, driverId: string): DriverNotificati
 
 /** Chỉ tham số câu cần: mã kiện và lý do của xác nhận tay bị từ chối; chi tiết riêng của từng câu về chuyến (`driverNoticeEvent`). */
 function detailsOf(event: AuditEvent, kind: DriverNotificationKind): Readonly<Record<string, string | number>> {
-  if (kind === 'ticketReplied') return {}
+  if (kind === 'ticketReplied' || kind === 'ticketUpdated') return {}
   if (kind === 'manualRejected') {
     const { packageInstanceId, reason } = event.params
     return { ...(packageInstanceId === undefined ? {} : { packageInstanceId }), ...(reason === undefined ? {} : { reason }) }
@@ -181,5 +182,9 @@ export function mockDriverApi(): DriverApi {
       return { recordedAt }
     },
     fetchNotifications,
+    // "Đã đọc" của kho mẫu là trạng thái giao diện trong bộ nhớ (`notification-read.ts`), không phải dữ liệu của nguồn
+    async markNotificationsRead() {
+      throw new ApiError('NOT_SUPPORTED')
+    },
   }
 }

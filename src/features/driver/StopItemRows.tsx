@@ -1,4 +1,5 @@
 import { CircleCheck, Package, TriangleAlert, Undo2, type LucideIcon } from 'lucide-react-native'
+import { memo } from 'react'
 import { StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
@@ -11,9 +12,10 @@ import type { StopItem, StopPickupItem } from './driver-model'
  * Một dòng kiện cần dỡ, cao tối thiểu 80 (như `DeliveryItemRow` của web). Thứ tự dỡ lấy từ phương án đã duyệt. Dòng chỉ **hiện** trạng
  * thái — kiện được ghi "đã dỡ" qua tờ đối chiếu, không có nút đánh dấu tay. Trạng thái không chỉ nằm ở màu: kiện đã dỡ có nền xanh nhạt và
  * dòng "Đã dỡ" kèm dấu kiểm và cách đối chiếu; kiện có sự cố có nền vàng nhạt và dòng nêu loại sự cố; kiện khách từ chối thêm dòng "Hoàn
- * trả". Xác nhận tay bị điều phối viên từ chối thì kiện quay về chưa dỡ kèm lý do để tài xế kiểm lại.
+ * trả". Xác nhận tay bị điều phối viên từ chối thì kiện quay về chưa dỡ kèm lý do để tài xế kiểm lại. `memo`: mỗi nhịp đọc lại, kiện không
+ * đổi giữ nguyên object (Query chia sẻ cấu trúc) nên dòng đó không vẽ lại.
  */
-export function DeliveryItemRow({ item, last }: { item: StopItem; last: boolean }) {
+export const DeliveryItemRow = memo(function DeliveryItemRow({ item, last }: { item: StopItem; last: boolean }) {
   const t = useT()
   const format = useFormat()
   const issue = item.issueKind
@@ -51,13 +53,13 @@ export function DeliveryItemRow({ item, last }: { item: StopItem; last: boolean 
       ) : null}
     </View>
   )
-}
+})
 
 /**
  * Một dòng kiện nhận dọc đường (như `PickupItemRow` của web): không có thứ tự dỡ, vùng hay lớp. Điểm nhận: "Chưa nhận" / "Đã nhận"; điểm
  * giao: "Chưa dỡ" / "Đã dỡ", kèm cách đối chiếu gần nhất. Xác nhận tay bị từ chối thì kiện quay về chưa xong kèm lý do.
  */
-export function PickupItemRow({ item, last }: { item: StopPickupItem; last: boolean }) {
+export const PickupItemRow = memo(function PickupItemRow({ item, last }: { item: StopPickupItem; last: boolean }) {
   const t = useT()
   const format = useFormat()
   return (
@@ -83,7 +85,7 @@ export function PickupItemRow({ item, last }: { item: StopPickupItem; last: bool
       {item.rejectedReason === undefined ? null : <Rejected reason={item.rejectedReason} />}
     </View>
   )
-}
+})
 
 /** Lý do điều phối viên từ chối xác nhận tay: đọc ngay khi xuất hiện. */
 function Rejected({ reason }: { reason: string }) {

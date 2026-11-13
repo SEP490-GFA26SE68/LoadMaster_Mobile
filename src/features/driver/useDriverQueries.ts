@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import type { PickupRequestInput } from '@/lib/mock-db'
+import { pollInterval } from '@/lib/polling'
 
 import {
   arriveAtStop,
@@ -12,6 +13,7 @@ import {
   fetchMyTrips,
   fetchNotifications,
   fetchTripScreen,
+  markNotificationsRead,
   reportDeliveryIssue,
   reportTripException,
   startDelivery,
@@ -61,7 +63,7 @@ export function useMyTripsQuery() {
     queryKey: driverKeys.myTrips,
     queryFn: fetchMyTrips,
     staleTime: 0,
-    refetchInterval: (query) => query.state.data?.refreshMs ?? false,
+    refetchInterval: (query) => pollInterval(query, query.state.data?.refreshMs),
   })
 }
 
@@ -73,7 +75,7 @@ export function useTripScreenQuery(tripId: string) {
     staleTime: 0,
     refetchInterval: (query) => {
       const data = query.state.data
-      return data?.kind === 'stop' ? (data.screen.refreshMs ?? false) : false
+      return pollInterval(query, data?.kind === 'stop' ? data.screen.refreshMs : false)
     },
   })
 }
@@ -81,6 +83,15 @@ export function useTripScreenQuery(tripId: string) {
 /** Chuông: mở màn là đọc lại; `enabled` tắt khi nguồn chưa có thông báo. */
 export function useNotificationsQuery(enabled: boolean) {
   return useQuery({ queryKey: driverKeys.notifications, queryFn: fetchNotifications, enabled, staleTime: 0 })
+}
+
+/** Đánh dấu đã đọc ở máy chủ: danh sách máy chủ trả lại thay cho danh sách đang hiện, không đọc lại. */
+export function useMarkNotificationsReadMutation() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: (ids: readonly string[]) => markNotificationsRead(ids),
+    onSuccess: (list) => client.setQueryData(driverKeys.notifications, list),
+  })
 }
 
 /** Mọi lệnh ghi của tài xế: xong (kể cả lỗi — kho có thể đã đổi ở nơi khác) thì đọc lại mọi thứ của tài xế. */

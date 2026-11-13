@@ -50,6 +50,10 @@ export const notifications = {
     shortageKept: 'Điều phối viên chọn tìm tiếp kiện {id} — tìm kiện này rồi soạn vào khu chờ',
     /** Như `warehouse.replan.SHORTAGE`, nhưng nêu kiện mình báo thiếu thay mã chuyến (dòng thông báo đã nêu chuyến). */
     shortageDropped: 'Điều phối viên đã bỏ kiện {id} khỏi chuyến — kiện đã soạn giữ ở khu chờ, làm tiếp khi phương án mới được duyệt',
+    /** Hai câu trên khi nguồn không nói kiện nào (máy chủ không ghi mã kiện báo thiếu vào nhật ký). */
+    shortageKeptUnnamed: 'Điều phối viên chọn tìm tiếp kiện bạn báo thiếu — tìm kiện đó rồi soạn vào khu chờ',
+    shortageDroppedUnnamed:
+      'Điều phối viên đã bỏ kiện bạn báo thiếu khỏi chuyến — kiện đã soạn giữ ở khu chờ, làm tiếp khi phương án mới được duyệt',
     /** Câu của màn phiên xếp (`warehouse.confirms.rejected`). */
     manualRejected: warehouseScreen.confirms.rejected,
     /** Chuyến bị huỷ: câu, rồi dòng dỡ kiện đã lên xe — như màn phiên xếp (`warehouse.cancelledTitle`, `warehouse.cancelledUnload`). */
@@ -60,6 +64,8 @@ export const notifications = {
   },
   manualRejected: 'Điều phối viên từ chối xác nhận tay của bạn — kiểm lại kiện',
   ticketReplied: 'Bộ phận hỗ trợ đã trả lời yêu cầu của bạn',
+  /** Máy chủ báo cả lần yêu cầu chỉ đổi trạng thái (không kèm trả lời). */
+  ticketUpdated: 'Bộ phận hỗ trợ đã cập nhật yêu cầu của bạn',
   params: {
     reason: 'Lý do',
     loaded: 'Đã lên xe',

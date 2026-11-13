@@ -1,9 +1,11 @@
 import { api, ApiError, currentUserId, type ApiClient } from '@/data/http'
+import { driverNotificationsOf, fetchServerNotifications, markServerNotificationsRead } from '@/features/bell/server-notifications'
 
 import type { DriverApi } from './driver-api'
 import type { CompleteStopDto, CurrentStopDto, DriverTripDto, LocationPointDto, RoutePlanDetailDto } from './driver-http-dto'
 import { myTripsOf, shownStatusOf, tripRowOf } from './driver-http-mapping'
 import { deliveryPackageOf, isUnloaded, packageOfCode, stopScreenOf, withUnloaded } from './driver-http-stop'
+import { serverEtaSources, serverTripStops, tripStopsOf, type DriverTripStopsDto, type ServerTripStops } from './driver-http-stop-times'
 import { coded, HTTP_DRIVER_CAPABILITIES, refused, SERVER_REFRESH_MS, unsupported } from './driver-http-support'
 import type { DriverTripRow, DriverTripScreen, StopKey, TripHead } from './driver-model'
 
@@ -11,8 +13,8 @@ import type { DriverTripRow, DriverTripScreen, StopKey, TripHead } from './drive
  * Nguồn backend của màn tài xế (như `driver-backend-api.ts` của web): "Chuyến của tôi", xuất phát ở thẻ chuyến, "Đã đến", dỡ (quét / gõ mã
  * hoặc xác nhận tay), nhận kiện ở điểm nhận dọc đường, sự cố theo kiện, sự cố trên đường, hoàn tất điểm, vị trí điện thoại. Giờ đến và tiến
  * độ từng kiện đọc lại từ `current-stop` sau mỗi lệnh ghi; adapter chỉ giữ lần đọc gần nhất (để đổi mã quét được thành mã kiện), theo người
- * đang đăng nhập. Chưa có ở backend: yêu cầu nhận hàng của tài xế, xác nhận tay ở điểm nhận, thông báo — `capabilities` tắt, gọi tới là
- * `NOT_SUPPORTED`.
+ * đang đăng nhập. Thông báo đọc chuông của máy chủ (máy chủ giữ "đã đọc"). Chưa có ở backend: yêu cầu nhận hàng của tài xế, xác nhận tay
+ * ở điểm nhận — `capabilities` tắt, gọi tới là `NOT_SUPPORTED`.
  *
  * Lỗi ném bằng `AppException` mang tên `ErrorCode` trong phong bì: mã có câu ở `backendErrors` thì giữ nguyên; vài mã đổi sang câu nêu mã
  * kiện hay tên điểm. Backend cũ trả lỗi không kèm mã: mỗi lệnh đọc theo mã HTTP.
@@ -23,9 +25,14 @@ type Memory = {
   readonly trips: Map<string, DriverTripRow>
   /** Điểm hiện tại của lần đọc gần nhất theo chuyến: để đổi mã quét được thành mã kiện. */
   readonly stops: Map<string, CurrentStopDto>
+  /** Tuyến đang đi theo chuyến, kèm điểm hiện tại và lúc đọc: tuyến gần như không đổi nên không đọc lại theo nhịp 30 giây của màn. */
+  readonly plans: Map<string, { readonly plan: RoutePlanDetailDto; readonly stopId: number; readonly at: number }>
 }
 
-const emptyMemory = (): Memory => ({ trips: new Map(), stops: new Map() })
+const emptyMemory = (): Memory => ({ trips: new Map(), stops: new Map(), plans: new Map() })
+
+/** Tuyến đã đọc dùng lại chừng này lâu khi điểm hiện tại chưa đổi; sang điểm mới (hoàn tất điểm) thì đọc lại ngay. */
+export const ROUTE_REUSE_MS = 5 * 60_000
 
 type HttpDriverDeps = {
   readonly client?: () => ApiClient
@@ -93,6 +100,36 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     }
   }
 
+  // GET /api/driver/trips/{id}/stops — giờ đến và hạn giao; không đọc được thì màn không có phần giờ
+  async function stopTimes(tripId: string): Promise<ServerTripStops | null> {
+    try {
+      return tripStopsOf(await client().get<DriverTripStopsDto>(`/api/driver/trips/${encodeURIComponent(tripId)}/stops`))
+    } catch {
+      return null
+    }
+  }
+
+  /** Thẻ chuyến kèm các điểm, giờ đến và hạn giao theo máy chủ (như `ServerMyTripStops` của web); không đọc được thì thẻ không có điểm. */
+  async function withStops(row: DriverTripRow): Promise<DriverTripRow> {
+    const times = await stopTimes(row.id)
+    if (times === null || times.stops.length === 0) return row
+    const stops = serverTripStops(times)
+    return { ...row, stops, etaSources: serverEtaSources(stops), etaFromServer: true }
+  }
+
+  /**
+   * Tuyến cho điểm `stop`: dùng lại lần đọc trước khi vẫn là điểm đó và chưa quá `ROUTE_REUSE_MS`; không thì đọc lại (lần đọc `early`
+   * đã bắt đầu thì chờ nó). Đọc lỗi không giữ lại — lần sau đọc tiếp.
+   */
+  async function routeOf(tripId: string, stop: CurrentStopDto, early: Promise<RoutePlanDetailDto | null> | null): Promise<RoutePlanDetailDto | null> {
+    const cached = mine().plans.get(tripId)
+    if (early === null && cached !== undefined && cached.stopId === stop.stopId) return cached.plan
+    const plan = await (early ?? activePlan(tripId))
+    if (plan === null) mine().plans.delete(tripId)
+    else mine().plans.set(tripId, { plan, stopId: stop.stopId, at: Date.now() })
+    return plan
+  }
+
   /**
    * Chỉ mở chuyến có trong danh sách của chính tài xế (backend đọc điểm hiện tại của chuyến nào cũng được), nên đọc danh sách trước: chuyến
    * đã giao mở màn tổng kết (backend chưa có số liệu tổng kết); chuyến chưa rời kho, đã huỷ hay không còn của mình thì không mở.
@@ -102,7 +139,11 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     const trip = headOf(tripId)
     if (dto?.status === 'DELIVERED') return { kind: 'completed', trip, summary: undefined }
     if (dto?.status !== 'IN_TRANSIT') throw notInTransit(tripId)
-    const plan = activePlan(tripId)
+    const cached = mine().plans.get(tripId)
+    const reusable = cached !== undefined && Date.now() - cached.at < ROUTE_REUSE_MS
+    // Chưa có tuyến dùng lại được: đọc song song với điểm hiện tại
+    const early = reusable ? null : activePlan(tripId)
+    const times = stopTimes(tripId)
     let stop: CurrentStopDto
     try {
       stop = await currentStop(tripId)
@@ -113,14 +154,17 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       if (refused(error, 404, 'NO_PENDING_DELIVERY_STOP')) return { kind: 'noStops', trip }
       throw error
     }
-    return { kind: 'stop', trip, screen: stopScreenOf(stop, dto.stopCount ?? 0, await plan) }
+    return { kind: 'stop', trip, screen: stopScreenOf(stop, dto.stopCount ?? 0, await routeOf(tripId, stop, early), await times) }
   }
 
   return {
     capabilities: HTTP_DRIVER_CAPABILITIES,
 
     async fetchMyTrips() {
-      const groups = myTripsOf(await listTrips())
+      const all = myTripsOf(await listTrips())
+      // Chuyến đang chạy và chuyến xếp xong chờ xuất phát có danh sách điểm (như web); nhóm khác chưa có việc ở từng điểm
+      const [inTransit, loaded] = await Promise.all([Promise.all(all.inTransit.map(withStops)), Promise.all(all.loaded.map(withStops))])
+      const groups = { ...all, inTransit, loaded }
       const active = groups.inTransit.length + groups.loaded.length + groups.preparing.length > 0
       return { groups, refreshMs: active ? SERVER_REFRESH_MS : null }
     },
@@ -245,6 +289,15 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       return { id: result.id ?? 'EXC-0' }
     },
     createPickupRequest: unsupported,
-    fetchNotifications: unsupported,
+
+    // GET /api/notifications
+    async fetchNotifications() {
+      return driverNotificationsOf(await fetchServerNotifications(client()), userId())
+    },
+
+    // POST /api/notifications/read
+    async markNotificationsRead(ids) {
+      return driverNotificationsOf(await markServerNotificationsRead(client(), ids), userId())
+    },
   }
 }

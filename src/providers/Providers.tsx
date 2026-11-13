@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState, type ReactNode } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
+import { connectAppFocus } from '@/data/app-focus'
 import { connectNetworkStatus } from '@/data/network'
 import { createQueryClient } from '@/data/query-client'
 import { AuthProvider } from '@/features/auth/AuthProvider'
@@ -12,6 +13,8 @@ export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(createQueryClient)
   // Trạng thái mạng của máy cho cache truy vấn (thử lại khi có mạng lại) và cho dải "Mất kết nối" của màn tài xế, kho
   useEffect(() => connectNetworkStatus(), [])
+  // App xuống nền thì thôi đọc lại theo nhịp; quay lại thì đọc lại dữ liệu đã cũ
+  useEffect(() => connectAppFocus(), [])
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>

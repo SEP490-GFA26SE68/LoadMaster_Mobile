@@ -159,7 +159,7 @@ function TripStops({ trip }: { trip: DriverTripRow }) {
           </View>
         )
       })}
-      <EtaSourceLine sources={trip.etaSources} />
+      <EtaSourceLine sources={trip.etaSources} mock={!trip.etaFromServer} />
     </View>
   )
 }

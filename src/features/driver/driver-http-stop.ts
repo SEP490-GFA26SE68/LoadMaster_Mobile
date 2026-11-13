@@ -2,6 +2,7 @@ import type { DeliveryIssueKind } from '@/lib/mock-db'
 
 import type { CurrentStopDto, RoutePlanDetailDto, StopPackageDto } from './driver-http-dto'
 import { routeMapOf, vnInstant } from './driver-http-mapping'
+import { serverStopTiming, serverTripStops, type ServerTripStops } from './driver-http-stop-times'
 import { SERVER_REFRESH_MS } from './driver-http-support'
 import type { DriverTripStop, StopItem, StopPickupItem, StopScreen, VerifyVia } from './driver-model'
 
@@ -141,10 +142,13 @@ function pickupItemOf(pkg: StopPackage, packages: readonly StopPackage[]): StopP
 
 /**
  * Màn điểm giao từ điểm hiện tại của backend: giờ đến và tiến độ từng kiện (đã dỡ, sự cố, xác nhận tay, đã nhận lên xe) đọc từ máy chủ, nên
- * mở lại app hay đổi máy vẫn đúng. Chỉ giờ đến máy chủ ghi khi bấm "Đã đến" mới là đã đến. Chỉ biết điểm hiện tại nên các điểm khác của dải
- * tiến độ chỉ có số và đã xong hay chưa (backend hoàn tất điểm theo thứ tự), và không biết điểm kế tiếp. Toạ độ lấy từ plan active khi có.
+ * mở lại app hay đổi máy vẫn đúng. Chỉ giờ đến máy chủ ghi khi bấm "Đã đến" mới là đã đến. Toạ độ lấy từ plan active khi có.
+ *
+ * Các điểm của chuyến kèm giờ đến và hạn giao đọc ở `GET /api/driver/trips/{id}/stops` (`times`): có thì danh sách điểm có tên, số kiện,
+ * giờ, và biết điểm kế tiếp; không đọc được thì các điểm khác của dải tiến độ chỉ có số và đã xong hay chưa (backend hoàn tất điểm theo
+ * thứ tự), điểm đang giao không có phần giờ.
  */
-export function stopScreenOf(dto: CurrentStopDto, tripStopCount: number, plan: RoutePlanDetailDto | null = null): StopScreen {
+export function stopScreenOf(dto: CurrentStopDto, tripStopCount: number, plan: RoutePlanDetailDto | null = null, times: ServerTripStops | null = null): StopScreen {
   const number = dto.stopSequence
   const name = dto.stopName ?? ''
   const kind = isPickupStop(dto) ? 'PICKUP' : 'DELIVERY'
@@ -160,20 +164,24 @@ export function stopScreenOf(dto: CurrentStopDto, tripStopCount: number, plan: R
   const verifiable = items.filter((item) => !item.unloaded && !item.returned).length + pickupWaiting
   const pendingConfirms = items.filter((item) => item.via === 'MANUAL_PENDING').length
   const arrivedAt = vnInstant(dto.actualArrival)
-  const stopCount = Math.max(tripStopCount, number)
+  const known = times === null ? [] : serverTripStops(times)
+  const stopCount = Math.max(tripStopCount, number, known.length)
   const stops = Array.from({ length: stopCount }, (_, index): DriverTripStop => {
     const current = index + 1 === number
+    const server = known.find((entry) => entry.number === index + 1)
     return {
       number: index + 1,
-      name: current ? name : '',
+      name: current ? name : (server?.name ?? ''),
       kind: current ? kind : 'DELIVERY',
-      packageCount: current && kind === 'DELIVERY' ? items.length : undefined,
+      packageCount: current ? (kind === 'DELIVERY' ? items.length : undefined) : server?.packageCount,
       done: index + 1 < number,
-      timing: undefined,
+      timing: index + 1 < number ? undefined : server?.timing,
     }
   })
+  const here = times?.stops.find((entry) => entry.number === number)
+  const following = known.find((entry) => entry.number === number + 1)
   const routeMap = routeMapOf(plan, { number, name })
-  const here = routeMap?.stops.find((stop) => stop.number === number)
+  const point = routeMap?.stops.find((stop) => stop.number === number)
   return {
     mode: 'delivering',
     stop: {
@@ -184,14 +192,15 @@ export function stopScreenOf(dto: CurrentStopDto, tripStopCount: number, plan: R
       phone: undefined,
       contactName: undefined,
       kind,
-      lat: here?.lat,
-      lng: here?.lng,
+      lat: point?.lat,
+      lng: point?.lng,
     },
     stops,
     stopCount,
     arrived: arrivedAt !== undefined,
     arrivedAt,
-    timing: undefined,
+    timing: here === undefined || times === null ? undefined : serverStopTiming(here, times.location),
+    ...(times === null ? {} : { etaFromServer: true as const }),
     items,
     pickupItems,
     leftAtWarehouse: 0,
@@ -206,13 +215,13 @@ export function stopScreenOf(dto: CurrentStopDto, tripStopCount: number, plan: R
       returned: items.filter((item) => !item.unloaded).map(({ id, label, name: itemName }) => ({ id, label, name: itemName })),
       picked,
       issues: issueCount,
-      next: undefined,
-      nextKnown: false,
+      next: following === undefined ? undefined : { number: following.number, name: following.name },
+      nextKnown: times !== null && known.length > 0,
     },
     names: Object.fromEntries([...items, ...pickupItems].map((item) => [item.id, item.name])),
     hasPickupStops: false,
     // màn điểm giao chỉ có khi chuyến đang vận chuyển
-    refreshMs: SERVER_REFRESH_MS,
+    refreshMs: times?.refreshMs ?? SERVER_REFRESH_MS,
     routeMap,
   }
 }

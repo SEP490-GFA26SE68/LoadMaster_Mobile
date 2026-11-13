@@ -247,7 +247,7 @@ describe('httpDriverApi: xuất phát, đã đến, vị trí, sự cố trên �
       tripExceptions: true,
       pickups: false,
       gps: true,
-      notifications: false,
+      notifications: true,
       gpsLocalOnly: false,
     })
     for (const run of [
@@ -257,7 +257,6 @@ describe('httpDriverApi: xuất phát, đã đến, vị trí, sự cố trên �
           delivery: { name: 'Kho Sóng Thần', address: 'Dĩ An', lat: 10.89, lng: 106.75 },
           packages: [{ packageCode: 'HG-1', lengthCm: 40, widthCm: 30, heightCm: 30, weightKg: 8, handlingClass: 'STANDARD' }],
         }),
-      () => driver.fetchNotifications(),
     ]) {
       expect((await failure(run)).code).toBe('NOT_SUPPORTED')
     }

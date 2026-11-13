@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
@@ -11,7 +12,10 @@ import { colors, radius, shadow, space } from '@/theme/tokens'
 import { initialsOf } from '@/types/user'
 
 import { useAuth } from './AuthProvider'
+import { ForgotPasswordFlow } from './ForgotPasswordFlow'
 import { scopeNote } from './landing'
+import type { PasswordResetApi } from './password-reset-api'
+import { usePasswordReset } from './usePasswordReset'
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -24,12 +28,35 @@ function Row({ label, value }: { label: string; value: string }) {
   )
 }
 
-/** Mọi vai trò mở được: người đang đăng nhập, ngôn ngữ, app đang đọc dữ liệu từ đâu, đăng xuất. */
-export function AccountScreen() {
+type PasswordMode = 'idle' | 'changing' | 'changed'
+
+/**
+ * Mọi vai trò mở được: người đang đăng nhập, ngôn ngữ, app đang đọc dữ liệu từ đâu, đổi mật khẩu, đăng xuất. Đổi mật khẩu dùng lại ba bước
+ * của Đặt lại mật khẩu (mã gửi tới email, điền sẵn email đăng nhập) — chỉ khi nguồn đăng nhập làm được việc đó (máy chủ; kho mẫu không gửi
+ * được mã nên không có nút). Đổi xong vẫn giữ phiên. `passwordReset` chỉ truyền trong test.
+ */
+export function AccountScreen({ passwordReset }: { passwordReset?: PasswordResetApi } = {}) {
   const t = useT()
   const format = useFormat()
   const { user, signOut } = useAuth()
+  const reset = usePasswordReset(passwordReset)
+  const [password, setPassword] = useState<PasswordMode>('idle')
+  const backToAccount = useCallback(() => setPassword('idle'), [])
   if (user === null) return null
+
+  if (password === 'changing' && reset !== null) {
+    return (
+      <Screen title={t('account.changePassword')} scroll>
+        <ForgotPasswordFlow
+          api={reset}
+          initialEmail={user.email}
+          onDone={() => setPassword('changed')}
+          onCancel={backToAccount}
+          cancelLabel={t('account.backToAccount')}
+        />
+      </Screen>
+    )
+  }
 
   const note = scopeNote(user.role)
   const onHttp = FEATURES.filter((feature) => dataConfig.sources[feature] === 'http')
@@ -71,6 +98,18 @@ export function AccountScreen() {
         <AppText variant="label">{t('account.dataSource.title')}</AppText>
         <AppText color={colors.text2}>{source}</AppText>
       </View>
+
+      {password === 'changed' ? (
+        <Banner tone="success" onDismiss={backToAccount}>
+          {t('account.passwordChanged')}
+        </Banner>
+      ) : null}
+
+      {reset === null ? null : (
+        <Button variant="secondary" onPress={() => setPassword('changing')}>
+          {t('account.changePassword')}
+        </Button>
+      )}
 
       <Button variant="secondary" onPress={() => void signOut()}>
         {t('account.signOut')}

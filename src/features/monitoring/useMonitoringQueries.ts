@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient, type Query, type QueryKey } from
 
 import { OFFICE_QUERY_ROOTS } from '@/data/query-roots'
 import type { DeadlineRenegotiationInput, TripExceptionInput } from '@/lib/mock-db'
+import { pollInterval } from '@/lib/polling'
 
 import {
   confirmReroute,
@@ -60,7 +61,7 @@ export function useFleetMonitoringQuery() {
     staleTime: 0,
     refetchInterval: (query) => {
       const waits = (query.state.data ?? []).flatMap((trip) => (trip.refreshMs === null ? [] : [trip.refreshMs]))
-      return waits.length > 0 ? Math.min(...waits) : false
+      return pollInterval(query, waits.length > 0 ? Math.min(...waits) : false)
     },
   })
 }
@@ -71,7 +72,7 @@ export function useLiveTripQuery(tripId: string) {
     queryKey: monitoringKeys.live(tripId),
     queryFn: () => fetchLiveTrip(tripId),
     staleTime: 0,
-    refetchInterval: (query) => query.state.data?.live.refreshMs ?? false,
+    refetchInterval: (query) => pollInterval(query, query.state.data?.live.refreshMs),
   })
 }
 

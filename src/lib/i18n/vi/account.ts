@@ -5,6 +5,10 @@ export const account = {
   phone: 'Số điện thoại',
   depot: 'Kho / chi nhánh',
   signOut: 'Đăng xuất',
+  /** Đổi mật khẩu bằng mã gửi tới email đăng nhập (cùng ba bước với Quên mật khẩu). */
+  changePassword: 'Đổi mật khẩu',
+  backToAccount: 'Về tài khoản',
+  passwordChanged: 'Đã đổi mật khẩu. Lần đăng nhập sau dùng mật khẩu mới.',
   dataSource: {
     title: 'Nguồn dữ liệu',
     mock: 'Dữ liệu mẫu trong máy. App chưa nối máy chủ: việc làm ở đây không hiện trên bản web hay máy khác.',

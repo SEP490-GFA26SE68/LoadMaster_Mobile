@@ -1,19 +1,28 @@
-import type { UseQueryResult } from '@tanstack/react-query'
+import type { UseMutationResult, UseQueryResult } from '@tanstack/react-query'
 import { useRouter, type Href } from 'expo-router'
 import { ArrowLeft, ChevronRight } from 'lucide-react-native'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
+import { Banner } from '@/components/Banner'
 import { Button } from '@/components/Button'
 import { Chip } from '@/components/Chip'
 import { IconButton } from '@/components/IconButton'
 import { Screen } from '@/components/Screen'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateView'
 import { useAuth, useCan } from '@/features/auth/AuthProvider'
-import { useDriverCapabilities, useNotificationsQuery } from '@/features/driver/useDriverQueries'
+import {
+  useDriverCapabilities,
+  useMarkNotificationsReadMutation as useMarkDriverRead,
+  useNotificationsQuery,
+} from '@/features/driver/useDriverQueries'
 import { useMonitoringCapabilities, useOfficeNotificationsQuery } from '@/features/monitoring/useMonitoringQueries'
 import { NOTIFICATION_WINDOW_DAYS } from '@/features/notifications/notifications'
-import { useWarehouseCapabilities, useWarehouseNotifications } from '@/features/warehouse/useWarehouseQueries'
+import {
+  useMarkNotificationsReadMutation as useMarkWarehouseRead,
+  useWarehouseCapabilities,
+  useWarehouseNotifications,
+} from '@/features/warehouse/useWarehouseQueries'
 import type { Formatter } from '@/lib/format'
 import { dataErrorMessage, useFormat, useT, type TFunction } from '@/lib/i18n'
 import { colors, radius, shadow, space } from '@/theme/tokens'
@@ -26,7 +35,8 @@ import { officeRow } from './office-rows'
  * Màn Thông báo (chuông của web mở thành menu; điện thoại dùng một màn riêng), theo vai trò người đọc: tài xế đọc việc của chuyến mình,
  * nhân viên kho đọc việc của kho, điều phối viên và quản lý công ty đọc việc của văn phòng — sự kiện trong `NOTIFICATION_WINDOW_DAYS` ngày
  * gần nhất, mới nhất trước. Dòng chưa đọc có nhãn "Chưa đọc" bằng chữ. Thông báo về một chuyến mở chuyến đó ở màn của vai trò (với văn
- * phòng: Chi tiết chuyến, hoặc màn giám sát chuyến khi việc phải làm nằm ở đó); mở là đã đọc. Nút "Đánh dấu đã đọc" đọc hết một lần. Vai
+ * phòng: Chi tiết chuyến, hoặc màn giám sát chuyến khi việc phải làm nằm ở đó); mở là đã đọc. Nút "Đánh dấu đã đọc" đọc hết một lần —
+ * nguồn là máy chủ thì "đã đọc" ghi ở máy chủ (theo người, mọi máy), kho mẫu thì giữ trong bộ nhớ của lần mở app. Vai
  * trò không có thông báo, hoặc nguồn dữ liệu của vai trò chưa có, thì màn nói không hỗ trợ.
  */
 export function NotificationsScreen() {
@@ -51,13 +61,15 @@ function OfficeNotifications() {
 function DriverNotifications() {
   const { notifications } = useDriverCapabilities()
   const query = useNotificationsQuery(notifications)
-  return notifications ? <NotificationList query={query} describe={driverRow} /> : <NotificationsUnsupported />
+  const mark = useMarkDriverRead()
+  return notifications ? <NotificationList query={query} describe={driverRow} mark={mark} /> : <NotificationsUnsupported />
 }
 
 function WarehouseNotifications() {
   const { notifications } = useWarehouseCapabilities()
   const query = useWarehouseNotifications()
-  return notifications ? <NotificationList query={query} describe={warehouseRow} /> : <NotificationsUnsupported />
+  const mark = useMarkWarehouseRead()
+  return notifications ? <NotificationList query={query} describe={warehouseRow} mark={mark} /> : <NotificationsUnsupported />
 }
 
 function BackButton() {
@@ -79,16 +91,26 @@ type ListProps<Entry> = {
   readonly query: UseQueryResult<Entry[]>
   /** Dịch một thông báo của vai trò thành dòng của màn (`bell-rows.ts`). */
   readonly describe: (entry: Entry, t: TFunction, format: Formatter) => BellRow
+  /** Ghi "đã đọc" ở nguồn, cho dòng mang `read` (máy chủ); vắng thì mọi dấu đã đọc giữ trong bộ nhớ. */
+  readonly mark?: UseMutationResult<unknown, Error, readonly string[]>
 }
 
-function NotificationList<Entry>({ query, describe }: ListProps<Entry>) {
+function NotificationList<Entry>({ query, describe, mark }: ListProps<Entry>) {
   const t = useT()
   const format = useFormat()
   const router = useRouter()
   const { user } = useAuth()
   const read = useReadNotifications(user)
   const rows = (query.data ?? []).map((entry) => describe(entry, t, format))
-  const unread = rows.filter((row) => !read.has(row.id))
+  const isRead = (row: BellRow) => row.read ?? read.has(row.id)
+  const unread = rows.filter((row) => !isRead(row))
+  /** Dòng của nguồn giữ "đã đọc" ghi ở nguồn; dòng còn lại đánh dấu trong bộ nhớ. */
+  const markRead = (targets: readonly BellRow[]) => {
+    const server = targets.filter((row) => row.read !== undefined).map((row) => row.id)
+    const local = targets.filter((row) => row.read === undefined).map((row) => row.id)
+    if (local.length > 0) markNotificationsRead(user, local)
+    if (server.length > 0) mark?.mutate(server)
+  }
 
   return (
     <Screen
@@ -102,19 +124,17 @@ function NotificationList<Entry>({ query, describe }: ListProps<Entry>) {
         <ErrorState message={dataErrorMessage(query.error, t)} onRetry={() => void query.refetch()} />
       ) : (
         <>
+          {mark?.isError ? (
+            <Banner tone="danger" onDismiss={() => mark.reset()}>
+              {dataErrorMessage(mark.error, t)}
+            </Banner>
+          ) : null}
           {unread.length > 0 ? (
             <View style={styles.toolbar}>
               <AppText variant="label" style={styles.flex}>
                 {t('notifications.unreadCount', { count: unread.length })}
               </AppText>
-              <Button
-                variant="secondary"
-                onPress={() =>
-                  markNotificationsRead(
-                    user,
-                    unread.map((row) => row.id),
-                  )
-                }>
+              <Button variant="secondary" loading={mark?.isPending ?? false} onPress={() => markRead(unread)}>
                 {t('notifications.markAllRead')}
               </Button>
             </View>
@@ -127,9 +147,9 @@ function NotificationList<Entry>({ query, describe }: ListProps<Entry>) {
                 <NotificationRow
                   key={row.id}
                   row={row}
-                  unread={!read.has(row.id)}
+                  unread={!isRead(row)}
                   onOpen={(href) => {
-                    markNotificationsRead(user, [row.id])
+                    if (!isRead(row)) markRead([row])
                     router.push(href)
                   }}
                 />

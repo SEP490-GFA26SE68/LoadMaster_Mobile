@@ -68,7 +68,7 @@ export function StopList({ screen }: { screen: StopScreen }) {
           })}
           {sources.length === 0 ? null : (
             <View style={styles.sources}>
-              <EtaSourceLine sources={sources} />
+              <EtaSourceLine sources={sources} mock={!screen.etaFromServer} />
             </View>
           )}
         </View>
