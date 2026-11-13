@@ -48,6 +48,8 @@ const MIRRORED_FILES = [
   ...['pickup-rule-text', 'pickup-stops', 'pickup-look'].map((name) => `features/pickups/${name}.ts`),
   // Tìm bỏ dấu, so chữ, khoảng ngày của danh sách
   'lib/list-filter.ts',
+  // Nhịp đọc lại giãn dần khi máy chủ lỗi liên tiếp, dừng sau năm lần (`refetchInterval`)
+  'lib/polling.ts',
   // Chữ của hai ô vĩ độ / kinh độ → toạ độ, tìm địa danh mẫu — phần thuần của ô chọn toạ độ (bản web có thêm bản đồ)
   ...['coordinates', 'place-search'].map((name) => `components/map/${name}.ts`),
   // Phép chiếu đẳng cự cho hình vẽ tĩnh (hướng đặt kiện ở màn kho) và token nó đọc — ngoài trình duyệt `readToken` trả chuỗi rỗng

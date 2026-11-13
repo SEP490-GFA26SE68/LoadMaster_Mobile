@@ -1,6 +1,6 @@
 {
-  "syncedOn": "2026-11-12",
-  "digest": "8b2a3f9b5d72d4043ea2fbd903ebc45b66fe4989e2db4acf1f3b57506a6ea1c8",
+  "syncedOn": "2026-11-13",
+  "digest": "334a35595a806f835bccde40c12bd6de08dc8d4a21986ba6f48ac8e7b94b262d",
   "files": [
     "components/map/coordinates.ts",
     "components/map/place-search.ts",
@@ -236,6 +236,7 @@
     "lib/mock-db/user-scope.ts",
     "lib/mock-db/vehicle-limits.ts",
     "lib/mock-db/verify-model.ts",
+    "lib/polling.ts",
     "lib/stops.ts",
     "lib/tokens.ts",
     "services/optimization/MockOptimizationService.ts",

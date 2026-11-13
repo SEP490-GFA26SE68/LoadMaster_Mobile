@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import type { PickupRequestInput } from '@/lib/mock-db'
+import { pollInterval } from '@/lib/polling'
 
 import {
   arriveAtStop,
@@ -62,7 +63,7 @@ export function useMyTripsQuery() {
     queryKey: driverKeys.myTrips,
     queryFn: fetchMyTrips,
     staleTime: 0,
-    refetchInterval: (query) => query.state.data?.refreshMs ?? false,
+    refetchInterval: (query) => pollInterval(query, query.state.data?.refreshMs),
   })
 }
 
@@ -74,7 +75,7 @@ export function useTripScreenQuery(tripId: string) {
     staleTime: 0,
     refetchInterval: (query) => {
       const data = query.state.data
-      return data?.kind === 'stop' ? (data.screen.refreshMs ?? false) : false
+      return pollInterval(query, data?.kind === 'stop' ? data.screen.refreshMs : false)
     },
   })
 }
