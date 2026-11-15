@@ -1,4 +1,5 @@
 import { account } from './vi/account'
+import { accountLock } from './vi/accountLock'
 import { apiErrors } from './vi/apiErrors'
 import { auth } from './vi/auth'
 import { backendErrors } from './vi/backendErrors'
@@ -48,6 +49,7 @@ import { warehouseTrips } from './vi/warehouseTrips'
  */
 export const vi = {
   account,
+  accountLock,
   apiErrors,
   auth,
   backendErrors,

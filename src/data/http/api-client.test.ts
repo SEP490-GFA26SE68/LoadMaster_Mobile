@@ -162,3 +162,31 @@ describe('createApiClient', () => {
     expect(calls[0]?.aborted).toBe(true)
   })
 })
+
+describe('tài khoản bị khoá ở máy chủ', () => {
+  function lockedClient(status: number, code: string) {
+    const onAccountLocked = jest.fn()
+    const client = createApiClient({
+      baseUrl: 'http://api.test',
+      accessToken: async () => 'TOKEN',
+      onAccountLocked,
+      fetch: (async () => respond(status, { success: false, code })) as unknown as typeof fetch,
+    })
+    return { client, onAccountLocked }
+  }
+
+  test.each(['SUBSCRIPTION_EXPIRED', 'ACCOUNT_FLAGGED'])('403 %s: lỗi giữ mã, báo cho nơi giữ phiên', async (code) => {
+    const { client, onAccountLocked } = lockedClient(403, code)
+    expect(await failure(() => client.get('/api/driver/trips'))).toMatchObject({ code, status: 403 })
+    expect(onAccountLocked).toHaveBeenCalledWith(code)
+  })
+
+  test('403 vì thiếu quyền, hay mã khoá đi kèm mã HTTP khác: không báo', async () => {
+    const forbidden = lockedClient(403, 'ACCESS_DENIED')
+    await failure(() => forbidden.client.get('/x'))
+    expect(forbidden.onAccountLocked).not.toHaveBeenCalled()
+    const other = lockedClient(409, 'SUBSCRIPTION_EXPIRED')
+    await failure(() => other.client.post('/api/credits/top-up'))
+    expect(other.onAccountLocked).not.toHaveBeenCalled()
+  })
+})

@@ -324,6 +324,11 @@ liệu. Backend lệch với hợp đồng của app thì ghi vào issue và h�
 - Mọi lối ra khỏi phiên soạn → xếp (nút thoát, "Về danh sách chuyến") đi qua `useLeaveSession` — `router.dismissTo('/warehouse')`,
   không `router.back()`: phiên mở từ thông báo hay liên kết sâu vẫn về đúng danh sách chuyến của kho.
 - Danh sách tài khoản dùng thử chỉ hiện khi feature `auth` chạy trên kho mẫu.
+- **Màn khoá** (`account-lock.ts`, như `AppShell` của web; chỉ khi đăng nhập bằng backend): hồ sơ `/api/users/me` mang `status` `FLAGGED`
+  (dùng thử chưa ký thoả thuận — mọi vai trò) hoặc `subscriptionExpired` (gói cước của công ty hết hạn — nhân sự công ty trừ quản trị công ty)
+  thì `(app)/_layout.tsx` vẽ `AccountLockedScreen` thay cả nhóm: lý do, ai mở lại được trên web, đổi ngôn ngữ, nút chính Đăng xuất. Lượt gọi
+  backend bị 403 `SUBSCRIPTION_EXPIRED` / `ACCOUNT_FLAGGED` (`ACCOUNT_LOCK_CODES`) giữa lúc dùng thì `AuthProvider` đọc lại hồ sơ
+  (`refresh` của adapter); đọc không được thì tin mã vừa nhận.
 - Khoá cất phiên (`SESSION_KEY`), `backendUserId()`, `renewAccessToken()` và mã `PASSWORD_CHANGE_REQUIRED` khai ở `auth-adapter.ts`.
 
 ### Đăng nhập bằng Keycloak (`auth` dùng backend)
@@ -340,7 +345,7 @@ liệu. Backend lệch với hợp đồng của app thì ghi vào issue và h�
   đăng xuất. Keycloak không nhận refresh token nữa → `UNAUTHENTICATED`, app đăng xuất; không tới được Keycloak → lỗi mạng, giữ phiên.
   Mở app lúc mất sóng thì vào bằng hồ sơ đã cất.
 - Hồ sơ `GET /api/users/me` đổi sang người dùng của app bằng `backend-user.ts` (chép từ web). Vai trò app chưa biết: `ROLE_UNKNOWN`;
-  tài khoản bị khoá: `ACCOUNT_SUSPENDED`; backend trả 401 cho token vừa cấp: `SIGN_IN_REJECTED` (địa chỉ Keycloak của app khác địa chỉ
+  tài khoản bị khoá: `ACCOUNT_SUSPENDED` (trừ `FLAGGED` — vào app để thấy màn khoá); backend trả 401 cho token vừa cấp: `SIGN_IN_REJECTED` (địa chỉ Keycloak của app khác địa chỉ
   backend tin, hoặc client thiếu audience `loadmaster-api`); 404 (tài khoản Keycloak chưa gắn người dùng nào, kèm `USER_NOT_FOUND` hoặc
   không): `PROFILE_NOT_FOUND`. Bị từ
   chối thì phiên vừa mở ở Keycloak được đóng luôn (logout) — không để lại phiên Keycloak không dùng được; mở lại phiên đã cất mà gặp

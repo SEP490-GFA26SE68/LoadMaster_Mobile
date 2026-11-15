@@ -35,6 +35,11 @@ export type AuthAdapter = {
    * không dùng token. Không làm mới được nữa: `UNAUTHENTICATED`.
    */
   renewAccessToken(rejected: string): Promise<string | null>
+  /**
+   * Đọc lại hồ sơ của phiên đang mở (trạng thái tài khoản, gói cước của công ty) khi máy chủ vừa từ chối vì tài khoản bị khoá; `null` khi
+   * không còn phiên. Thất bại thì ném lỗi có mã. Vắng ở nguồn không có hồ sơ máy chủ (kho mẫu).
+   */
+  refresh?(): Promise<AuthSession | null>
   /** Mã người dùng của backend của phiên đang mở (endpoint của tài xế gửi kèm mã này); `null` khi chưa đăng nhập hoặc đăng nhập trên kho mẫu. */
   backendUserId(): string | null
 }

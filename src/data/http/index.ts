@@ -2,7 +2,7 @@ import { dataConfig } from '../config'
 import { createApiClient, type ApiClient } from './api-client'
 import { ApiError } from './api-error'
 
-export { createApiClient, type ApiClient, type RequestOptions } from './api-client'
+export { ACCOUNT_LOCK_CODES, createApiClient, type ApiClient, type RequestOptions } from './api-client'
 export { ApiError, isApiError, isTransientError } from './api-error'
 
 type AuthLink = {
@@ -10,6 +10,8 @@ type AuthLink = {
   /** Backend trả 401 cho token này: token mới để gọi lại một lần. */
   readonly renewAccessToken: (rejected: string) => Promise<string | null>
   readonly onUnauthenticated: () => void
+  /** Backend trả 403 vì tài khoản bị khoá (gói cước hết hạn, tài khoản bị gắn cờ): đọc lại hồ sơ để hiện màn khoá. */
+  readonly onAccountLocked?: (code: string) => void
   /** Mã người đang đăng nhập (đăng nhập bằng backend: mã người dùng của backend); `null` khi chưa đăng nhập. */
   readonly userId: () => string | null
 }
@@ -39,6 +41,7 @@ export function api(): ApiClient {
     accessToken: () => link.accessToken(),
     renewAccessToken: (rejected) => link.renewAccessToken(rejected),
     onUnauthenticated: () => link.onUnauthenticated(),
+    onAccountLocked: (code) => link.onAccountLocked?.(code),
   })
   return client
 }

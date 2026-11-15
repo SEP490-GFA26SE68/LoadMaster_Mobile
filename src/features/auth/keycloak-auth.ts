@@ -168,6 +168,18 @@ export function createKeycloakAuth({ oauth, readProfile, persist, standIn, now =
 
     signOut: forget,
 
+    async refresh() {
+      const started = generation
+      const tokens = await freshTokens()
+      const profile = await profileFor(tokens.accessToken)
+      // Đã đăng xuất (hoặc đổi người) trong lúc đọc: không trả hồ sơ của phiên cũ
+      const current = live
+      if (started !== generation || current === null || current.tokens.refreshToken === null) return null
+      const session = sessionOf(profile, current.tokens.refreshToken)
+      live = { tokens: current.tokens, profile }
+      return session
+    },
+
     async accessToken() {
       if (live === null) return null
       return (await freshTokens()).accessToken

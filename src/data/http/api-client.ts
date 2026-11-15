@@ -13,6 +13,8 @@ export type ApiClientOptions = {
   readonly renewAccessToken?: (rejected: string) => Promise<string | null>
   /** Backend trả 401: phiên đã hết — nơi giữ phiên đăng xuất người dùng. */
   readonly onUnauthenticated?: () => void
+  /** Backend trả 403 vì tài khoản bị khoá (`ACCOUNT_LOCK_CODES`): nơi giữ phiên đọc lại hồ sơ để app hiện màn khoá. */
+  readonly onAccountLocked?: (code: string) => void
   readonly fetch?: typeof fetch
   readonly timeoutMs?: number
 }
@@ -32,7 +34,13 @@ export type ApiClient = {
   delete<T>(path: string, options?: RequestOptions): Promise<T>
 }
 
-type Envelope = { success?: unknown; code?: unknown; data?: unknown; errors?: unknown }
+/**
+ * Mã 403 của bộ lọc máy chủ khi tài khoản không dùng được nghiệp vụ nữa: gói cước của công ty hết hạn, tài khoản dùng thử bị gắn cờ.
+ * Mọi màn sau đó đều sẽ bị từ chối, nên app chuyển sang màn khoá thay vì báo lỗi ở từng màn.
+ */
+export const ACCOUNT_LOCK_CODES: readonly string[] = ['SUBSCRIPTION_EXPIRED', 'ACCOUNT_FLAGGED']
+
+type Envelope ={ success?: unknown; code?: unknown; data?: unknown; errors?: unknown }
 
 const DEFAULT_TIMEOUT_MS = 15_000
 
@@ -61,6 +69,7 @@ export function createApiClient({
   accessToken,
   renewAccessToken,
   onUnauthenticated,
+  onAccountLocked,
   fetch: fetchImpl = fetch,
   timeoutMs = DEFAULT_TIMEOUT_MS,
 }: ApiClientOptions): ApiClient {
@@ -112,6 +121,7 @@ export function createApiClient({
     if (!response.ok || envelope?.success === false) {
       if (response.status === 401) onUnauthenticated?.()
       const code = typeof envelope?.code === 'string' && envelope.code !== '' ? envelope.code : codeOfStatus(response.status)
+      if (response.status === 403 && ACCOUNT_LOCK_CODES.includes(code)) onAccountLocked?.(code)
       throw new ApiError(code, { status: response.status, params: isRecord(envelope?.errors) ? envelope.errors : {} })
     }
     return (envelope === null ? payload : envelope.data) as T
