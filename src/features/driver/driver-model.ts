@@ -18,6 +18,8 @@ import type { EtaSource, StopTiming } from './stop-timing'
  * không nút giả.
  */
 export type DriverCapabilities = {
+  /** Mở bảng lương tháng do backend tính. */
+  readonly payroll: boolean
   /** Bấm "Xuất phát" ở màn điểm giao khi kho đã xếp xong (kho mẫu: màn mở được trước khi xe chạy). */
   readonly depart: boolean
   /**
@@ -44,6 +46,36 @@ export type DriverCapabilities = {
   /** Vị trí GPS chỉ ở lại kho mẫu trong máy (không có máy chủ nào nhận). */
   readonly gpsLocalOnly: boolean
 }
+
+export type DriverPayrollTripLine = {
+  readonly tripId: string
+  readonly tripCode: string
+  readonly planKg: number
+  readonly planKm: number
+  readonly sharePercent: number
+  readonly allocatedKg: number
+  readonly allocatedKm: number
+  readonly kgAmountVnd: number
+  readonly kmAmountVnd: number
+  readonly totalAmountVnd: number
+}
+
+export type DriverPayrollStatement =
+  | { readonly kind: 'notCalculated'; readonly period: string }
+  | {
+      readonly kind: 'calculated'
+      readonly period: string
+      readonly status: 'DRAFT' | 'LOCKED'
+      readonly baseSalaryVnd: number
+      readonly totalKg: number
+      readonly kgRateVndPerKg: number
+      readonly kgAmountVnd: number
+      readonly totalKm: number
+      readonly kmRateVndPerKm: number
+      readonly kmAmountVnd: number
+      readonly totalSalaryVnd: number
+      readonly trips: readonly DriverPayrollTripLine[]
+    }
 
 /** Một điểm của chuyến trong danh sách điểm: số, tên, loại, số kiện của phương án ở điểm, đã xong chưa, giờ đến / hạn. */
 export type DriverTripStop = {

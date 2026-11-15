@@ -7,7 +7,66 @@ import { myTripsOf, shownStatusOf, tripRowOf } from './driver-http-mapping'
 import { deliveryPackageOf, isUnloaded, packageOfCode, stopScreenOf, withUnloaded } from './driver-http-stop'
 import { serverEtaSources, serverTripStops, tripStopsOf, type DriverTripStopsDto, type ServerTripStops } from './driver-http-stop-times'
 import { coded, HTTP_DRIVER_CAPABILITIES, refused, SERVER_REFRESH_MS, unsupported } from './driver-http-support'
-import type { DriverTripRow, DriverTripScreen, StopKey, TripHead } from './driver-model'
+import type { DriverPayrollStatement, DriverTripRow, DriverTripScreen, StopKey, TripHead } from './driver-model'
+
+type DriverPayrollStatementDto = {
+  calculated: boolean
+  period: string
+  status: 'DRAFT' | 'LOCKED' | null
+  baseSalaryVnd: number | null
+  totalKg: number | null
+  rateVndPerKg: number | null
+  kgAmountVnd: number | null
+  totalKm: number | null
+  rateVndPerKm: number | null
+  kmAmountVnd: number | null
+  totalSalaryVnd: number | null
+  trips: readonly {
+    tripId: number
+    tripCode: string | null
+    planKg: number
+    planKm: number
+    sharePercent: number
+    allocatedKg: number
+    allocatedKm: number
+    kgAmountVnd: number
+    kmAmountVnd: number
+    totalAmountVnd: number
+  }[] | null
+}
+
+function payrollStatementOf(dto: DriverPayrollStatementDto): DriverPayrollStatement {
+  if (!dto.calculated) return { kind: 'notCalculated', period: dto.period }
+  const amounts = [dto.baseSalaryVnd, dto.totalKg, dto.rateVndPerKg, dto.kgAmountVnd, dto.totalKm, dto.rateVndPerKm, dto.kmAmountVnd, dto.totalSalaryVnd]
+  if (dto.status === null || amounts.some((value) => value === null || !Number.isFinite(value))) {
+    throw new ApiError('SERVER_ERROR')
+  }
+  return {
+    kind: 'calculated',
+    period: dto.period,
+    status: dto.status,
+    baseSalaryVnd: dto.baseSalaryVnd as number,
+    totalKg: dto.totalKg as number,
+    kgRateVndPerKg: dto.rateVndPerKg as number,
+    kgAmountVnd: dto.kgAmountVnd as number,
+    totalKm: dto.totalKm as number,
+    kmRateVndPerKm: dto.rateVndPerKm as number,
+    kmAmountVnd: dto.kmAmountVnd as number,
+    totalSalaryVnd: dto.totalSalaryVnd as number,
+    trips: (dto.trips ?? []).map((line) => ({
+      tripId: String(line.tripId),
+      tripCode: line.tripCode ?? String(line.tripId),
+      planKg: line.planKg,
+      planKm: line.planKm,
+      sharePercent: line.sharePercent,
+      allocatedKg: line.allocatedKg,
+      allocatedKm: line.allocatedKm,
+      kgAmountVnd: line.kgAmountVnd,
+      kmAmountVnd: line.kmAmountVnd,
+      totalAmountVnd: line.totalAmountVnd,
+    })),
+  }
+}
 
 /*
  * Nguồn backend của màn tài xế (như `driver-backend-api.ts` của web): "Chuyến của tôi", xuất phát ở thẻ chuyến, "Đã đến", dỡ (quét / gõ mã
@@ -167,6 +226,11 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       const groups = { ...all, inTransit, loaded }
       const active = groups.inTransit.length + groups.loaded.length + groups.preparing.length > 0
       return { groups, refreshMs: active ? SERVER_REFRESH_MS : null }
+    },
+
+    async fetchPayroll(period) {
+      driverId()
+      return payrollStatementOf(await client().get<DriverPayrollStatementDto>('/api/driver/payroll', { query: { period } }))
     },
 
     fetchTripScreen,

@@ -1,6 +1,8 @@
 import { RefreshControl, SectionList, StyleSheet, View } from 'react-native'
+import { useRouter } from 'expo-router'
 
 import { AppText } from '@/components/AppText'
+import { Button } from '@/components/Button'
 import { Screen } from '@/components/Screen'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateView'
 import { NotificationBell } from '@/features/bell/NotificationBell'
@@ -10,7 +12,7 @@ import { colors, CONTENT_MAX_WIDTH, space } from '@/theme/tokens'
 import type { DriverTripRow } from './driver-model'
 import { MY_TRIP_GROUPS } from './my-trips'
 import { TripCard } from './TripCard'
-import { useMyTripsQuery } from './useDriverQueries'
+import { useDriverCapabilities, useMyTripsQuery } from './useDriverQueries'
 
 /**
  * Màn chính của tài xế (như `MyTripsPage` của web): chuyến gán cho mình chia nhóm theo trạng thái — Đang vận chuyển · Xếp xong — chờ xuất
@@ -20,6 +22,8 @@ import { useMyTripsQuery } from './useDriverQueries'
 export function MyTripsScreen() {
   const t = useT()
   const format = useFormat()
+  const router = useRouter()
+  const capabilities = useDriverCapabilities()
   const query = useMyTripsQuery()
 
   const groups = query.data?.groups
@@ -35,7 +39,16 @@ export function MyTripsScreen() {
     <Screen
       title={t('driver.myTrips.title')}
       actions={<NotificationBell />}
-      below={<AppText color={colors.skyText2}>{format.date(new Date())}</AppText>}>
+      below={
+        <View style={styles.headerBelow}>
+          <AppText color={colors.skyText2}>{format.date(new Date())}</AppText>
+          {capabilities.payroll ? (
+            <Button variant="secondary" onPress={() => router.push('/driver-payroll')}>
+              {t('driver.payroll.open')}
+            </Button>
+          ) : null}
+        </View>
+      }>
       {query.isPending ? (
         <LoadingState />
       ) : query.isError ? (
@@ -71,5 +84,6 @@ function Separator() {
 const styles = StyleSheet.create({
   list: { flexGrow: 1, width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center', padding: space[4], paddingBottom: space[8] },
   sectionTitle: { marginTop: space[4], marginBottom: space[3] },
+  headerBelow: { gap: space[2] },
   separator: { height: space[3] },
 })

@@ -248,6 +248,7 @@ describe('httpDriverApi: xuất phát, đã đến, vị trí, sự cố trên �
       pickups: false,
       gps: true,
       notifications: true,
+      payroll: true,
       gpsLocalOnly: false,
     })
     for (const run of [

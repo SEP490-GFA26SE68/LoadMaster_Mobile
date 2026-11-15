@@ -23,6 +23,7 @@ import type {
   DeliveryIssueRequest,
   DriverCapabilities,
   DriverNotification,
+  DriverPayrollStatement,
   DriverTrips,
   DriverTripScreen,
   LocationRequest,
@@ -42,6 +43,7 @@ import { mockDriverApi } from './driver-mock'
 export type DriverApi = {
   readonly capabilities: DriverCapabilities
   fetchMyTrips(): Promise<DriverTrips>
+  fetchPayroll(period: string): Promise<DriverPayrollStatement>
   fetchTripScreen(tripId: string): Promise<DriverTripScreen>
   startDelivery(tripId: string): Promise<void>
   arriveAtStop(tripId: string, stop: StopKey): Promise<void>
@@ -68,6 +70,11 @@ export function driverCapabilities(): DriverCapabilities {
 // GET /api/driver/trips
 export function fetchMyTrips(): Promise<DriverTrips> {
   return adapter().fetchMyTrips()
+}
+
+// GET /api/driver/payroll?period=YYYY-MM
+export function fetchPayroll(period: string): Promise<DriverPayrollStatement> {
+  return adapter().fetchPayroll(period)
 }
 
 // GET /api/driver/trips/{id}/current-stop

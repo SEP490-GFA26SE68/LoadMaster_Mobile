@@ -11,6 +11,7 @@ import {
   createPickupRequest,
   driverCapabilities,
   fetchMyTrips,
+  fetchPayroll,
   fetchNotifications,
   fetchTripScreen,
   markNotificationsRead,
@@ -21,6 +22,7 @@ import {
 import type { DeliveryIssueRequest, DriverCapabilities, ManualConfirmRequest, StopKey, TripExceptionRequest, VerifyCodeInput } from './driver-model'
 
 const NO_CAPABILITIES: DriverCapabilities = {
+  payroll: false,
   depart: false,
   departFromList: false,
   arrive: false,
@@ -50,6 +52,7 @@ export function useDriverCapabilities(): DriverCapabilities {
 export const driverKeys = {
   all: ['driver'] as const,
   myTrips: ['driver', 'my-trips'] as const,
+  payroll: (period: string) => ['driver', 'payroll', period] as const,
   trip: (tripId: string) => ['driver', 'trip', tripId] as const,
   notifications: ['driver', 'notifications'] as const,
 }
@@ -64,6 +67,15 @@ export function useMyTripsQuery() {
     queryFn: fetchMyTrips,
     staleTime: 0,
     refetchInterval: (query) => pollInterval(query, query.state.data?.refreshMs),
+  })
+}
+
+/** Phiếu lương đã tính của tháng đang xem; backend trả trạng thái chưa tính riêng, không dựng số liệu tạm. */
+export function useDriverPayrollQuery(period: string) {
+  return useQuery({
+    queryKey: driverKeys.payroll(period),
+    queryFn: () => fetchPayroll(period),
+    staleTime: 60_000,
   })
 }
 

@@ -140,9 +140,13 @@ export function mockDriverApi(): DriverApi {
       pickups: true,
       gps: true,
       notifications: true,
+      payroll: false,
       gpsLocalOnly: true,
     },
     fetchMyTrips,
+    async fetchPayroll() {
+      throw new ApiError('NOT_SUPPORTED')
+    },
     fetchTripScreen,
     async startDelivery(tripId) {
       await db().startDelivery(tripId)
