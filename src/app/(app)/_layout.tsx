@@ -1,6 +1,8 @@
 import { Stack } from 'expo-router'
 
-import { useCan } from '@/features/auth/AuthProvider'
+import { accountLockOf } from '@/features/auth/account-lock'
+import { AccountLockedScreen } from '@/features/auth/AccountLockedScreen'
+import { useAuth, useCan } from '@/features/auth/AuthProvider'
 
 /** Mở thẳng một màn chồng (thông báo đẩy, liên kết sâu) vẫn có thanh tab bên dưới để quay về. */
 export const unstable_settings = { initialRouteName: '(tabs)' }
@@ -16,9 +18,13 @@ export { RouteErrorScreen as ErrorBoundary } from '@/features/errors/RouteErrorS
  * chuyến của nhân viên kho, chi tiết một chuyến và giám sát một chuyến đang chạy của điều phối viên và quản lý công ty, thông báo (của cả
  * bốn vai trò). Màn làm việc nằm sau quyền của nó (`Stack.Protected`): vai trò thiếu quyền không mở được route. Màn chồng mới thêm một
  * `Stack.Screen` ở đây.
+ * Tài khoản bị khoá ở máy chủ (gói cước hết hạn, bị gắn cờ — `account-lock.ts`) thì cả nhóm nhường chỗ cho màn khoá: mọi màn khác chỉ
+ * nhận 403.
  */
 export default function AppLayout() {
   const can = useCan()
+  const lock = accountLockOf(useAuth().user)
+  if (lock !== null) return <AccountLockedScreen reason={lock} />
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />

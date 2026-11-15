@@ -1,11 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { createContext, use, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Alert } from 'react-native'
 
 import { connectAuth } from '@/data/http'
 import { useT } from '@/lib/i18n'
 import type { User } from '@/types/user'
 
+import { lockedUser } from './account-lock'
 import type { AuthAdapter } from './auth-adapter'
 import { authAdapter } from './auth-api'
 import { can, type Permission } from './permissions'
@@ -77,15 +78,38 @@ export function AuthProvider({ children, adapter: injected }: { children: ReactN
     }
   }, [adapter])
 
+  // Máy chủ vừa từ chối vì tài khoản bị khoá giữa lúc dùng (gói cước hết hạn, bị gắn cờ): đọc lại hồ sơ để màn khoá hiện ra
+  // (`account-lock.ts`). Một lượt đọc cho mọi lượt gọi bị từ chối cùng lúc; đọc không được thì tin mã máy chủ vừa trả.
+  const relocking = useRef<Promise<void> | null>(null)
+  const recheckAccount = useCallback(
+    (code: string) => {
+      if (relocking.current !== null) return
+      const run = (async () => {
+        const session = await Promise.resolve(adapter.refresh?.()).catch(() => null)
+        if (session == null) {
+          setState((previous) => (previous.status === 'signedIn' ? { status: 'signedIn', user: lockedUser(previous.user, code) } : previous))
+          return
+        }
+        await saveSession(session.saved)
+        setState((previous) => (previous.status === 'signedIn' ? { status: 'signedIn', user: session.user } : previous))
+      })()
+      relocking.current = run.finally(() => {
+        relocking.current = null
+      })
+    },
+    [adapter],
+  )
+
   useEffect(() => {
     connectAuth({
       accessToken: () => adapter.accessToken(),
       renewAccessToken: (rejected) => adapter.renewAccessToken(rejected),
       onUnauthenticated: () => void signOut(),
+      onAccountLocked: recheckAccount,
       // Đọc thẳng từ adapter, không từ state: màn mở ngay sau khi đăng nhập gọi backend trước khi effect này kịp chạy lại
       userId: () => adapter.backendUserId(),
     })
-  }, [adapter, signOut])
+  }, [adapter, recheckAccount, signOut])
 
   const value = useMemo<AuthValue>(
     () => ({

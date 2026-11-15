@@ -70,6 +70,9 @@ describe('đăng nhập', () => {
       status: 'active',
       lastActiveAt: null,
       companyId: '3',
+      // Máy chủ cũ không gửi hai trường này: tài khoản chính thức, gói còn hiệu lực
+      userType: 'OFFICIAL',
+      subscriptionExpired: false,
     })
     // Chỉ refresh token được cất; token truy cập ở trong bộ nhớ
     expect(savedOf(session.saved)).toEqual({ v: 1, refreshToken: 'RT-1', profile: PROFILE })
@@ -82,6 +85,25 @@ describe('đăng nhập', () => {
     const { user } = await auth.signIn(EMAIL, PASSWORD)
     expect(user).toMatchObject({ fullName: 'taixe.binh', phone: '' })
     expect(user).not.toHaveProperty('companyId')
+  })
+
+  test('tài khoản dùng thử của công ty hết gói: vào app, mang hai cờ của máy chủ (màn khoá đọc chúng)', async () => {
+    const { auth } = setup({ readProfile: async () => ({ ...PROFILE, userType: 'TRIAL', subscriptionExpired: true }) })
+    const { user } = await auth.signIn(EMAIL, PASSWORD)
+    expect(user).toMatchObject({ status: 'active', userType: 'TRIAL', subscriptionExpired: true })
+  })
+
+  test('tài khoản bị gắn cờ (chưa ký thoả thuận): vẫn vào app với trạng thái flagged, không bị coi là bị khoá', async () => {
+    const { auth, oauth } = setup({ readProfile: async () => ({ ...PROFILE, status: 'FLAGGED', userType: 'TRIAL' }) })
+    const { user } = await auth.signIn(EMAIL, PASSWORD)
+    expect(user).toMatchObject({ status: 'flagged', userType: 'TRIAL' })
+    expect(oauth.endSession).not.toHaveBeenCalled()
+  })
+
+  test('máy chủ gửi null cho hai cờ mới: hồ sơ vẫn đọc được', async () => {
+    const { auth } = setup({ readProfile: async () => ({ ...PROFILE, userType: null, subscriptionExpired: null }) })
+    const { user } = await auth.signIn(EMAIL, PASSWORD)
+    expect(user).toMatchObject({ userType: 'OFFICIAL', subscriptionExpired: false })
   })
 
   test.each(['INVALID_CREDENTIALS', 'ACCOUNT_SUSPENDED', 'PASSWORD_CHANGE_REQUIRED', 'NETWORK_ERROR'])(
@@ -307,6 +329,35 @@ describe('mở lại phiên đã cất', () => {
     const session = await auth.restore(SAVED)
     expect(session?.user).toMatchObject({ id: '15', fullName: 'Trần Văn Bình' })
     expect(savedOf(session?.saved)).toMatchObject({ refreshToken: 'RT-9+' })
+  })
+})
+
+describe('đọc lại hồ sơ giữa lúc dùng', () => {
+  test('gói cước vừa hết hạn: hồ sơ mới mang cờ, chuỗi cất mang hồ sơ mới và refresh token đang giữ', async () => {
+    const { auth, readProfile } = setup()
+    await auth.signIn(EMAIL, PASSWORD)
+    readProfile.mockResolvedValueOnce({ ...PROFILE, subscriptionExpired: true })
+    const session = await auth.refresh?.()
+    expect(readProfile).toHaveBeenLastCalledWith('AT-RT-1')
+    expect(session?.user).toMatchObject({ id: '15', subscriptionExpired: true })
+    expect(savedOf(session?.saved)).toMatchObject({ refreshToken: 'RT-1', profile: { subscriptionExpired: true } })
+  })
+
+  test('đã đăng xuất: không có phiên để đọc lại', async () => {
+    const { auth, readProfile } = setup()
+    await expect(auth.refresh?.()).rejects.toMatchObject({ code: 'UNAUTHENTICATED' })
+    expect(readProfile).not.toHaveBeenCalled()
+  })
+
+  test('đăng xuất trong lúc đang đọc: không trả hồ sơ của phiên cũ', async () => {
+    const { auth, readProfile } = setup()
+    await auth.signIn(EMAIL, PASSWORD)
+    const reading = deferred<unknown>()
+    readProfile.mockReturnValueOnce(reading.promise)
+    const refreshing = auth.refresh?.()
+    await auth.signOut()
+    reading.resolve({ ...PROFILE, status: 'FLAGGED' })
+    await expect(refreshing).resolves.toBeNull()
   })
 })
 

@@ -27,7 +27,16 @@ const profileSchema = z.object({
     .nullish()
     .transform((value) => value ?? null),
   userRoleType: z.string(),
+  // Hai trường máy chủ thêm sau: máy chủ cũ không gửi, gửi `null` cũng coi như không có
+  userType: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
   status: z.string(),
+  subscriptionExpired: z
+    .boolean()
+    .nullish()
+    .transform((value) => value ?? undefined),
 })
 
 const savedSchema = z.object({ v: z.literal(1), refreshToken: z.string().min(1), profile: profileSchema })
@@ -59,11 +68,14 @@ export function readSaved(saved: string): { readonly refreshToken: string; reado
   return profile === null ? null : { refreshToken: stored.data.refreshToken, profile }
 }
 
-/** Vai trò app biết và tài khoản còn hoạt động; không thì lỗi có mã. */
+/**
+ * Vai trò app biết và tài khoản còn hoạt động; không thì lỗi có mã. Tài khoản bị gắn cờ (`FLAGGED`: dùng thử chưa ký thoả thuận) vẫn vào
+ * app để thấy màn khoá và đăng xuất (`account-lock.ts`), như bản web.
+ */
 export function roleOf(profile: BackendUserProfile): Role {
   const role = roleOfBackend(profile.userRoleType)
   if (role === null) throw new ApiError('ROLE_UNKNOWN', { params: { role: profile.userRoleType } })
-  if (!isActiveOnBackend(profile.status)) throw new ApiError('ACCOUNT_SUSPENDED')
+  if (!isActiveOnBackend(profile.status) && profile.status !== 'FLAGGED') throw new ApiError('ACCOUNT_SUSPENDED')
   return role
 }
 
@@ -76,9 +88,11 @@ export function userOf(profile: BackendUserProfile, role: Role, standIn: User | 
     email: profile.email,
     phone: profile.phoneNumber ?? '',
     role,
-    status: 'active',
+    status: profile.status === 'FLAGGED' ? 'flagged' : 'active',
     lastActiveAt: null,
     ...(profile.companyId === null ? {} : { companyId: String(profile.companyId) }),
+    userType: profile.userType === 'TRIAL' ? 'TRIAL' : 'OFFICIAL',
+    subscriptionExpired: Boolean(profile.subscriptionExpired),
   }
 }
 
