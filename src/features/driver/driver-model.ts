@@ -268,3 +268,63 @@ export type DriverNotification = {
   /** Đã đọc theo máy chủ; vắng khi nguồn không giữ "đã đọc" (kho mẫu: màn giữ trong bộ nhớ, `notification-read.ts`). */
   readonly read?: boolean
 }
+
+/** Kiện hàng thuộc một điểm dừng trong màn hình chi tiết chuyến của tài xế. */
+export type DriverTripDetailPackage = {
+  readonly id: string
+  readonly code: string
+  readonly barcode: string
+  readonly name: string
+  readonly weightKg?: number
+  readonly status: string
+  readonly unloadOrder?: number
+}
+
+/** Điểm dừng trong màn hình chi tiết chuyến của tài xế. */
+export type DriverTripDetailStop = {
+  readonly id: string
+  readonly number: number
+  readonly name: string
+  readonly address: string
+  readonly lat?: number
+  readonly lng?: number
+  readonly status: 'PENDING' | 'ARRIVED' | 'COMPLETED'
+  readonly kind: 'DELIVERY' | 'PICKUP'
+  readonly plannedArrival?: string
+  readonly actualArrival?: string
+  readonly deadline?: string
+  readonly plannedStatus?: 'OK' | 'AT_RISK' | 'MISSED'
+  readonly eta?: string
+  readonly etaStatus?: 'OK' | 'AT_RISK' | 'MISSED'
+  readonly contactName?: string
+  readonly contactPhone?: string
+  readonly packages: readonly DriverTripDetailPackage[]
+}
+
+/** Chi tiết đầy đủ chuyến đi cho tài xế. */
+export type DriverTripDetail = {
+  readonly id: string
+  readonly code: string
+  readonly name?: string
+  readonly status: TripStatus
+  readonly departureTime?: string
+  readonly completedAt?: string
+  readonly loadingCompleted?: boolean
+  readonly depot: {
+    readonly name: string
+    readonly address: string
+    readonly lat?: number
+    readonly lng?: number
+  }
+  readonly vehicle?: {
+    readonly id: string
+    readonly name?: string
+    readonly licensePlate: string
+    readonly maxPayloadKg?: number
+    readonly typeName?: string
+  }
+  readonly totalStops: number
+  readonly totalPackages: number
+  readonly totalWeightKg?: number
+  readonly stops: readonly DriverTripDetailStop[]
+}

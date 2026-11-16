@@ -22,6 +22,11 @@ export function tripPath(tripId: string) {
   return { pathname: '/trip/[tripId]', params: { tripId } } as const
 }
 
+/** Đường mở màn hình chi tiết chuyến của tài xế. */
+export function driverTripDetailPath(tripId: string) {
+  return { pathname: '/driver-trip/[tripId]', params: { tripId } } as const
+}
+
 /** Ngày chạy `YYYY-MM-DD` là ngày lịch; giờ xuất phát ISO giữ nguyên. */
 function dayOf(value: string): Date | string {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) ? calendarDate(value) : value
@@ -37,6 +42,7 @@ export function TripCard({ trip, primary = false }: { trip: DriverTripRow; prima
   const format = useFormat()
   const router = useRouter()
   const preparing = myTripGroup(trip) === 'preparing'
+  const upcoming = myTripGroup(trip) === 'upcoming' || trip.status === 'PLANNED'
   // Máy chủ: chuyến Đang xếp hàng xuất phát ngay ở thẻ — máy chủ không mở màn điểm giao trước khi xe chạy; nút bật khi kho đã xếp xong
   const departs = useDriverCapabilities().departFromList && trip.status === 'LOADING'
   const facts = [
@@ -87,6 +93,14 @@ export function TripCard({ trip, primary = false }: { trip: DriverTripRow; prima
           </AppText>
         </View>
       ) : null}
+      {upcoming ? (
+        <View style={[styles.box, styles.neutral]}>
+          <Clock color={colors.text2} size={20} strokeWidth={1.5} style={styles.boxIcon} />
+          <AppText color={colors.text2} style={styles.boxText}>
+            {t('driver.myTrips.waitingLoading')}
+          </AppText>
+        </View>
+      ) : null}
       {trip.status === 'DELIVERED' && trip.completedAt !== undefined ? (
         <AppText color={colors.text2}>
           {t('driver.myTrips.completedAt', { time: format.time(trip.completedAt), date: format.date(trip.completedAt) })}
@@ -100,20 +114,37 @@ export function TripCard({ trip, primary = false }: { trip: DriverTripRow; prima
       ) : null}
 
       {departs ? (
-        <DepartButton
-          tripId={trip.id}
-          tripCode={trip.code}
-          primary={primary}
-          blockedReason={preparing ? t('driver.myTrips.departNote') : undefined}
-          href={tripPath(trip.id)}
-        />
-      ) : (
+        <View style={styles.buttonGroup}>
+          <DepartButton
+            tripId={trip.id}
+            tripCode={trip.code}
+            primary={primary}
+            blockedReason={preparing ? t('driver.myTrips.departNote') : undefined}
+            href={tripPath(trip.id)}
+          />
+          <Button variant="secondary" onPress={() => router.push(driverTripDetailPath(trip.id))}>
+            {t('driver.myTrips.viewDetail')}
+          </Button>
+        </View>
+      ) : upcoming ? (
         <Button
           variant={primary ? 'primary' : 'secondary'}
-          accessibilityLabel={t('driver.myTrips.openLabel', { action, tripId: trip.code })}
-          onPress={() => router.push(tripPath(trip.id))}>
-          {action}
+          accessibilityLabel={t('driver.myTrips.openLabel', { action: t('driver.myTrips.viewDetail'), tripId: trip.code })}
+          onPress={() => router.push(driverTripDetailPath(trip.id))}>
+          {t('driver.myTrips.viewDetail')}
         </Button>
+      ) : (
+        <View style={styles.buttonGroup}>
+          <Button
+            variant={primary ? 'primary' : 'secondary'}
+            accessibilityLabel={t('driver.myTrips.openLabel', { action, tripId: trip.code })}
+            onPress={() => router.push(tripPath(trip.id))}>
+            {action}
+          </Button>
+          <Button variant="secondary" onPress={() => router.push(driverTripDetailPath(trip.id))}>
+            {t('driver.myTrips.viewDetail')}
+          </Button>
+        </View>
       )}
     </Card>
   )
@@ -178,4 +209,5 @@ const styles = StyleSheet.create({
   stopName: { flex: 1, minWidth: 0 },
   // Dòng giờ thẳng mép với tên điểm (chấm số 32 + khe 12)
   stopTime: { paddingLeft: 44 },
+  buttonGroup: { gap: space[2] },
 })

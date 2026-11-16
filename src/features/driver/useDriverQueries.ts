@@ -12,6 +12,7 @@ import {
   driverCapabilities,
   fetchMyTrips,
   fetchNotifications,
+  fetchTripDetail,
   fetchTripScreen,
   markNotificationsRead,
   reportDeliveryIssue,
@@ -51,6 +52,7 @@ export const driverKeys = {
   all: ['driver'] as const,
   myTrips: ['driver', 'my-trips'] as const,
   trip: (tripId: string) => ['driver', 'trip', tripId] as const,
+  detail: (tripId: string) => ['driver', 'trip-detail', tripId] as const,
   notifications: ['driver', 'notifications'] as const,
 }
 
@@ -77,6 +79,16 @@ export function useTripScreenQuery(tripId: string) {
       const data = query.state.data
       return pollInterval(query, data?.kind === 'stop' ? data.screen.refreshMs : false)
     },
+  })
+}
+
+/** Chi tiết đầy đủ chuyến đi của tài xế. */
+export function useDriverTripDetailQuery(tripId: string) {
+  return useQuery({
+    queryKey: driverKeys.detail(tripId),
+    queryFn: () => fetchTripDetail(tripId),
+    staleTime: 0,
+    enabled: tripId.length > 0,
   })
 }
 

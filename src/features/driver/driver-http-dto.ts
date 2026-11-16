@@ -84,3 +84,57 @@ export type CompleteStopDto = { readonly tripCompleted: boolean | null }
 
 /** `POST /api/driver/location` */
 export type LocationPointDto = { readonly recordedAt: string }
+
+/** `GET /api/driver/trips/{id}/detail` */
+export type DriverTripDetailPackageDto = {
+  readonly packageId: number | null
+  readonly packageCode: string | null
+  readonly trackingBarcode: string | null
+  readonly packageName: string | null
+  readonly weightKg: number | null
+  readonly status: string | null
+  readonly unloadOrder: number | null
+}
+
+export type DriverTripDetailStopDto = {
+  readonly stopId: number
+  readonly stopSequence: number
+  readonly stopName: string | null
+  readonly address: string | null
+  readonly lat: number | null
+  readonly lng: number | null
+  readonly status: string | null
+  readonly stopType: string | null
+  readonly plannedArrival: string | null
+  readonly actualArrival: string | null
+  readonly deadline: string | null
+  readonly plannedStatus: string | null
+  readonly eta: string | null
+  readonly etaStatus: string | null
+  readonly contactName: string | null
+  readonly contactPhone: string | null
+  readonly packages: readonly DriverTripDetailPackageDto[] | null
+}
+
+export type DriverTripDetailDto = {
+  readonly tripId: number
+  readonly tripCode: string | null
+  readonly tripName: string | null
+  readonly status: string | null
+  readonly departureTime: string | null
+  readonly completedAt: string | null
+  readonly loadingCompleted: boolean | null
+  readonly depotName: string | null
+  readonly depotAddress: string | null
+  readonly depotLat: number | null
+  readonly depotLng: number | null
+  readonly vehicleId: number | null
+  readonly vehicleName: string | null
+  readonly licensePlate: string | null
+  readonly maxPayloadKg: number | null
+  readonly vehicleTypeName: string | null
+  readonly totalStops: number | null
+  readonly totalPackages: number | null
+  readonly totalWeightKg: number | null
+  readonly stops: readonly DriverTripDetailStopDto[] | null
+}

@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router'
-import { ArrowLeft, ScanLine, TriangleAlert } from 'lucide-react-native'
+import { ArrowLeft, FileText, ScanLine, TriangleAlert } from 'lucide-react-native'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 
@@ -25,6 +25,7 @@ import { StopList } from './StopList'
 import { StopMoreActions } from './StopMoreActions'
 import { StopNotices } from './StopNotices'
 import { StopProgress } from './StopProgress'
+import { driverTripDetailPath } from './TripCard'
 import { useDriverCapabilities } from './useDriverQueries'
 import { useStopActions } from './useStopActions'
 import { useUnloadVerify } from './useUnloadVerify'
@@ -63,7 +64,17 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
           <StopDot number={stop.number} size="lg" />
         </View>
       }
-      actions={<NotificationBell />}
+      actions={
+        <View style={styles.headActions}>
+          <IconButton
+            icon={FileText}
+            tone="sky"
+            label={t('driver.myTrips.viewDetail')}
+            onPress={() => router.push(driverTripDetailPath(trip.id))}
+          />
+          <NotificationBell />
+        </View>
+      }
       below={<ProgressStrip screen={screen} />}
       scroll
       footer={footerShown ? <StopFooter screen={screen} actions={actions} capabilities={capabilities} verifyPending={verify.pending} /> : undefined}>
@@ -167,6 +178,7 @@ function ProgressStrip({ screen }: { screen: StopScreen }) {
 
 const styles = StyleSheet.create({
   leading: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  headActions: { flexDirection: 'row', alignItems: 'center', gap: space[1] },
   actions: { gap: space[2] },
   list: { overflow: 'hidden', borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bg, ...shadow.card },
   empty: { padding: space[4] },

@@ -7,11 +7,11 @@ import {
   selectNotifications,
 } from '@/features/notifications/notifications'
 import { ApiError } from '@/data/http'
-import { MockDbError, vnDate, type AuditEvent, type MockDb, type TripMonitoring } from '@/lib/mock-db'
+import { MockDbError, tripStatus, vnDate, type AuditEvent, type MockDb, type TripMonitoring } from '@/lib/mock-db'
 import type { User } from '@/types/user'
 
 import type { DriverApi } from './driver-api'
-import type { DriverNotification, DriverNotificationKind, DriverTripRow, DriverTrips } from './driver-model'
+import type { DriverNotification, DriverNotificationKind, DriverTripDetail, DriverTripRow, DriverTrips } from './driver-model'
 import { driverPlan, isVisibleTo, myTrips, MY_TRIP_GROUPS, type MyTripGroup, type MyTripRow } from './my-trips'
 import { stopListTimings } from './stop-timing'
 import { tripScreen } from './trip-screen'
@@ -143,6 +143,67 @@ export function mockDriverApi(): DriverApi {
       gpsLocalOnly: true,
     },
     fetchMyTrips,
+    async fetchTripDetail(tripId: string): Promise<DriverTripDetail> {
+      const database = db()
+      const viewer = signedIn(database)
+      const trip = await database.getTrip(tripId)
+      if (!isVisibleTo(trip, viewer)) throw new MockDbError('NOT_FOUND', { collection: 'trips', id: tripId })
+      const vehicles = await database.listVehicles()
+      const vehicle = vehicles.find((v) => v.id === trip.vehicleId)
+      const status = tripStatus(trip)
+      return {
+        id: trip.id,
+        code: trip.id,
+        name: trip.name,
+        status,
+        departureTime: trip.departureAt,
+        completedAt: trip.delivery?.completedAt,
+        loadingCompleted: trip.loading?.completedAt !== undefined,
+        depot: {
+          name: trip.depot?.name ?? '',
+          address: trip.depot?.address ?? '',
+          lat: trip.depot?.lat,
+          lng: trip.depot?.lng,
+        },
+        vehicle: vehicle
+          ? {
+              id: vehicle.id,
+              name: vehicle.name,
+              licensePlate: vehicle.name,
+              maxPayloadKg: vehicle.maxPayloadKg,
+              typeName: vehicle.name,
+            }
+          : undefined,
+        totalStops: trip.stops.length,
+        totalPackages: trip.packages.length,
+        totalWeightKg: undefined,
+        stops: trip.stops.map((stop, idx) => ({
+          id: stop.id,
+          number: idx + 1,
+          name: stop.name,
+          address: stop.address,
+          lat: stop.lat,
+          lng: stop.lng,
+          status: trip.delivery?.completedAt !== undefined ? 'COMPLETED' : 'PENDING',
+          kind: 'DELIVERY',
+          plannedArrival: undefined,
+          actualArrival: undefined,
+          deadline: stop.deadline,
+          contactName: stop.contactName,
+          contactPhone: stop.phone,
+          packages: trip.packages
+            .filter((p) => p.deliveryStop === idx + 1)
+            .map((pkg) => ({
+              id: pkg.id,
+              code: pkg.id,
+              barcode: pkg.id,
+              name: pkg.name,
+              weightKg: pkg.weightKg,
+              status: 'PENDING',
+            })),
+        })),
+      }
+    },
     fetchTripScreen,
     async startDelivery(tripId) {
       await db().startDelivery(tripId)

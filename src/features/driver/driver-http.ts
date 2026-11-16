@@ -2,12 +2,12 @@ import { api, ApiError, currentUserId, type ApiClient } from '@/data/http'
 import { driverNotificationsOf, fetchServerNotifications, markServerNotificationsRead } from '@/features/bell/server-notifications'
 
 import type { DriverApi } from './driver-api'
-import type { CompleteStopDto, CurrentStopDto, DriverTripDto, LocationPointDto, RoutePlanDetailDto } from './driver-http-dto'
-import { myTripsOf, shownStatusOf, tripRowOf } from './driver-http-mapping'
+import type { CompleteStopDto, CurrentStopDto, DriverTripDetailDto, DriverTripDto, LocationPointDto, RoutePlanDetailDto } from './driver-http-dto'
+import { myTripsOf, shownStatusOf, tripDetailOf, tripRowOf } from './driver-http-mapping'
 import { deliveryPackageOf, isUnloaded, packageOfCode, stopScreenOf, withUnloaded } from './driver-http-stop'
 import { serverEtaSources, serverTripStops, tripStopsOf, type DriverTripStopsDto, type ServerTripStops } from './driver-http-stop-times'
 import { coded, HTTP_DRIVER_CAPABILITIES, refused, SERVER_REFRESH_MS, unsupported } from './driver-http-support'
-import type { DriverTripRow, DriverTripScreen, StopKey, TripHead } from './driver-model'
+import type { DriverTripDetail, DriverTripRow, DriverTripScreen, StopKey, TripHead } from './driver-model'
 
 /*
  * Nguồn backend của màn tài xế (như `driver-backend-api.ts` của web): "Chuyến của tôi", xuất phát ở thẻ chuyến, "Đã đến", dỡ (quét / gõ mã
@@ -167,6 +167,11 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       const groups = { ...all, inTransit, loaded }
       const active = groups.inTransit.length + groups.loaded.length + groups.preparing.length > 0
       return { groups, refreshMs: active ? SERVER_REFRESH_MS : null }
+    },
+
+    // GET /api/driver/trips/{id}/detail
+    async fetchTripDetail(tripId: string): Promise<DriverTripDetail> {
+      return tripDetailOf(await client().get<DriverTripDetailDto>(`/api/driver/trips/${encodeURIComponent(tripId)}/detail`))
     },
 
     fetchTripScreen,
