@@ -24,6 +24,7 @@ import type {
   DriverCapabilities,
   DriverNotification,
   DriverTripDetail,
+  DriverTripException,
   DriverTrips,
   DriverTripScreen,
   LocationRequest,
@@ -51,6 +52,7 @@ export type DriverApi = {
   confirmUnloadManually(tripId: string, input: ManualConfirmRequest): Promise<RecordedItem>
   reportDeliveryIssue(tripId: string, input: DeliveryIssueRequest): Promise<void>
   completeStop(tripId: string, stop: StopKey): Promise<void>
+  fetchTripExceptions(tripId: string): Promise<DriverTripException[]>
   reportTripException(tripId: string, input: TripExceptionRequest): Promise<{ readonly id: string }>
   createPickupRequest(tripId: string, input: PickupRequestInput): Promise<PickupRequestResult>
   setDriverGps(tripId: string, enabled: boolean): Promise<void>
@@ -110,6 +112,11 @@ export function reportDeliveryIssue(tripId: string, input: DeliveryIssueRequest)
 // POST /api/driver/stops/{id}/complete
 export function completeStop(tripId: string, stop: StopKey): Promise<void> {
   return adapter().completeStop(tripId, stop)
+}
+
+// GET /api/driver/trips/{id}/exceptions
+export function fetchTripExceptions(tripId: string): Promise<DriverTripException[]> {
+  return adapter().fetchTripExceptions(tripId)
 }
 
 // POST /api/driver/trips/{id}/exceptions

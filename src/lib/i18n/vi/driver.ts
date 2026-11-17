@@ -199,6 +199,11 @@ export const driver = {
   remaining: { one: 'Còn {count} kiện chưa dỡ hoặc chưa báo sự cố', other: 'Còn {count} kiện chưa dỡ hoặc chưa báo sự cố' },
   allHandled: 'Mọi kiện của điểm này đã dỡ hoặc đã báo sự cố.',
   itemsTitle: 'Kiện cần dỡ',
+  unloadingRule: {
+    title: 'Quy tắc dỡ hàng bắt buộc (LIFO — Xếp sau ra trước)',
+    rule: 'Dỡ đúng theo thứ tự (Dỡ thứ 1 → 2 → 3…), ưu tiên kiện gần cửa thùng trước và tầng trên trước.',
+    note: 'Lưu ý: Tài xế cần dỡ hàng theo đúng quy tắc để đảm bảo an toàn, tránh xê dịch hoặc hư hỏng hàng của các điểm giao tiếp theo.',
+  },
   /** Hộp hỏi lại trước khi hoàn tất điểm giao hoặc điểm nhận. */
   completeConfirm: {
     title: 'Hoàn tất điểm {number} — {name}?',
@@ -226,6 +231,7 @@ export const driver = {
   },
   item: {
     order: 'Dỡ thứ {order}',
+    next: 'Dỡ tiếp theo',
     done: 'Đã dỡ',
     where: '{area}, {layer}',
     issue: 'Sự cố: {kind}',

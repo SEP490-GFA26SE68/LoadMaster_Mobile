@@ -21,11 +21,18 @@ export type DriverTripDto = {
 export type StopPackageDto = {
   readonly packageId: number | null
   readonly packageName: string | null
+  readonly packageTypeName?: string | null
   readonly trackingBarcode: string | null
   /** Mã của bên gửi và mã QR in trên nhãn — tài xế quét hoặc gõ được cả hai. */
   readonly packageCode?: string | null
   readonly qrToken?: string | null
   readonly weight: number | null
+  readonly lengthCm?: number | null
+  readonly widthCm?: number | null
+  readonly heightCm?: number | null
+  readonly handlingClass?: string | null
+  readonly fragile?: boolean | null
+  readonly note?: string | null
   readonly unloadOrder: number | null
   /** Kiện đã dỡ ở điểm này (máy chủ đọc từ các lần xác nhận dỡ). */
   readonly unloaded?: boolean | null
@@ -84,6 +91,21 @@ export type CompleteStopDto = { readonly tripCompleted: boolean | null }
 
 /** `POST /api/driver/location` */
 export type LocationPointDto = { readonly recordedAt: string }
+
+/** `GET /api/driver/trips/{id}/exceptions` */
+export type DriverTripExceptionDto = {
+  readonly id: string | number
+  readonly tripId?: string | number | null
+  readonly type: string | null
+  readonly description: string | null
+  readonly delayMinutes: number | null
+  readonly status: string | null
+  readonly stopNumber?: number | null
+  readonly reportedAt: string | null
+  readonly reportedBy?: string | null
+  readonly escalation?: { readonly reason?: string | null; readonly at?: string | null; readonly by?: string | null } | null
+  readonly resolution?: { readonly at?: string | null; readonly by?: string | null; readonly note?: string | null } | null
+}
 
 /** `GET /api/driver/trips/{id}/detail` */
 export type DriverTripDetailPackageDto = {

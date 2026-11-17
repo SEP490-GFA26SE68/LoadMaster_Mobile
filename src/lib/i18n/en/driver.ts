@@ -191,6 +191,11 @@ export const driver = {
   remaining: { one: '{count} package not unloaded or reported yet', other: '{count} packages not unloaded or reported yet' },
   allHandled: 'Every package of this stop is unloaded or reported.',
   itemsTitle: 'Packages to unload',
+  unloadingRule: {
+    title: 'Mandatory unloading rule (LIFO — Last-in, first-out)',
+    rule: 'Unload strictly in order (Unload #1 → #2 → #3…), starting near the door and from top layers down.',
+    note: 'Note: Drivers must follow the unloading rule strictly to ensure safety and prevent shifting or damaging packages for upcoming stops.',
+  },
   completeConfirm: {
     title: 'Complete stop {number} — {name}?',
     description: 'A completed stop cannot be reopened.',
@@ -218,6 +223,7 @@ export const driver = {
   },
   item: {
     order: 'Unload #{order}',
+    next: 'Unload next',
     done: 'Unloaded',
     where: '{area}, {layer}',
     issue: 'Issue: {kind}',

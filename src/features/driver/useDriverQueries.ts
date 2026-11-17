@@ -13,6 +13,7 @@ import {
   fetchMyTrips,
   fetchNotifications,
   fetchTripDetail,
+  fetchTripExceptions,
   fetchTripScreen,
   markNotificationsRead,
   reportDeliveryIssue,
@@ -53,6 +54,7 @@ export const driverKeys = {
   myTrips: ['driver', 'my-trips'] as const,
   trip: (tripId: string) => ['driver', 'trip', tripId] as const,
   detail: (tripId: string) => ['driver', 'trip-detail', tripId] as const,
+  exceptions: (tripId: string) => ['driver', 'trip-exceptions', tripId] as const,
   notifications: ['driver', 'notifications'] as const,
 }
 
@@ -89,6 +91,16 @@ export function useDriverTripDetailQuery(tripId: string) {
     queryFn: () => fetchTripDetail(tripId),
     staleTime: 0,
     enabled: tripId.length > 0,
+  })
+}
+
+/** Danh sách sự cố trên đường đã báo cáo của chuyến đang giao. */
+export function useTripExceptionsQuery(tripId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: driverKeys.exceptions(tripId),
+    queryFn: () => fetchTripExceptions(tripId),
+    staleTime: 0,
+    enabled: enabled && tripId.length > 0,
   })
 }
 

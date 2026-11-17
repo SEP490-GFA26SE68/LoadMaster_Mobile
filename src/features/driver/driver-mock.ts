@@ -245,6 +245,22 @@ export function mockDriverApi(): DriverApi {
     async completeStop(tripId, stop) {
       await db().completeStop(tripId, stop.number)
     },
+    async fetchTripExceptions(tripId) {
+      const list = await db().listTripExceptions(tripId)
+      return list.map((item) => ({
+        id: item.id,
+        type: item.type,
+        description: item.description,
+        delayMinutes: item.delayMinutes,
+        status: item.status,
+        stopNumber: item.stopNumber,
+        reportedAt: item.reportedAt,
+        reportedBy: item.reportedBy ?? undefined,
+        escalationReason: item.escalation?.reason,
+        resolutionNote: item.resolution?.note,
+        resolvedAt: item.resolution?.at,
+      }))
+    },
     async reportTripException(tripId, input) {
       const { id } = await db().reportTripException(tripId, input)
       return { id }

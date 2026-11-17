@@ -104,7 +104,14 @@ export type StopItem = {
   /** Mã in trên nhãn, hiện trên màn. */
   readonly label: string
   readonly name: string
+  readonly packageTypeName?: string
   readonly weightKg: number | undefined
+  readonly lengthCm?: number
+  readonly widthCm?: number
+  readonly heightCm?: number
+  readonly handlingClass?: string
+  readonly fragile?: boolean
+  readonly note?: string
   readonly unloadingOrder: number
   /** Vùng và lớp trong thùng; vắng khi nguồn không có vị trí xếp. */
   readonly place: { readonly area: DeliveryArea; readonly layer: DeliveryLayer } | undefined
@@ -242,6 +249,21 @@ export type ManualConfirmRequest = { readonly stop: StopKey; readonly itemId: st
 export type DeliveryIssueRequest = { readonly stop: StopKey; readonly itemId: string; readonly kind: DeliveryIssueKind; readonly note: string | undefined }
 
 export type TripExceptionRequest = { readonly type: TripExceptionType; readonly description: string; readonly delayMinutes: number }
+
+/** Một sự cố trên đường đã được báo cáo cho chuyến đang chạy. */
+export type DriverTripException = {
+  readonly id: string
+  readonly type: TripExceptionType
+  readonly description: string
+  readonly delayMinutes: number
+  readonly status: 'OPEN' | 'ESCALATED' | 'RESOLVED'
+  readonly stopNumber?: number
+  readonly reportedAt: string
+  readonly reportedBy?: string
+  readonly escalationReason?: string
+  readonly resolutionNote?: string
+  readonly resolvedAt?: string
+}
 
 /** Vị trí điện thoại gửi làm vị trí xe: độ, km/h, độ (0–360). */
 export type LocationRequest = { readonly lat: number; readonly lng: number; readonly speedKmh?: number; readonly heading?: number }
