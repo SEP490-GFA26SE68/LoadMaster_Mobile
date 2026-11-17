@@ -40,6 +40,16 @@ export const driver = {
     stopsLabel: 'Các điểm của chuyến {tripId}',
     /** Không chuyến nào xếp xong hay đang chạy: màn không có nút chính. */
     noReady: 'Chưa có chuyến nào xếp xong hoặc đang vận chuyển.',
+    labels: {
+      plannedDate: 'Ngày chạy theo kế hoạch',
+      totalStops: 'Tổng số điểm dừng',
+      totalPackages: 'Tổng số kiện',
+      vehiclePlate: 'Biển số xe tải',
+      deliveryAddress: 'Địa chỉ điểm giao hàng',
+      packageQuantity: 'Số lượng kiện',
+      plannedArrival: 'Thời gian dự kiến đến',
+    },
+    actionsMenu: 'Tùy chọn',
   },
 
   detail: {

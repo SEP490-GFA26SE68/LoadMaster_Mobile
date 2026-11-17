@@ -34,6 +34,16 @@ export const driver = {
     },
     stopsLabel: 'Stops of trip {tripId}',
     noReady: 'No trip is loaded or in transit yet.',
+    labels: {
+      plannedDate: 'Planned departure date',
+      totalStops: 'Total stops',
+      totalPackages: 'Total packages',
+      vehiclePlate: 'License plate',
+      deliveryAddress: 'Delivery address',
+      packageQuantity: 'Package quantity',
+      plannedArrival: 'Planned arrival time',
+    },
+    actionsMenu: 'Options',
   },
 
   detail: {

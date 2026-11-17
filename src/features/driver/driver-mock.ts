@@ -169,12 +169,12 @@ export function mockDriverApi(): DriverApi {
         },
         vehicle: vehicle
           ? {
-              id: vehicle.id,
-              name: vehicle.name,
-              licensePlate: vehicle.name,
-              maxPayloadKg: vehicle.maxPayloadKg,
-              typeName: vehicle.name,
-            }
+            id: vehicle.id,
+            name: vehicle.name,
+            licensePlate: vehicle.name,
+            maxPayloadKg: vehicle.maxPayloadKg,
+            typeName: vehicle.name,
+          }
           : undefined,
         totalStops: trip.stops.length,
         totalPackages: trip.packages.length,
