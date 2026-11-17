@@ -3,33 +3,115 @@ import { memo } from 'react'
 import { StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
+import { Chip } from '@/components/Chip'
 import { useFormat, useT } from '@/lib/i18n'
-import { badgeTones, colors, space } from '@/theme/tokens'
+import { badgeTones, colors, palette, radius, space } from '@/theme/tokens'
 
 import type { StopItem, StopPickupItem } from './driver-model'
 
+function handlingChipInfo(handlingClass: string | undefined, fragile: boolean | undefined, t: ReturnType<typeof useT>) {
+  const effective = handlingClass === 'STANDARD' && fragile ? 'FRAGILE' : handlingClass || (fragile ? 'FRAGILE' : 'STANDARD')
+  switch (effective) {
+    case 'FRAGILE':
+      return { label: t('driver.detail.handling.FRAGILE'), tone: 'danger' as const }
+    case 'REFRIGERATED':
+      return { label: t('driver.detail.handling.REFRIGERATED'), tone: 'cyan' as const }
+    case 'HAZARDOUS':
+      return { label: t('driver.detail.handling.HAZARDOUS'), tone: 'danger' as const }
+    case 'HIGH_VALUE':
+      return { label: t('driver.detail.handling.HIGH_VALUE'), tone: 'warning' as const }
+    default:
+      return { label: t('driver.detail.handling.STANDARD'), tone: 'neutral' as const }
+  }
+}
+
 /**
- * Một dòng kiện cần dỡ, cao tối thiểu 80 (như `DeliveryItemRow` của web). Thứ tự dỡ lấy từ phương án đã duyệt. Dòng chỉ **hiện** trạng
- * thái — kiện được ghi "đã dỡ" qua tờ đối chiếu, không có nút đánh dấu tay. Trạng thái không chỉ nằm ở màu: kiện đã dỡ có nền xanh nhạt và
- * dòng "Đã dỡ" kèm dấu kiểm và cách đối chiếu; kiện có sự cố có nền vàng nhạt và dòng nêu loại sự cố; kiện khách từ chối thêm dòng "Hoàn
- * trả". Xác nhận tay bị điều phối viên từ chối thì kiện quay về chưa dỡ kèm lý do để tài xế kiểm lại. `memo`: mỗi nhịp đọc lại, kiện không
- * đổi giữ nguyên object (Query chia sẻ cấu trúc) nên dòng đó không vẽ lại.
+ * Một dòng kiện cần dỡ, cao tối thiểu 80 (như `DeliveryItemRow` của web), đầy đủ thông tin như màn Chi tiết chuyến đi:
+ * tên kiện, mã kiện, thứ tự dỡ nổi bật (highlight kiện cần dỡ tiếp theo theo quy tắc LIFO), phân loại hàng hóa,
+ * kích thước, khối lượng, loại thùng, ghi chú, vị trí trên thùng xe và trạng thái đối chiếu / sự cố.
  */
-export const DeliveryItemRow = memo(function DeliveryItemRow({ item, last }: { item: StopItem; last: boolean }) {
+export const DeliveryItemRow = memo(function DeliveryItemRow({
+  item,
+  last,
+  isNext = false,
+}: {
+  item: StopItem
+  last: boolean
+  /** Kiện cần dỡ kế tiếp theo đúng thứ tự LIFO. */
+  isNext?: boolean
+}) {
   const t = useT()
   const format = useFormat()
   const issue = item.issueKind
+  const handling = handlingChipInfo(item.handlingClass, item.fragile, t)
+  const extraFragile = item.fragile && item.handlingClass && item.handlingClass !== 'FRAGILE' && item.handlingClass !== 'STANDARD'
+  const dims =
+    item.lengthCm !== undefined && item.widthCm !== undefined && item.heightCm !== undefined
+      ? `${Math.round(item.lengthCm)} × ${Math.round(item.widthCm)} × ${Math.round(item.heightCm)} cm`
+      : undefined
+  const showType = item.packageTypeName && item.packageTypeName !== item.name
+
   return (
-    <View style={[styles.row, last && styles.last, item.unloaded ? styles.done : issue !== undefined ? styles.issue : null]}>
+    <View
+      style={[
+        styles.row,
+        last && styles.last,
+        item.unloaded ? styles.done : issue !== undefined ? styles.issue : isNext ? styles.nextRow : null,
+      ]}>
       <View style={styles.head}>
-        <AppText variant="label" style={styles.code}>
+        <View style={styles.headLeft}>
+          <AppText variant="label" style={styles.flexShrink}>
+            {item.name}
+          </AppText>
+        </View>
+        <View style={styles.orderGroup}>
+          {isNext && !item.unloaded && issue === undefined ? (
+            <Chip tone="warning" label={t('driver.item.next')} />
+          ) : null}
+          <View style={[styles.orderPill, isNext && !item.unloaded ? styles.orderPillNext : null]}>
+            <AppText
+              variant="label"
+              color={isNext && !item.unloaded ? palette.amber[700] : colors.primary}
+              style={styles.orderText}>
+              {t('driver.item.order', { order: item.unloadingOrder })}
+            </AppText>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.chipsRow}>
+        <Chip tone={handling.tone} label={handling.label} />
+        {extraFragile ? <Chip tone="danger" label={t('driver.detail.handling.FRAGILE')} /> : null}
+        {item.weightKg !== undefined ? (
+          <AppText variant="label" color={colors.text2} style={styles.code}>
+            {format.weight(item.weightKg)}
+          </AppText>
+        ) : null}
+      </View>
+
+      <View style={styles.metaRow}>
+        <AppText variant="meta" color={colors.text3} style={styles.code}>
           {item.label}
         </AppText>
-        <AppText color={colors.text3} style={styles.code}>
-          {t('driver.item.order', { order: item.unloadingOrder })}
-        </AppText>
+        {dims ? (
+          <AppText variant="meta" color={colors.text2} style={styles.code}>
+            {t('driver.detail.packageDimensions', { dims })}
+          </AppText>
+        ) : null}
       </View>
-      <AppText color={colors.text2}>{item.weightKg === undefined ? item.name : `${item.name} · ${format.weight(item.weightKg)}`}</AppText>
+
+      {showType ? (
+        <AppText variant="meta" color={colors.text2}>
+          {t('driver.detail.packageType', { type: item.packageTypeName })}
+        </AppText>
+      ) : null}
+
+      {item.note ? (
+        <AppText variant="meta" color={colors.text2}>
+          {t('driver.detail.packageNote', { note: item.note })}
+        </AppText>
+      ) : null}
+
       {item.place === undefined ? null : (
         <Line icon={Package} color={colors.text3}>
           {t('driver.item.where', { area: t(`driver.item.area.${item.place.area}`), layer: t(`driver.item.layer.${item.place.layer}`) })}
@@ -111,11 +193,71 @@ function Line({ icon: Icon, color, strong = false, children }: { icon: LucideIco
 }
 
 const styles = StyleSheet.create({
-  row: { minHeight: 80, justifyContent: 'center', gap: space[1], paddingVertical: space[3], paddingHorizontal: space[4], borderBottomWidth: 1, borderBottomColor: colors.lineSoft, backgroundColor: colors.bg },
+  row: {
+    minHeight: 80,
+    justifyContent: 'center',
+    gap: space[1],
+    paddingVertical: space[3],
+    paddingHorizontal: space[4],
+    borderBottomWidth: 1,
+    borderBottomColor: colors.lineSoft,
+    backgroundColor: colors.bg,
+  },
   last: { borderBottomWidth: 0 },
   done: { backgroundColor: badgeTones.success.bg },
   issue: { backgroundColor: badgeTones.warning.bg },
-  head: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: space[2] },
+  nextRow: {
+    borderLeftWidth: 4,
+    borderLeftColor: colors.warning,
+    backgroundColor: palette.amber[50],
+  },
+  head: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space[2],
+  },
+  headLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  orderGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[1],
+  },
+  orderPill: {
+    backgroundColor: badgeTones.cyan.bg,
+    borderWidth: 1,
+    borderColor: palette.cyan[200],
+    paddingHorizontal: space[2],
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+  },
+  orderPillNext: {
+    backgroundColor: palette.amber[200],
+    borderColor: colors.warning,
+  },
+  orderText: {
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: space[2],
+    marginTop: 2,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space[2],
+  },
+  flexShrink: { flexShrink: 1 },
   code: { fontVariant: ['tabular-nums'] },
   line: { flexDirection: 'row', alignItems: 'flex-start', gap: space[2] },
   icon: { marginTop: 4 },

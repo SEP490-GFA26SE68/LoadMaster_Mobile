@@ -23,6 +23,8 @@ import type {
   DeliveryIssueRequest,
   DriverCapabilities,
   DriverNotification,
+  DriverTripDetail,
+  DriverTripException,
   DriverTrips,
   DriverTripScreen,
   LocationRequest,
@@ -42,6 +44,7 @@ import { mockDriverApi } from './driver-mock'
 export type DriverApi = {
   readonly capabilities: DriverCapabilities
   fetchMyTrips(): Promise<DriverTrips>
+  fetchTripDetail(tripId: string): Promise<DriverTripDetail>
   fetchTripScreen(tripId: string): Promise<DriverTripScreen>
   startDelivery(tripId: string): Promise<void>
   arriveAtStop(tripId: string, stop: StopKey): Promise<void>
@@ -49,6 +52,7 @@ export type DriverApi = {
   confirmUnloadManually(tripId: string, input: ManualConfirmRequest): Promise<RecordedItem>
   reportDeliveryIssue(tripId: string, input: DeliveryIssueRequest): Promise<void>
   completeStop(tripId: string, stop: StopKey): Promise<void>
+  fetchTripExceptions(tripId: string): Promise<DriverTripException[]>
   reportTripException(tripId: string, input: TripExceptionRequest): Promise<{ readonly id: string }>
   createPickupRequest(tripId: string, input: PickupRequestInput): Promise<PickupRequestResult>
   setDriverGps(tripId: string, enabled: boolean): Promise<void>
@@ -68,6 +72,11 @@ export function driverCapabilities(): DriverCapabilities {
 // GET /api/driver/trips
 export function fetchMyTrips(): Promise<DriverTrips> {
   return adapter().fetchMyTrips()
+}
+
+// GET /api/driver/trips/{id}/detail
+export function fetchTripDetail(tripId: string): Promise<DriverTripDetail> {
+  return adapter().fetchTripDetail(tripId)
 }
 
 // GET /api/driver/trips/{id}/current-stop
@@ -103,6 +112,11 @@ export function reportDeliveryIssue(tripId: string, input: DeliveryIssueRequest)
 // POST /api/driver/stops/{id}/complete
 export function completeStop(tripId: string, stop: StopKey): Promise<void> {
   return adapter().completeStop(tripId, stop)
+}
+
+// GET /api/driver/trips/{id}/exceptions
+export function fetchTripExceptions(tripId: string): Promise<DriverTripException[]> {
+  return adapter().fetchTripExceptions(tripId)
 }
 
 // POST /api/driver/trips/{id}/exceptions

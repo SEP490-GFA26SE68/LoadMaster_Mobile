@@ -9,6 +9,11 @@ export type BackendUserProfile = {
   readonly fullName: string
   readonly phoneNumber: string | null
   readonly companyId: number | null
+  readonly companyName?: string
+  readonly companyCode?: string
+  readonly companyTaxCode?: string
+  readonly companyBillingEmail?: string
+  readonly companyStatus?: string
   readonly userRoleType: string
   readonly userType?: string
   readonly status: string
@@ -57,6 +62,11 @@ export function userFromBackend(profile: BackendUserProfile, role: Role, standIn
     email: profile.email,
     phone: profile.phoneNumber ?? '',
     status,
+    companyName: profile.companyName ?? sample.companyName,
+    companyCode: profile.companyCode ?? sample.companyCode,
+    companyTaxCode: profile.companyTaxCode ?? sample.companyTaxCode,
+    companyBillingEmail: profile.companyBillingEmail ?? sample.companyBillingEmail,
+    companyStatus: profile.companyStatus ?? sample.companyStatus,
     userType: profile.userType === 'TRIAL' ? 'TRIAL' : 'OFFICIAL',
     subscriptionExpired: Boolean(profile.subscriptionExpired),
   }

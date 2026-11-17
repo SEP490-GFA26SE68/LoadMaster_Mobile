@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, View, type ViewStyle } from 'react-native'
 
 import { Banner } from '@/components/Banner'
 import { Button } from '@/components/Button'
@@ -19,12 +19,14 @@ export function DepartButton({
   primary,
   blockedReason,
   href,
+  style,
 }: {
   tripId: string
   tripCode: string
   primary: boolean
   blockedReason: string | undefined
   href: { readonly pathname: '/trip/[tripId]'; readonly params: { readonly tripId: string } }
+  style?: ViewStyle
 }) {
   const t = useT()
   const router = useRouter()
@@ -48,7 +50,8 @@ export function DepartButton({
         disabled={blockedReason !== undefined}
         accessibilityLabel={t('driver.myTrips.openLabel', { action: label, tripId: tripCode })}
         accessibilityHint={blockedReason}
-        onPress={handleDepart}>
+        onPress={handleDepart}
+        style={style}>
         {label}
       </Button>
     </View>

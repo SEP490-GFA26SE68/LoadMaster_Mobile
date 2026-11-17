@@ -23,6 +23,7 @@ type AuthValue = {
   /** Thất bại thì ném lỗi có mã (`dataErrorMessage`); không cất gì. */
   signIn(email: string, password: string): Promise<void>
   signOut(): Promise<void>
+  updateUser(updates: Partial<User>): void
 }
 
 const AuthContext = createContext<AuthValue | null>(null)
@@ -125,6 +126,9 @@ export function AuthProvider({ children, adapter: injected }: { children: ReactN
         setState({ status: 'signedIn', user: session.user })
       },
       signOut,
+      updateUser(updates) {
+        setState((previous) => (previous.status === 'signedIn' ? { status: 'signedIn', user: { ...previous.user, ...updates } } : previous))
+      },
     }),
     [adapter, queryClient, sessionNotice, signOut, state],
   )

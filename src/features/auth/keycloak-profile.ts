@@ -26,6 +26,26 @@ const profileSchema = z.object({
     .number()
     .nullish()
     .transform((value) => value ?? null),
+  companyName: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
+  companyCode: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
+  companyTaxCode: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
+  companyBillingEmail: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
+  companyStatus: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
   userRoleType: z.string(),
   // Hai trường máy chủ thêm sau: máy chủ cũ không gửi, gửi `null` cũng coi như không có
   userType: z
@@ -91,6 +111,11 @@ export function userOf(profile: BackendUserProfile, role: Role, standIn: User | 
     status: profile.status === 'FLAGGED' ? 'flagged' : 'active',
     lastActiveAt: null,
     ...(profile.companyId === null ? {} : { companyId: String(profile.companyId) }),
+    companyName: profile.companyName,
+    companyCode: profile.companyCode,
+    companyTaxCode: profile.companyTaxCode,
+    companyBillingEmail: profile.companyBillingEmail,
+    companyStatus: profile.companyStatus,
     userType: profile.userType === 'TRIAL' ? 'TRIAL' : 'OFFICIAL',
     subscriptionExpired: Boolean(profile.subscriptionExpired),
   }

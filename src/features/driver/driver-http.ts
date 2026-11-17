@@ -1,13 +1,14 @@
 import { api, ApiError, currentUserId, type ApiClient } from '@/data/http'
+import { pathFromEncodedPolylines } from '@/domain/routing/polyline'
 import { driverNotificationsOf, fetchServerNotifications, markServerNotificationsRead } from '@/features/bell/server-notifications'
 
 import type { DriverApi } from './driver-api'
-import type { CompleteStopDto, CurrentStopDto, DriverTripDto, LocationPointDto, RoutePlanDetailDto } from './driver-http-dto'
-import { myTripsOf, shownStatusOf, tripRowOf } from './driver-http-mapping'
+import type { CompleteStopDto, CurrentStopDto, DriverTripDetailDto, DriverTripDto, DriverTripExceptionDto, LocationPointDto, RoutePlanDetailDto } from './driver-http-dto'
+import { myTripsOf, shownStatusOf, tripDetailOf, tripRowOf } from './driver-http-mapping'
 import { deliveryPackageOf, isUnloaded, packageOfCode, stopScreenOf, withUnloaded } from './driver-http-stop'
 import { serverEtaSources, serverTripStops, tripStopsOf, type DriverTripStopsDto, type ServerTripStops } from './driver-http-stop-times'
 import { coded, HTTP_DRIVER_CAPABILITIES, refused, SERVER_REFRESH_MS, unsupported } from './driver-http-support'
-import type { DriverTripRow, DriverTripScreen, StopKey, TripHead } from './driver-model'
+import type { DriverTripDetail, DriverTripException, DriverTripRow, DriverTripScreen, StopKey, TripHead } from './driver-model'
 
 /*
  * Nguồn backend của màn tài xế (như `driver-backend-api.ts` của web): "Chuyến của tôi", xuất phát ở thẻ chuyến, "Đã đến", dỡ (quét / gõ mã
@@ -169,6 +170,24 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       return { groups, refreshMs: active ? SERVER_REFRESH_MS : null }
     },
 
+    // GET /api/driver/trips/{id}/detail
+    async fetchTripDetail(tripId: string): Promise<DriverTripDetail> {
+      const detail = tripDetailOf(await client().get<DriverTripDetailDto>(`/api/driver/trips/${encodeURIComponent(tripId)}/detail`))
+      try {
+        const plan = await activePlan(tripId)
+        if (plan?.legs && plan.legs.length > 0) {
+          const ordered = [...plan.legs].sort((a, b) => a.legSequence - b.legSequence)
+          const path = pathFromEncodedPolylines(ordered.map((l) => l.polyline))
+          if (path.length > 0) {
+            return { ...detail, path }
+          }
+        }
+      } catch {
+        // activePlan is optional
+      }
+      return detail
+    },
+
     fetchTripScreen,
 
     // POST /api/driver/trips/{id}/start
@@ -279,6 +298,28 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
 
     // Điện thoại gửi thẳng vị trí lên backend: không có công tắc nào ở máy chủ để bật / tắt
     async setDriverGps() {},
+
+    // GET /api/driver/trips/{id}/exceptions
+    async fetchTripExceptions(tripId) {
+      try {
+        const list = await client().get<readonly DriverTripExceptionDto[]>(`/api/driver/trips/${encodeURIComponent(tripId)}/exceptions`)
+        return (list ?? []).map((item): DriverTripException => ({
+          id: String(item.id),
+          type: (item.type as DriverTripException['type']) ?? 'OTHER',
+          description: item.description ?? '',
+          delayMinutes: item.delayMinutes ?? 0,
+          status: (item.status as DriverTripException['status']) ?? 'OPEN',
+          stopNumber: item.stopNumber ?? undefined,
+          reportedAt: item.reportedAt ?? '',
+          reportedBy: item.reportedBy ?? undefined,
+          escalationReason: item.escalation?.reason ?? undefined,
+          resolutionNote: item.resolution?.note ?? undefined,
+          resolvedAt: item.resolution?.at ?? undefined,
+        }))
+      } catch {
+        return []
+      }
+    },
 
     // POST /api/driver/trips/{id}/exceptions
     async reportTripException(tripId, input) {

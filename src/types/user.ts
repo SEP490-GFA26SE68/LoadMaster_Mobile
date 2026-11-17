@@ -81,6 +81,10 @@ export type User = {
 
   companyId?: string
   companyName?: string
+  companyCode?: string
+  companyTaxCode?: string
+  companyBillingEmail?: string
+  companyStatus?: string
   userType?: 'TRIAL' | 'OFFICIAL'
   subscriptionExpired?: boolean
 }

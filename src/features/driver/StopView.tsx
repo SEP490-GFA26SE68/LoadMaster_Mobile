@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router'
-import { ArrowLeft, ScanLine, TriangleAlert } from 'lucide-react-native'
+import { ArrowLeft, FileText, ListOrdered, ScanLine, TriangleAlert } from 'lucide-react-native'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 
@@ -12,12 +12,12 @@ import { PackageVerifySheet } from '@/components/verify/PackageVerifySheet'
 import { NotificationBell } from '@/features/bell/NotificationBell'
 import { useT } from '@/lib/i18n'
 import { stopColor } from '@/lib/stops'
-import { colors, palette, radius, shadow, space } from '@/theme/tokens'
+import { badgeTones, colors, palette, radius, shadow, space } from '@/theme/tokens'
 
 import type { StopScreen, TripHead } from './driver-model'
+import { DriverNavigation } from './DriverNavigation'
 import { GpsToggle } from './GpsToggle'
 import { ReportIssueSheet } from './ReportIssueSheet'
-import { DriverNavigation } from './DriverNavigation'
 import { StopContactCard } from './StopContactCard'
 import { footerStep, StopFooter } from './StopFooter'
 import { DeliveryItemRow, PickupItemRow } from './StopItemRows'
@@ -25,7 +25,9 @@ import { StopList } from './StopList'
 import { StopMoreActions } from './StopMoreActions'
 import { StopNotices } from './StopNotices'
 import { StopProgress } from './StopProgress'
-import { useDriverCapabilities } from './useDriverQueries'
+import { driverTripDetailPath } from './TripCard'
+import { TripExceptionsBanner } from './TripExceptionHistorySheet'
+import { useDriverCapabilities, useTripExceptionsQuery } from './useDriverQueries'
 import { useStopActions } from './useStopActions'
 import { useUnloadVerify } from './useUnloadVerify'
 
@@ -36,10 +38,7 @@ const opened = (turn: SheetTurn): SheetTurn => ({ open: true, key: turn.key + 1 
 const closed = (turn: SheetTurn): SheetTurn => ({ ...turn, open: false })
 
 /**
- * Màn tài xế tại điểm giao (như `DeliveryStopView` của web) — điện thoại, một tay, ngoài trời. Dải trời: lối về danh sách chuyến, số điểm có
- * màu điểm giao kèm số, chuông; dưới là dải tiến độ theo điểm (chỉ để nhìn). Vùng cuộn: thông báo, công tắc GPS thật, danh sách điểm (khi
- * chuyến có điểm nhận dọc đường), thẻ liên hệ kèm giờ đến và hạn giao, tiến độ dỡ, các nút phụ (đối chiếu kiện, báo sự cố, "Thêm" — sự cố
- * trên đường và nhận hàng dọc đường), danh sách kiện. Chân màn: đúng một nút chính theo bước (`StopFooter`). Nút của việc mà nguồn dữ liệu chưa làm được thì không hiện.
+ * Màn tài xế tại điểm giao (như `DeliveryStopView` của web) — điện thoại, một tay, ngoài trời.
  */
 export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen }) {
   const t = useT()
@@ -48,9 +47,13 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
   const actions = useStopActions(trip.id, screen)
   const verify = useUnloadVerify(trip.id, screen)
   const [issue, setIssue] = useState(CLOSED)
+  const [historySignal, setHistorySignal] = useState(0)
   const { stop, mode, arrived, items, pickupItems } = screen
   const pickupStop = stop.kind === 'PICKUP'
   const delivering = mode === 'delivering'
+  const exceptionsQuery = useTripExceptionsQuery(trip.id, delivering && capabilities.tripExceptions)
+  const exceptions = exceptionsQuery.data ?? []
+  const nextItemId = items.find((entry) => !entry.unloaded && entry.issueKind === undefined)?.id
   // Không có nút chính và không có câu báo (xem trước): không vẽ chân màn trống
   const footerShown = footerStep(screen, capabilities) !== null || actions.flash !== null
 
@@ -63,11 +66,24 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
           <StopDot number={stop.number} size="lg" />
         </View>
       }
-      actions={<NotificationBell />}
+      actions={
+        <View style={styles.headActions}>
+          <IconButton
+            icon={FileText}
+            tone="sky"
+            label={t('driver.myTrips.viewDetail')}
+            onPress={() => router.push(driverTripDetailPath(trip.id))}
+          />
+          <NotificationBell />
+        </View>
+      }
       below={<ProgressStrip screen={screen} />}
       scroll
       footer={footerShown ? <StopFooter screen={screen} actions={actions} capabilities={capabilities} verifyPending={verify.pending} /> : undefined}>
       <StopNotices screen={screen} />
+      {delivering && exceptions.length > 0 ? (
+        <TripExceptionsBanner exceptions={exceptions} onOpen={() => setHistorySignal((n) => n + 1)} />
+      ) : null}
       {delivering && capabilities.gps ? <GpsToggle tripId={trip.id} localOnly={capabilities.gpsLocalOnly} /> : null}
       {screen.hasPickupStops ? <StopList screen={screen} /> : null}
       <DriverNavigation tripId={trip.id} screen={screen} />
@@ -88,15 +104,21 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
         <StopMoreActions
           trip={trip}
           delivering={delivering}
+          exceptions={exceptions}
+          exceptionsLoading={exceptionsQuery.isLoading}
+          openHistorySignal={historySignal}
           onExceptionReported={(id) => actions.show({ tone: 'success', message: t('tripException.reported', { id }) })}
         />
       </View>
 
       {items.length > 0 ? (
-        <View accessibilityLabel={t('driver.itemsTitle')} style={styles.list}>
-          {items.map((item, index) => (
-            <DeliveryItemRow key={item.id} item={item} last={index === items.length - 1} />
-          ))}
+        <View style={styles.section}>
+          <UnloadingRuleCallout />
+          <View accessibilityLabel={t('driver.itemsTitle')} style={styles.list}>
+            {items.map((item, index) => (
+              <DeliveryItemRow key={item.id} item={item} last={index === items.length - 1} isNext={item.id === nextItemId} />
+            ))}
+          </View>
         </View>
       ) : pickupItems.length === 0 ? (
         <View style={[styles.list, styles.empty]}>
@@ -151,6 +173,27 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
   )
 }
 
+/** Khối nhấn mạnh quy tắc dỡ hàng bắt buộc (LIFO) đặt ngay trên danh sách kiện cần dỡ. */
+function UnloadingRuleCallout() {
+  const t = useT()
+  return (
+    <View style={styles.ruleCard}>
+      <View style={styles.ruleHeader}>
+        <ListOrdered size={20} color={palette.amber[700]} strokeWidth={2.2} />
+        <AppText variant="heading" color={palette.amber[700]} style={styles.ruleTitle}>
+          {t('driver.unloadingRule.title')}
+        </AppText>
+      </View>
+      <AppText variant="label" color={colors.text} style={styles.ruleBody}>
+        {t('driver.unloadingRule.rule')}
+      </AppText>
+      <AppText variant="meta" color={palette.amber[700]} style={styles.ruleNote}>
+        {t('driver.unloadingRule.note')}
+      </AppText>
+    </View>
+  )
+}
+
 /** Dải tiến độ theo điểm trong dải trời: điểm đã xong cyan, điểm hiện tại màu của điểm, điểm chưa tới mờ. Chữ "Điểm n / N" nói đủ. */
 function ProgressStrip({ screen }: { screen: StopScreen }) {
   return (
@@ -167,6 +210,7 @@ function ProgressStrip({ screen }: { screen: StopScreen }) {
 
 const styles = StyleSheet.create({
   leading: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  headActions: { flexDirection: 'row', alignItems: 'center', gap: space[1] },
   actions: { gap: space[2] },
   list: { overflow: 'hidden', borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bg, ...shadow.card },
   empty: { padding: space[4] },
@@ -174,4 +218,31 @@ const styles = StyleSheet.create({
   center: { textAlign: 'center' },
   strip: { flexDirection: 'row', gap: space[1] },
   segment: { flex: 1, height: 8, borderRadius: radius.pill },
+  ruleCard: {
+    backgroundColor: badgeTones.warning.bg,
+    borderWidth: 1.5,
+    borderColor: palette.amber[500],
+    borderLeftWidth: 5,
+    borderLeftColor: palette.amber[700],
+    borderRadius: radius.md,
+    padding: space[3],
+    gap: space[1],
+  },
+  ruleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+  },
+  ruleTitle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  ruleBody: {
+    fontWeight: '700',
+  },
+  ruleNote: {
+    fontWeight: '600',
+    marginTop: 2,
+  },
 })

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { createElement, useEffect, useMemo, useRef, useState } from 'react'
+import { Platform, StyleSheet, View } from 'react-native'
 import { WebView } from 'react-native-webview'
 
 import { colors, radius } from '@/theme/tokens'
@@ -22,7 +22,9 @@ export function RouteMap({
   vehicle,
 }: RouteMapView & { readonly label: string }) {
   const [unavailable, setUnavailable] = useState(false)
+  const [webBlobUrl, setWebBlobUrl] = useState<string | null>(null)
   const webRef = useRef<WebView>(null)
+  const iframeRef = useRef<{ contentWindow?: { __lmVehicle?: (lng: number | null, lat?: number) => void } } | null>(null)
   const staticKey = JSON.stringify({ depot, stops, path })
   const html = useMemo(() => {
     const data = JSON.parse(staticKey) as Pick<RouteMapView, 'depot' | 'stops' | 'path'>
@@ -33,19 +35,50 @@ export function RouteMap({
     : 'window.__lmVehicle && window.__lmVehicle(null); true;'
 
   useEffect(() => {
+    if (Platform.OS !== 'web' || typeof URL === 'undefined' || typeof Blob === 'undefined') return
+    // Blob URL inherits the app's origin (unlike iframe srcDoc whose origin is "null"),
+    // so MapLibre's Actor origin check accepts messages between main thread and Web Worker.
+    const url = URL.createObjectURL(new Blob([html], { type: 'text/html; charset=utf-8' }))
+    setWebBlobUrl(url)
+    return () => {
+      URL.revokeObjectURL(url)
+    }
+  }, [html])
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      if (vehicle) iframeRef.current?.contentWindow?.__lmVehicle?.(vehicle.lng, vehicle.lat)
+      else iframeRef.current?.contentWindow?.__lmVehicle?.(null)
+      return
+    }
     webRef.current?.injectJavaScript?.(vehicleJs)
-  }, [vehicleJs])
+  }, [vehicle, vehicleJs])
 
   if (stops.length === 0 && depot === undefined) return null
   if (unavailable) {
     return <RouteSketch depot={depot} stops={stops} path={path} vehicle={vehicle} />
   }
 
+  if (Platform.OS === 'web') {
+    return (
+      <View accessible accessibilityLabel={label} accessibilityRole="image" style={styles.frame}>
+        {webBlobUrl
+          ? createElement('iframe', {
+              ref: iframeRef,
+              src: webBlobUrl,
+              style: { width: '100%', height: '100%', border: 'none', backgroundColor: 'transparent' },
+              title: label,
+            })
+          : null}
+      </View>
+    )
+  }
+
   return (
     <View accessible accessibilityLabel={label} accessibilityRole="image" style={styles.frame}>
       <WebView
         ref={webRef}
-        source={{ html }}
+        source={{ html, baseUrl: 'https://tiles.goong.io/' }}
         originWhitelist={['*']}
         style={styles.web}
         scrollEnabled={false}
