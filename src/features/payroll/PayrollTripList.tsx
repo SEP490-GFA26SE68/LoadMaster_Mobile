@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native'
 import { AppText } from '@/components/AppText'
 import { Card } from '@/components/Card'
 import { useT } from '@/lib/i18n'
-import { colors, radius, space } from '@/theme/tokens'
+import { badgeTones, colors, radius, space } from '@/theme/tokens'
 
 import type { PayrollTripLine } from './payroll-model'
 import { PayrollTripCard } from './PayrollTripCard'
@@ -26,9 +26,11 @@ export function PayrollTripList({ trips }: PayrollTripListProps) {
   const hiddenCount = trips.length - INITIAL_VISIBLE_TRIPS
 
   return (
-    <Card>
+    <Card style={styles.card}>
       <View style={styles.header}>
-        <Truck color={colors.primary} size={20} strokeWidth={1.75} />
+        <View style={[styles.headerBadge, { backgroundColor: badgeTones.azure.bg }]}>
+          <Truck color={badgeTones.azure.fg} size={18} strokeWidth={1.75} />
+        </View>
         <AppText variant="heading" accessibilityRole="header">
           {t('payroll.trips.title', { count: trips.length })}
         </AppText>
@@ -68,10 +70,21 @@ export function PayrollTripList({ trips }: PayrollTripListProps) {
 }
 
 const styles = StyleSheet.create({
+  card: {
+    borderLeftWidth: 4,
+    borderLeftColor: badgeTones.azure.fg,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[2],
+  },
+  headerBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   list: {
     gap: space[2],
@@ -94,9 +107,9 @@ const styles = StyleSheet.create({
     gap: space[1],
     paddingVertical: space[3],
     borderRadius: radius.md,
-    backgroundColor: colors.primaryBg,
+    backgroundColor: badgeTones.cyan.bg,
     borderWidth: 1,
-    borderColor: colors.lineSoft,
+    borderColor: badgeTones.cyan.border,
   },
   toggleButtonPressed: {
     opacity: 0.75,

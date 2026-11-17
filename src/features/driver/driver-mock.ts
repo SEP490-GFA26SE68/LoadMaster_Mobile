@@ -7,7 +7,7 @@ import {
   selectNotifications,
 } from '@/features/notifications/notifications'
 import { ApiError } from '@/data/http'
-import { MockDbError, tripStatus, vnDate, type AuditEvent, type MockDb, type TripMonitoring } from '@/lib/mock-db'
+import { MockDbError, tripStatus, vnDate, type AuditEvent, type MockDb, type Trip, type TripMonitoring } from '@/lib/mock-db'
 import type { User } from '@/types/user'
 
 import type { DriverApi } from './driver-api'
@@ -30,8 +30,17 @@ function signedIn(db: MockDb): User {
 /** Chuyến đang chạy và đã có tuyến: kho tính được vị trí xe và giờ đến từ đó. */
 const isLive = (row: Pick<MyTripRow, 'status' | 'schedule'>) => row.status === 'IN_TRANSIT' && row.schedule.routePlan !== undefined
 
-function tripRow(row: MyTripRow, live: TripMonitoring | undefined): DriverTripRow {
+function tripRow(row: MyTripRow, live: TripMonitoring | undefined, sourceTrip?: Trip): DriverTripRow {
   const { byStop, sources } = stopListTimings(row.schedule, row.status === 'IN_TRANSIT' ? live : undefined)
+  const routePlan = row.schedule.routePlan
+  const totalWeightKg =
+    sourceTrip !== undefined
+      ? Math.round(sourceTrip.packages.reduce((sum, pkg) => sum + pkg.weightKg * pkg.quantity, 0) * 100) / 100
+      : undefined
+  const totalDistanceMeters = routePlan !== undefined ? Math.round(routePlan.totalKm * 1000) : undefined
+  const estimatedDurationSeconds = routePlan !== undefined ? Math.round(routePlan.totalMinutes * 60) : undefined
+  const lastRouteStop = routePlan !== undefined && routePlan.stops.length > 0 ? routePlan.stops[routePlan.stops.length - 1] : undefined
+  const estimatedCompletionTime = lastRouteStop?.eta
   return {
     id: row.id,
     code: row.code ?? row.id,
@@ -43,6 +52,10 @@ function tripRow(row: MyTripRow, live: TripMonitoring | undefined): DriverTripRo
     manualSub: row.manualSub,
     stopCount: row.stopCount,
     packageCount: row.packageCount,
+    ...(totalWeightKg === undefined ? {} : { totalWeightKg }),
+    ...(totalDistanceMeters === undefined ? {} : { totalDistanceMeters }),
+    ...(estimatedDurationSeconds === undefined ? {} : { estimatedDurationSeconds }),
+    ...(estimatedCompletionTime === undefined ? {} : { estimatedCompletionTime }),
     currentStop: row.currentStop,
     completedAt: row.completedAt,
     issueCount: row.issueCount,
@@ -56,6 +69,7 @@ async function fetchMyTrips(): Promise<DriverTrips> {
   const db = getMockDb()
   const viewer = signedIn(db)
   const [trips, vehicles] = await Promise.all([db.listTrips(), db.listVehicles()])
+  const tripById = new Map(trips.map((trip) => [trip.id, trip]))
   // Chuyến còn lập kế hoạch và chuyến đã huỷ không hiện ở "Chuyến của tôi": không cần đọc revision của chúng
   const visible = trips.filter((trip) => isVisibleTo(trip, viewer) && trip.phase !== 'planning' && trip.phase !== 'cancelled')
   const entries = await Promise.all(visible.map(async (trip) => ({ trip, revisions: await db.listRevisions(trip.id) })))
@@ -64,10 +78,10 @@ async function fetchMyTrips(): Promise<DriverTrips> {
     await Promise.all(rows.inTransit.filter(isLive).map(async (row) => [row.id, await db.getTripMonitoring(row.id)] as const)),
   )
   const groups = Object.fromEntries(
-    MY_TRIP_GROUPS.map((group) => [group, rows[group].map((row) => tripRow(row, live.get(row.id)))]),
+    MY_TRIP_GROUPS.map((group) => [group, rows[group].map((row) => tripRow(row, live.get(row.id), tripById.get(row.id)))]),
   ) as Record<MyTripGroup, DriverTripRow[]>
   const waits = [...live.values()].flatMap((entry) => (entry.refreshMs === null ? [] : [entry.refreshMs]))
-  return { groups, refreshMs: waits.length === 0 ? null : Math.min(...waits) }
+  return { groups, history: groups.recent, refreshMs: waits.length === 0 ? null : Math.min(...waits) }
 }
 
 async function fetchTripScreen(tripId: string) {

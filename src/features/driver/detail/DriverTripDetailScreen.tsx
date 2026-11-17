@@ -26,7 +26,7 @@ import { ErrorState, LoadingState } from '@/components/StateView'
 import { StopDot } from '@/components/StopDot'
 import { TripStatusChip, TripSubStatusTag } from '@/components/TripStatus'
 import { dataErrorMessage, useFormat, useT } from '@/lib/i18n'
-import { colors, CONTENT_MAX_WIDTH, radius, shadow, space } from '@/theme/tokens'
+import { badgeTones, colors, CONTENT_MAX_WIDTH, radius, shadow, space, type BadgeTone } from '@/theme/tokens'
 import type { TripSubStatus } from '@/types/trip'
 
 import type { DriverTripDetail, DriverTripDetailStop } from '../driver-model'
@@ -72,9 +72,17 @@ export function DriverTripDetailScreen({ tripId }: { readonly tripId: string }) 
   )
 }
 
+function heroAccentOf(detail: DriverTripDetail): BadgeTone {
+  if (detail.status === 'IN_TRANSIT') return 'azure'
+  if (detail.status === 'DELIVERED') return 'success'
+  if (detail.status === 'LOADING') return detail.loadingCompleted ? 'cyan' : 'warning'
+  return 'cyan'
+}
+
 function TripDetailHeroCard({ detail }: { readonly detail: DriverTripDetail }) {
   const t = useT()
   const format = useFormat()
+  const accent = badgeTones[heroAccentOf(detail)]
 
   const sub: TripSubStatus | null =
     detail.status === 'LOADING'
@@ -84,7 +92,7 @@ function TripDetailHeroCard({ detail }: { readonly detail: DriverTripDetail }) {
       : null
 
   return (
-    <Card style={styles.heroCard}>
+    <Card style={[styles.heroCard, styles.accentCard, { borderLeftColor: accent.fg }]}>
       <View style={styles.heroHeader}>
         <AppText variant="heading" style={styles.codeText}>
           {detail.code}
@@ -95,9 +103,9 @@ function TripDetailHeroCard({ detail }: { readonly detail: DriverTripDetail }) {
         </View>
       </View>
       {detail.departureTime ? (
-        <View style={styles.metaRow}>
-          <Clock size={16} color={colors.text2} />
-          <AppText color={colors.text2}>
+        <View style={[styles.heroMetaPill, { backgroundColor: accent.bg, borderColor: accent.border }]}>
+          <Clock size={16} color={accent.fg} />
+          <AppText variant="meta" color={accent.fg}>
             {t('driver.detail.plannedArrival')}: {format.time(detail.departureTime)} {format.date(detail.departureTime)}
           </AppText>
         </View>
@@ -108,6 +116,7 @@ function TripDetailHeroCard({ detail }: { readonly detail: DriverTripDetail }) {
 
 function DispatcherCard({ dispatcher }: { readonly dispatcher: NonNullable<DriverTripDetail['dispatcher']> }) {
   const t = useT()
+  const [open, setOpen] = useState(false)
 
   const handleCall = () => {
     if (dispatcher.phone) {
@@ -116,26 +125,44 @@ function DispatcherCard({ dispatcher }: { readonly dispatcher: NonNullable<Drive
   }
 
   return (
-    <Card>
-      <View style={styles.sectionHead}>
-        <UserIcon size={20} color={colors.primary} />
-        <AppText variant="heading">{t('driver.detail.dispatcherInfo')}</AppText>
-      </View>
-      <View style={styles.recipientCard}>
-        <View style={styles.recipientInfo}>
-          <AppText variant="label" color={colors.text}>
-            {dispatcher.name}
-          </AppText>
-          <AppText color={colors.text2}>
-            {dispatcher.phone ?? t('driver.detail.noPhone')}
-          </AppText>
+    <Card style={[styles.accentCard, { borderLeftColor: badgeTones.azure.fg }]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        onPress={() => setOpen((prev) => !prev)}
+        style={({ pressed }) => [styles.accordionHeader, pressed && styles.accordionHeaderPressed]}>
+        <View style={styles.sectionHeadLeft}>
+          <View style={[styles.iconBadge, { backgroundColor: badgeTones.azure.bg }]}>
+            <UserIcon size={18} color={badgeTones.azure.fg} />
+          </View>
+          <View style={styles.accordionTitleCol}>
+            <AppText variant="heading">{t('driver.detail.dispatcherInfo')}</AppText>
+            {!open ? (
+              <AppText variant="meta" color={badgeTones.azure.fg} numberOfLines={1}>
+                {dispatcher.name}
+              </AppText>
+            ) : null}
+          </View>
         </View>
-        {dispatcher.phone ? (
-          <Button icon={Phone} variant="secondary" style={styles.compactBtn} onPress={handleCall}>
-            {t('driver.detail.dispatcherCall')}
-          </Button>
-        ) : null}
-      </View>
+        {open ? <ChevronUp size={20} color={badgeTones.azure.fg} /> : <ChevronDown size={20} color={colors.text2} />}
+      </Pressable>
+      {open ? (
+        <View style={[styles.recipientCard, { borderColor: badgeTones.azure.border, backgroundColor: badgeTones.azure.bg }]}>
+          <View style={styles.recipientInfo}>
+            <AppText variant="label" color={colors.text}>
+              {dispatcher.name}
+            </AppText>
+            <AppText color={badgeTones.azure.fg}>
+              {dispatcher.phone ?? t('driver.detail.noPhone')}
+            </AppText>
+          </View>
+          {dispatcher.phone ? (
+            <Button icon={Phone} variant="secondary" style={styles.compactBtn} onPress={handleCall}>
+              {t('driver.detail.dispatcherCall')}
+            </Button>
+          ) : null}
+        </View>
+      ) : null}
     </Card>
   )
 }
@@ -151,10 +178,12 @@ function DepotCard({ detail }: { readonly detail: DriverTripDetail }) {
   }
 
   return (
-    <Card>
+    <Card style={[styles.accentCard, { borderLeftColor: badgeTones.cyan.fg }]}>
       <View style={styles.sectionHeadBetween}>
         <View style={styles.sectionHeadLeft}>
-          <Warehouse size={20} color={colors.primary} />
+          <View style={[styles.iconBadge, { backgroundColor: badgeTones.cyan.bg }]}>
+            <Warehouse size={18} color={badgeTones.cyan.fg} />
+          </View>
           <AppText variant="heading">{t('driver.detail.depotInfo')}</AppText>
         </View>
         {detail.depot.address || (detail.depot.lat && detail.depot.lng) ? (
@@ -163,12 +192,12 @@ function DepotCard({ detail }: { readonly detail: DriverTripDetail }) {
           </Button>
         ) : null}
       </View>
-      <AppText variant="label" style={styles.depotName}>
+      <AppText variant="label" color={badgeTones.cyan.fg} style={styles.depotName}>
         {detail.depot.name}
       </AppText>
       {detail.depot.address ? (
         <View style={styles.metaRow}>
-          <MapPin size={16} color={colors.text3} />
+          <MapPin size={16} color={badgeTones.cyan.fg} />
           <AppText color={colors.text2} style={styles.flexShrink}>
             {detail.depot.address}
           </AppText>
@@ -180,6 +209,7 @@ function DepotCard({ detail }: { readonly detail: DriverTripDetail }) {
 
 function VehicleDetailCard({ detail }: { readonly detail: DriverTripDetail }) {
   const t = useT()
+  const [open, setOpen] = useState(false)
 
   const payloadUtilization =
     detail.vehicle?.maxPayloadKg && detail.totalWeightKg !== undefined
@@ -192,66 +222,89 @@ function VehicleDetailCard({ detail }: { readonly detail: DriverTripDetail }) {
       : undefined
 
   return (
-    <Card>
-      <View style={styles.sectionHead}>
-        <Truck size={20} color={colors.primary} />
-        <AppText variant="heading">{t('driver.detail.vehicleInfo')}</AppText>
-      </View>
-      {detail.vehicle ? (
-        <View style={styles.vehicleGrid}>
-          <View style={styles.vehicleRow}>
-            <AppText color={colors.text3}>{t('driver.detail.licensePlateLabel')}:</AppText>
-            <AppText variant="label" style={styles.codeText}>{detail.vehicle.licensePlate}</AppText>
+    <Card style={[styles.accentCard, { borderLeftColor: badgeTones.warning.fg }]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        onPress={() => setOpen((prev) => !prev)}
+        style={({ pressed }) => [styles.accordionHeader, pressed && styles.accordionHeaderPressed]}>
+        <View style={styles.sectionHeadLeft}>
+          <View style={[styles.iconBadge, { backgroundColor: badgeTones.warning.bg }]}>
+            <Truck size={18} color={badgeTones.warning.fg} />
           </View>
-          {detail.vehicle.typeName ? (
+          <View style={styles.accordionTitleCol}>
+            <AppText variant="heading">{t('driver.detail.vehicleInfo')}</AppText>
+            {!open && detail.vehicle?.licensePlate ? (
+              <AppText variant="meta" color={badgeTones.warning.fg} numberOfLines={1}>
+                {detail.vehicle.licensePlate}
+                {detail.vehicle.typeName ? ` · ${detail.vehicle.typeName}` : ''}
+              </AppText>
+            ) : null}
+          </View>
+        </View>
+        {open ? <ChevronUp size={20} color={badgeTones.warning.fg} /> : <ChevronDown size={20} color={colors.text2} />}
+      </Pressable>
+      {open ? (
+        detail.vehicle ? (
+          <View style={styles.vehicleGrid}>
             <View style={styles.vehicleRow}>
-              <AppText color={colors.text3}>{t('driver.detail.vehicleType')}:</AppText>
-              <AppText variant="label">{detail.vehicle.typeName}</AppText>
-            </View>
-          ) : detail.vehicle.name ? (
-            <View style={styles.vehicleRow}>
-              <AppText color={colors.text3}>{t('driver.detail.vehicleNameLabel')}:</AppText>
-              <AppText variant="label">{detail.vehicle.name}</AppText>
-            </View>
-          ) : null}
-          {dimensions ? (
-            <View style={styles.vehicleRow}>
-              <AppText color={colors.text3}>{t('driver.detail.cargoDimensions')}:</AppText>
-              <AppText variant="label">{dimensions}</AppText>
-            </View>
-          ) : null}
-          {detail.vehicle.maxVolumeM3 ? (
-            <View style={styles.vehicleRow}>
-              <AppText color={colors.text3}>{t('driver.detail.cargoVolume')}:</AppText>
-              <AppText variant="label">{detail.vehicle.maxVolumeM3} m³</AppText>
-            </View>
-          ) : null}
-          {detail.vehicle.maxPayloadKg ? (
-            <View style={styles.vehicleRow}>
-              <AppText color={colors.text3}>{t('driver.detail.maxPayloadLabel')}:</AppText>
-              <View style={styles.vehiclePayloadCol}>
-                <AppText variant="label">{detail.vehicle.maxPayloadKg} kg</AppText>
-                {payloadUtilization !== undefined ? (
-                  <Chip
-                    tone={
-                      payloadUtilization > 100
-                        ? 'danger'
-                        : payloadUtilization > 85
-                          ? 'warning'
-                          : 'cyan'
-                    }
-                    label={t('driver.detail.payloadUtilization', {
-                      percent: payloadUtilization,
-                    })}
-                  />
-                ) : null}
+              <AppText color={colors.text3}>{t('driver.detail.licensePlateLabel')}:</AppText>
+              <View style={styles.platePill}>
+                <AppText variant="meta" color={badgeTones.cyan.fg} style={styles.plateText}>
+                  {detail.vehicle.licensePlate}
+                </AppText>
               </View>
             </View>
-          ) : null}
-        </View>
-      ) : (
-        <AppText color={colors.text3}>--</AppText>
-      )}
+            {detail.vehicle.typeName ? (
+              <View style={styles.vehicleRow}>
+                <AppText color={colors.text3}>{t('driver.detail.vehicleType')}:</AppText>
+                <AppText variant="label">{detail.vehicle.typeName}</AppText>
+              </View>
+            ) : detail.vehicle.name ? (
+              <View style={styles.vehicleRow}>
+                <AppText color={colors.text3}>{t('driver.detail.vehicleNameLabel')}:</AppText>
+                <AppText variant="label">{detail.vehicle.name}</AppText>
+              </View>
+            ) : null}
+            {dimensions ? (
+              <View style={styles.vehicleRow}>
+                <AppText color={colors.text3}>{t('driver.detail.cargoDimensions')}:</AppText>
+                <AppText variant="label">{dimensions}</AppText>
+              </View>
+            ) : null}
+            {detail.vehicle.maxVolumeM3 ? (
+              <View style={styles.vehicleRow}>
+                <AppText color={colors.text3}>{t('driver.detail.cargoVolume')}:</AppText>
+                <AppText variant="label">{detail.vehicle.maxVolumeM3} m³</AppText>
+              </View>
+            ) : null}
+            {detail.vehicle.maxPayloadKg ? (
+              <View style={styles.vehicleRow}>
+                <AppText color={colors.text3}>{t('driver.detail.maxPayloadLabel')}:</AppText>
+                <View style={styles.vehiclePayloadCol}>
+                  <AppText variant="label">{detail.vehicle.maxPayloadKg} kg</AppText>
+                  {payloadUtilization !== undefined ? (
+                    <Chip
+                      tone={
+                        payloadUtilization > 100
+                          ? 'danger'
+                          : payloadUtilization > 85
+                            ? 'warning'
+                            : 'cyan'
+                      }
+                      label={t('driver.detail.payloadUtilization', {
+                        percent: payloadUtilization,
+                      })}
+                    />
+                  ) : null}
+                </View>
+              </View>
+            ) : null}
+          </View>
+        ) : (
+          <AppText color={colors.text3}>--</AppText>
+        )
+      ) : null}
     </Card>
   )
 }
@@ -291,9 +344,11 @@ function TripRouteMapSection({ detail }: { readonly detail: DriverTripDetail }) 
   if (stops.length === 0 && depot === undefined) return null
 
   return (
-    <Card>
+    <Card style={[styles.accentCard, { borderLeftColor: badgeTones.success.fg }]}>
       <View style={styles.sectionHead}>
-        <MapPin size={20} color={colors.primary} />
+        <View style={[styles.iconBadge, { backgroundColor: badgeTones.success.bg }]}>
+          <MapPin size={18} color={badgeTones.success.fg} />
+        </View>
         <AppText variant="heading">{t('driver.detail.routeMap')}</AppText>
       </View>
       {detail.totalDistanceMeters !== undefined || detail.totalDurationSeconds !== undefined ? (
@@ -381,6 +436,8 @@ function packageStatusInfo(status: string | undefined, t: ReturnType<typeof useT
 function StopDetailCard({ stop }: { readonly stop: DriverTripDetailStop }) {
   const t = useT()
   const format = useFormat()
+  const [stopOpen, setStopOpen] = useState(false)
+  const [packagesOpen, setPackagesOpen] = useState(false)
   const [expanded, setExpanded] = useState(false)
 
   const handleCall = () => {
@@ -398,19 +455,36 @@ function StopDetailCard({ stop }: { readonly stop: DriverTripDetailStop }) {
 
   const statusTone =
     stop.status === 'COMPLETED' ? 'success' : stop.status === 'ARRIVED' ? 'azure' : 'neutral'
+  const borderAccent =
+    stop.status === 'COMPLETED'
+      ? badgeTones.success.fg
+      : stop.status === 'ARRIVED'
+        ? badgeTones.azure.fg
+        : colors.primary
 
   const INITIAL_PKG_LIMIT = 3
   const visiblePackages = expanded ? stop.packages : stop.packages.slice(0, INITIAL_PKG_LIMIT)
   const hasMorePackages = stop.packages.length > INITIAL_PKG_LIMIT
+  const addressDisplay = stop.address || stop.name
 
   return (
-    <Card style={styles.stopCard}>
-      <View style={styles.stopHead}>
+    <Card style={[styles.stopCard, styles.accentCard, { borderLeftColor: borderAccent }]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: stopOpen }}
+        onPress={() => setStopOpen((prev) => !prev)}
+        style={({ pressed }) => [styles.stopAccordionHeader, pressed && styles.accordionHeaderPressed]}>
         <StopDot number={stop.number} />
-        <View style={styles.stopTitleCol}>
-          <AppText variant="heading" style={styles.stopName}>
-            {stop.name}
+        <View style={styles.stopAddressCol}>
+          <AppText variant="label" color={colors.text} numberOfLines={stopOpen ? undefined : 2} style={styles.stopAddressText}>
+            {addressDisplay}
           </AppText>
+        </View>
+        {stopOpen ? <ChevronUp size={20} color={borderAccent} /> : <ChevronDown size={20} color={colors.text2} />}
+      </Pressable>
+
+      {stopOpen ? (
+        <View style={styles.stopExpandedBody}>
           <View style={styles.chipsRow}>
             <Chip
               tone={statusTone}
@@ -434,152 +508,167 @@ function StopDetailCard({ stop }: { readonly stop: DriverTripDetailStop }) {
               <Chip tone={stop.plannedStatus === 'MISSED' ? 'danger' : 'warning'} label={stop.plannedStatus} />
             ) : null}
           </View>
-        </View>
-      </View>
 
-      <View style={styles.addressRow}>
-        <MapPin size={16} color={colors.text3} style={styles.metaIcon} />
-        <AppText color={colors.text2} style={styles.flexShrink}>
-          {stop.address}
-        </AppText>
-      </View>
+          {stop.name && stop.name !== stop.address ? (
+            <View style={styles.addressRow}>
+              <MapPin size={16} color={borderAccent} style={styles.metaIcon} />
+              <AppText variant="label" color={colors.text2} style={styles.flexShrink}>
+                {stop.name}
+              </AppText>
+            </View>
+          ) : null}
 
-      <View style={styles.recipientSection}>
-        <View style={styles.recipientHeaderRow}>
-          <UserIcon size={15} color={colors.primary} />
-          <AppText variant="meta" color={colors.text3}>
-            {t('driver.detail.customerInfo')}
-          </AppText>
-        </View>
-        <View style={styles.recipientCard}>
-          <View style={styles.recipientInfo}>
-            <AppText variant="label" color={colors.text}>
-              {stop.contactName ?? t('driver.detail.contact')}
-            </AppText>
-            {stop.contactPhone ? (
-              <AppText color={colors.text2}>{stop.contactPhone}</AppText>
-            ) : null}
-          </View>
-          <View style={styles.stopActionButtons}>
-            {stop.address || (stop.lat && stop.lng) ? (
-              <Button icon={Navigation} variant="secondary" style={styles.compactBtn} onPress={handleNavigate}>
-                {t('driver.detail.navigate')}
-              </Button>
-            ) : null}
-            {stop.contactPhone ? (
-              <Button icon={Phone} variant="secondary" style={styles.compactBtn} onPress={handleCall}>
-                {t('driver.detail.call')}
-              </Button>
-            ) : null}
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.timingRow}>
-        {stop.plannedArrival ? (
-          <View style={styles.timingItem}>
-            <AppText variant="meta" color={colors.text3}>
-              {t('driver.detail.plannedArrival')}
-            </AppText>
-            <AppText variant="label">
-              {format.time(stop.plannedArrival)} {format.date(stop.plannedArrival)}
-            </AppText>
-          </View>
-        ) : null}
-        {stop.deadline ? (
-          <View style={styles.timingItem}>
-            <AppText variant="meta" color={colors.text3}>
-              {t('driver.detail.deadline')}
-            </AppText>
-            <AppText variant="label">
-              {format.time(stop.deadline)} {format.date(stop.deadline)}
-            </AppText>
-          </View>
-        ) : null}
-      </View>
-
-      {stop.packages.length > 0 ? (
-        <View style={styles.packagesSection}>
-          <View style={styles.packagesHead}>
-            <Package size={16} color={colors.primary} />
-            <AppText variant="label">
-              {t('driver.detail.packagesInStop', { count: stop.packages.length })}
-            </AppText>
-          </View>
-          {visiblePackages.map((pkg) => {
-            const handling = handlingInfo(pkg.handlingClass, pkg.fragile, t)
-            const extraFragile = pkg.fragile && pkg.handlingClass && pkg.handlingClass !== 'FRAGILE' && pkg.handlingClass !== 'STANDARD'
-            const pkgStatus = packageStatusInfo(pkg.status, t)
-            const dims =
-              pkg.lengthCm !== undefined && pkg.widthCm !== undefined && pkg.heightCm !== undefined
-                ? `${Math.round(pkg.lengthCm)} × ${Math.round(pkg.widthCm)} × ${Math.round(pkg.heightCm)} cm`
-                : undefined
-            const showType = pkg.packageTypeName && pkg.packageTypeName !== pkg.name
-
-            return (
-              <View key={pkg.id} style={styles.packageItem}>
-                <View style={styles.packageHeaderRow}>
-                  <AppText variant="label" style={styles.flexShrink}>
-                    {pkg.name || pkg.code}
-                  </AppText>
-                  {pkg.weightKg !== undefined ? (
-                    <AppText variant="label" color={colors.text2} style={styles.packageWeight}>
-                      {pkg.weightKg} kg
-                    </AppText>
-                  ) : null}
-                </View>
-
-                <View style={styles.chipsRow}>
-                  <Chip tone={handling.tone} label={handling.label} />
-                  {extraFragile ? <Chip tone="danger" label={t('driver.detail.handling.FRAGILE')} /> : null}
-                  {pkgStatus ? <Chip tone={pkgStatus.tone} label={pkgStatus.label} /> : null}
-                </View>
-
-                <View style={styles.packageMetaRow}>
-                  {pkg.barcode || pkg.code ? (
-                    <AppText variant="meta" color={colors.text3} style={styles.codeText}>
-                      {t('driver.detail.packageCode', { code: pkg.barcode || pkg.code })}
-                    </AppText>
-                  ) : null}
-                  {dims ? (
-                    <AppText variant="meta" color={colors.text2} style={styles.codeText}>
-                      {t('driver.detail.packageDimensions', { dims })}
-                    </AppText>
-                  ) : null}
-                </View>
-
-                {showType ? (
-                  <AppText variant="meta" color={colors.text2}>
-                    {t('driver.detail.packageType', { type: pkg.packageTypeName })}
-                  </AppText>
-                ) : null}
-
-                {pkg.note ? (
-                  <AppText variant="meta" color={colors.text2}>
-                    {t('driver.detail.packageNote', { note: pkg.note })}
-                  </AppText>
+          <View style={styles.recipientSection}>
+            <View style={styles.recipientHeaderRow}>
+              <UserIcon size={15} color={badgeTones.azure.fg} />
+              <AppText variant="meta" color={badgeTones.azure.fg}>
+                {t('driver.detail.customerInfo')}
+              </AppText>
+            </View>
+            <View style={[styles.recipientCard, { borderColor: badgeTones.azure.border, backgroundColor: badgeTones.azure.bg }]}>
+              <View style={styles.recipientInfo}>
+                <AppText variant="label" color={colors.text}>
+                  {stop.contactName ?? t('driver.detail.contact')}
+                </AppText>
+                {stop.contactPhone ? (
+                  <AppText color={badgeTones.azure.fg}>{stop.contactPhone}</AppText>
                 ) : null}
               </View>
-            )
-          })}
-          {hasMorePackages ? (
-            <Pressable
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.expandButton, pressed && styles.expandButtonPressed]}
-              onPress={() => setExpanded((prev) => !prev)}>
-              <AppText variant="label" color={colors.primary}>
-                {expanded
-                  ? t('driver.detail.collapsePackages')
-                  : t('driver.detail.viewMorePackages', {
-                      count: stop.packages.length - INITIAL_PKG_LIMIT,
-                    })}
-              </AppText>
-              {expanded ? (
-                <ChevronUp size={16} color={colors.primary} />
-              ) : (
-                <ChevronDown size={16} color={colors.primary} />
-              )}
-            </Pressable>
+              <View style={styles.stopActionButtons}>
+                {stop.address || (stop.lat && stop.lng) ? (
+                  <Button icon={Navigation} variant="secondary" style={styles.compactBtn} onPress={handleNavigate}>
+                    {t('driver.detail.navigate')}
+                  </Button>
+                ) : null}
+                {stop.contactPhone ? (
+                  <Button icon={Phone} variant="secondary" style={styles.compactBtn} onPress={handleCall}>
+                    {t('driver.detail.call')}
+                  </Button>
+                ) : null}
+              </View>
+            </View>
+          </View>
+
+          {stop.plannedArrival || stop.deadline ? (
+            <View style={styles.timingRow}>
+              {stop.plannedArrival ? (
+                <View style={[styles.timingItem, styles.timingTileCyan]}>
+                  <AppText variant="meta" color={badgeTones.cyan.fg}>
+                    {t('driver.detail.plannedArrival')}
+                  </AppText>
+                  <AppText variant="label" color={colors.text}>
+                    {format.time(stop.plannedArrival)} {format.date(stop.plannedArrival)}
+                  </AppText>
+                </View>
+              ) : null}
+              {stop.deadline ? (
+                <View style={[styles.timingItem, styles.timingTileWarning]}>
+                  <AppText variant="meta" color={badgeTones.warning.fg}>
+                    {t('driver.detail.deadline')}
+                  </AppText>
+                  <AppText variant="label" color={colors.text}>
+                    {format.time(stop.deadline)} {format.date(stop.deadline)}
+                  </AppText>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+
+          {stop.packages.length > 0 ? (
+            <View style={styles.packagesSection}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ expanded: packagesOpen }}
+                onPress={() => setPackagesOpen((prev) => !prev)}
+                style={({ pressed }) => [styles.packagesDropdownHeader, pressed && styles.accordionHeaderPressed]}>
+                <View style={styles.packagesHead}>
+                  <Package size={16} color={badgeTones.cyan.fg} />
+                  <AppText variant="label" color={badgeTones.cyan.fg}>
+                    {t('driver.detail.packagesInStop', { count: stop.packages.length })}
+                  </AppText>
+                </View>
+                {packagesOpen ? <ChevronUp size={18} color={badgeTones.cyan.fg} /> : <ChevronDown size={18} color={badgeTones.cyan.fg} />}
+              </Pressable>
+              {packagesOpen ? (
+                <>
+                  {visiblePackages.map((pkg) => {
+                    const handling = handlingInfo(pkg.handlingClass, pkg.fragile, t)
+                    const extraFragile = pkg.fragile && pkg.handlingClass && pkg.handlingClass !== 'FRAGILE' && pkg.handlingClass !== 'STANDARD'
+                    const pkgStatus = packageStatusInfo(pkg.status, t)
+                    const dims =
+                      pkg.lengthCm !== undefined && pkg.widthCm !== undefined && pkg.heightCm !== undefined
+                        ? `${Math.round(pkg.lengthCm)} × ${Math.round(pkg.widthCm)} × ${Math.round(pkg.heightCm)} cm`
+                        : undefined
+                    const showType = pkg.packageTypeName && pkg.packageTypeName !== pkg.name
+
+                    return (
+                      <View key={pkg.id} style={styles.packageItem}>
+                        <View style={styles.packageHeaderRow}>
+                          <AppText variant="label" style={styles.flexShrink}>
+                            {pkg.name || pkg.code}
+                          </AppText>
+                          {pkg.weightKg !== undefined ? (
+                            <AppText variant="label" color={badgeTones.warning.fg} style={styles.packageWeight}>
+                              {pkg.weightKg} kg
+                            </AppText>
+                          ) : null}
+                        </View>
+
+                        <View style={styles.chipsRow}>
+                          <Chip tone={handling.tone} label={handling.label} />
+                          {extraFragile ? <Chip tone="danger" label={t('driver.detail.handling.FRAGILE')} /> : null}
+                          {pkgStatus ? <Chip tone={pkgStatus.tone} label={pkgStatus.label} /> : null}
+                        </View>
+
+                        <View style={styles.packageMetaRow}>
+                          {pkg.barcode || pkg.code ? (
+                            <AppText variant="meta" color={colors.text3} style={styles.codeText}>
+                              {t('driver.detail.packageCode', { code: pkg.barcode || pkg.code })}
+                            </AppText>
+                          ) : null}
+                          {dims ? (
+                            <AppText variant="meta" color={colors.text2} style={styles.codeText}>
+                              {t('driver.detail.packageDimensions', { dims })}
+                            </AppText>
+                          ) : null}
+                        </View>
+
+                        {showType ? (
+                          <AppText variant="meta" color={colors.text2}>
+                            {t('driver.detail.packageType', { type: pkg.packageTypeName })}
+                          </AppText>
+                        ) : null}
+
+                        {pkg.note ? (
+                          <AppText variant="meta" color={colors.text2}>
+                            {t('driver.detail.packageNote', { note: pkg.note })}
+                          </AppText>
+                        ) : null}
+                      </View>
+                    )
+                  })}
+                  {hasMorePackages ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      style={({ pressed }) => [styles.expandButton, pressed && styles.expandButtonPressed]}
+                      onPress={() => setExpanded((prev) => !prev)}>
+                      <AppText variant="label" color={colors.primary}>
+                        {expanded
+                          ? t('driver.detail.collapsePackages')
+                          : t('driver.detail.viewMorePackages', {
+                              count: stop.packages.length - INITIAL_PKG_LIMIT,
+                            })}
+                      </AppText>
+                      {expanded ? (
+                        <ChevronUp size={16} color={colors.primary} />
+                      ) : (
+                        <ChevronDown size={16} color={colors.primary} />
+                      )}
+                    </Pressable>
+                  ) : null}
+                </>
+              ) : null}
+            </View>
           ) : null}
         </View>
       ) : null}
@@ -829,5 +918,96 @@ const styles = StyleSheet.create({
     minHeight: 38,
     paddingHorizontal: space[3],
     paddingVertical: space[1],
+  },
+  accordionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space[2],
+    paddingVertical: space[1],
+    borderRadius: radius.sm,
+  },
+  accordionHeaderPressed: {
+    opacity: 0.75,
+  },
+  accordionTitleCol: {
+    flex: 1,
+    gap: 2,
+  },
+  packagesDropdownHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space[2],
+    paddingVertical: space[2],
+    paddingHorizontal: space[3],
+    borderRadius: radius.md,
+    backgroundColor: badgeTones.cyan.bg,
+    borderWidth: 1,
+    borderColor: badgeTones.cyan.border,
+  },
+  accentCard: {
+    borderLeftWidth: 4,
+  },
+  heroMetaPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+    alignSelf: 'flex-start',
+    paddingHorizontal: space[3],
+    paddingVertical: space[1],
+    borderRadius: radius.pill,
+    borderWidth: 1,
+  },
+  iconBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  platePill: {
+    paddingHorizontal: space[2],
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    backgroundColor: badgeTones.cyan.bg,
+    borderWidth: 1,
+    borderColor: badgeTones.cyan.border,
+  },
+  plateText: {
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  stopAccordionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[3],
+    paddingVertical: space[1],
+  },
+  stopAddressCol: {
+    flex: 1,
+  },
+  stopAddressText: {
+    flexShrink: 1,
+  },
+  stopExpandedBody: {
+    gap: space[3],
+    paddingTop: space[2],
+    borderTopWidth: 1,
+    borderTopColor: colors.lineSoft,
+  },
+  timingTileCyan: {
+    padding: space[2],
+    borderRadius: radius.md,
+    backgroundColor: badgeTones.cyan.bg,
+    borderWidth: 1,
+    borderColor: badgeTones.cyan.border,
+  },
+  timingTileWarning: {
+    padding: space[2],
+    borderRadius: radius.md,
+    backgroundColor: badgeTones.warning.bg,
+    borderWidth: 1,
+    borderColor: badgeTones.warning.border,
   },
 })

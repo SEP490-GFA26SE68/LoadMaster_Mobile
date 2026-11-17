@@ -9,6 +9,11 @@ export type DriverTripDto = {
   readonly tripCode: string | null
   readonly vehicleLicensePlate: string | null
   readonly stopCount: number | null
+  readonly totalPackages?: number | null
+  readonly totalWeightKg?: number | string | null
+  readonly totalDistanceMeters?: number | null
+  readonly totalDurationSeconds?: number | null
+  readonly estimatedCompletionTime?: string | null
   /** `LocalDateTime` của backend: không kèm múi giờ. */
   readonly departureTime: string | null
   readonly status: string | null

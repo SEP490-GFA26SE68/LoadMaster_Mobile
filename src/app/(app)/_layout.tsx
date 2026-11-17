@@ -30,6 +30,8 @@ export default function AppLayout() {
       <Stack.Screen name="(tabs)" />
       <Stack.Protected guard={can('driver.operate')}>
         <Stack.Screen name="trip/[tripId]" />
+        <Stack.Screen name="driver-trip/[tripId]" />
+        <Stack.Screen name="driver-history" />
       </Stack.Protected>
       <Stack.Protected guard={can('warehouse.operate')}>
         <Stack.Screen name="loading/[tripId]" />
