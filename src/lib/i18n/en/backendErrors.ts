@@ -58,4 +58,7 @@ export const backendErrors = {
   LOADING_MANUAL_CONFIRM_PENDING: 'A manual confirmation is still waiting for the dispatcher — loading cannot be completed yet.',
   STAGING_NOT_READY: 'Not every package is staged yet, or a shortage is still waiting for the dispatcher — loading cannot start.',
   SEAL_NOT_ALLOWED: 'A seal number can only be recorded after loading is complete and before the truck departs.',
+  PAYROLL_INVALID_PERIOD: 'Invalid payroll period. Please choose another month.',
+  PAYROLL_PERIOD_NOT_FOUND: 'This payroll period was not found.',
+  PAYROLL_RATE_NOT_CONFIGURED: 'Payroll rates have not been configured for this period.',
 } satisfies Dictionary<typeof source>

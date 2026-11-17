@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router'
-import { LayoutDashboard, MapPinned, PackageSearch, Truck, UserRound, Warehouse, type LucideIcon } from 'lucide-react-native'
+import { LayoutDashboard, MapPinned, PackageSearch, Truck, UserRound, Wallet, Warehouse, type LucideIcon } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useAuth } from '@/features/auth/AuthProvider'
@@ -8,7 +8,7 @@ import { useLookupCapabilities } from '@/features/lookup/useLookupQueries'
 import { useT } from '@/lib/i18n'
 import { colors, space, TOUCH, type as scale } from '@/theme/tokens'
 
-type TabLabel = `nav.${'overview' | 'tripList' | 'monitoring' | 'trips' | 'warehouse' | 'lookup'}`
+type TabLabel = `nav.${'overview' | 'tripList' | 'monitoring' | 'trips' | 'payroll' | 'warehouse' | 'lookup'}`
 
 /** Nhãn và hình của từng tab làm việc; icon như mục điều hướng của bản web. */
 const TAB_LOOK: Readonly<Record<WorkTab, { readonly label: TabLabel; readonly icon: LucideIcon }>> = {
@@ -16,6 +16,7 @@ const TAB_LOOK: Readonly<Record<WorkTab, { readonly label: TabLabel; readonly ic
   'trip-list': { label: 'nav.tripList', icon: Truck },
   monitoring: { label: 'nav.monitoring', icon: MapPinned },
   trips: { label: 'nav.trips', icon: Truck },
+  payroll: { label: 'nav.payroll', icon: Wallet },
   warehouse: { label: 'nav.warehouse', icon: Warehouse },
   lookup: { label: 'nav.lookup', icon: PackageSearch },
 }
@@ -57,6 +58,7 @@ export default function AppLayout() {
       {tab('trip-list')}
       {tab('monitoring')}
       {tab('trips')}
+      {tab('payroll')}
       {tab('warehouse')}
       {tab('lookup')}
       <Tabs.Screen name="account" options={{ title: t('nav.account'), tabBarIcon: ({ color }) => <UserRound color={color} size={24} strokeWidth={1.5} /> }} />

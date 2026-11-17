@@ -10,7 +10,7 @@
  * xác nhận tay và kiện báo thiếu); `monitoring`: giám sát chuyến đang chạy, sự cố cấp chuyến, nhận hàng dọc đường và thông báo của
  * hai vai trò đó; `dashboard`: số liệu chính của quản lý.
  */
-export const FEATURES = ['auth', 'driver', 'warehouse', 'packages', 'trips', 'monitoring', 'dashboard'] as const
+export const FEATURES = ['auth', 'driver', 'payroll', 'warehouse', 'packages', 'trips', 'monitoring', 'dashboard'] as const
 
 export type Feature = (typeof FEATURES)[number]
 
