@@ -185,9 +185,9 @@ export function mockDriverApi(): DriverApi {
         totalWeightKg: undefined,
         dispatcher: dispatcher
           ? {
-              name: dispatcher.fullName,
-              phone: dispatcher.phone,
-            }
+            name: dispatcher.fullName,
+            phone: dispatcher.phone,
+          }
           : undefined,
         totalDistanceMeters: 45200,
         totalDurationSeconds: 4800,
@@ -213,8 +213,12 @@ export function mockDriverApi(): DriverApi {
               barcode: pkg.id,
               name: pkg.name,
               weightKg: pkg.weightKg,
-              status: 'PENDING',
-              handlingClass: 'FRAGILE',
+              lengthCm: pkg.lengthCm,
+              widthCm: pkg.widthCm,
+              heightCm: pkg.heightCm,
+              status: trip.loading?.completedAt !== undefined ? 'LOADED' : 'PENDING',
+              handlingClass: pkg.handlingClass ?? 'STANDARD',
+              fragile: pkg.handlingClass === 'FRAGILE',
             })),
         })),
       }

@@ -276,10 +276,16 @@ export type DriverTripDetailPackage = {
   readonly code: string
   readonly barcode: string
   readonly name: string
+  readonly packageTypeName?: string
   readonly weightKg?: number
+  readonly lengthCm?: number
+  readonly widthCm?: number
+  readonly heightCm?: number
   readonly status: string
   readonly unloadOrder?: number
   readonly handlingClass?: string
+  readonly fragile?: boolean
+  readonly note?: string
 }
 
 /** Điểm dừng trong màn hình chi tiết chuyến của tài xế. */

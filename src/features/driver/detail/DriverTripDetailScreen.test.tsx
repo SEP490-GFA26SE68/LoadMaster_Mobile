@@ -51,9 +51,11 @@ describe('màn hình Chi tiết chuyến đi của tài xế', () => {
     expect(screen.getAllByText('Giao hàng').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Thông tin khách nhận').length).toBeGreaterThan(0)
 
-    // Điểm dừng và kiện hàng (kèm loại dễ vỡ)
+    // Điểm dừng và kiện hàng (kèm loại hàng, kích thước, trạng thái kiện)
     expect(await screen.findByText(/PKG-004/)).toBeOnTheScreen()
-    expect(screen.getAllByText('Dễ vỡ').length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Kích thước: .* cm/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Đã xếp lên xe').length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Hàng tiêu chuẩn|Dễ vỡ/).length).toBeGreaterThan(0)
   })
 
   test('bấm nút gọi điện mở liên kết điện thoại tel:', async () => {

@@ -65,7 +65,7 @@ export function routeMapHtml(payload: RouteMapPayload): string {
   html,body,#map{margin:0;height:100%;background:${payload.background}}
   .pin{width:28px;height:28px;border:2px solid #fff;box-shadow:0 1px 2px rgba(14,28,33,.2);display:grid;place-items:center;font:700 11px/1 system-ui,sans-serif}
   .stop{border-radius:50%}
-  .depot{border-radius:6px;background:${payload.primary}}
+  .depot{border-radius:6px;background:${payload.primary};color:#fff}
   .vehicle{width:32px;height:32px;border-radius:50%;background:#fff;border:2px solid ${payload.primary}}
   .vehicle i{width:8px;height:8px;border-radius:50%;background:${payload.primary}}
   .maplibregl-ctrl-attrib{font-size:10px}
@@ -87,13 +87,14 @@ export function routeMapHtml(payload: RouteMapPayload): string {
     attributionControl:{compact:true}
   });
   map.touchZoomRotate.disableRotation();
+  map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'top-right');
   var vehicleMarker=null;
   function fit(){
     var pts=data.line.concat(data.depot?[data.depot]:[]).concat(data.stops.map(function(s){return s.lngLat}));
     if(!pts.length) return;
     if(pts.length===1){ map.jumpTo({center:pts[0],zoom:14}); return; }
     var b=pts.reduce(function(acc,p){return acc.extend(p)}, new maplibregl.LngLatBounds(pts[0],pts[0]));
-    map.fitBounds(b,{padding:40,maxZoom:14,animate:false});
+    map.fitBounds(b,{padding:44,maxZoom:14,animate:false});
   }
   function draw(){
     var geo={type:'Feature',properties:{},geometry:{type:'LineString',coordinates:data.line}};
@@ -101,7 +102,8 @@ export function routeMapHtml(payload: RouteMapPayload): string {
     if(src) src.setData(geo);
     else if(data.line.length>1){
       map.addSource('route',{type:'geojson',data:geo});
-      map.addLayer({id:'route',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':data.primary,'line-width':3}});
+      map.addLayer({id:'route-casing',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#ffffff','line-width':6.5,'line-opacity':0.9}});
+      map.addLayer({id:'route',type:'line',source:'route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':data.primary,'line-width':4}});
     }
   }
   function marker(el,lngLat){ return new maplibregl.Marker({element:el,anchor:'center'}).setLngLat(lngLat).addTo(map); }
@@ -129,6 +131,7 @@ export function routeMapHtml(payload: RouteMapPayload): string {
       if(data.depot){
         var d=document.createElement('div');
         d.className='pin depot';
+        d.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/></svg>';
         marker(d,data.depot);
       }
       data.stops.forEach(function(s){ marker(stopEl(s), s.lngLat); });

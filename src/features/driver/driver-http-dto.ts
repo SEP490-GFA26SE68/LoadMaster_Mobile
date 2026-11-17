@@ -91,10 +91,16 @@ export type DriverTripDetailPackageDto = {
   readonly packageCode: string | null
   readonly trackingBarcode: string | null
   readonly packageName: string | null
+  readonly packageTypeName?: string | null
   readonly weightKg: number | null
+  readonly lengthCm?: number | null
+  readonly widthCm?: number | null
+  readonly heightCm?: number | null
   readonly status: string | null
   readonly unloadOrder: number | null
   readonly handlingClass?: string | null
+  readonly fragile?: boolean | null
+  readonly note?: string | null
 }
 
 export type DriverTripDetailStopDto = {

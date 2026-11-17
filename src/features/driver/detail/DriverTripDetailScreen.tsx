@@ -343,6 +343,41 @@ function StopsTimelineSection({ stops }: { readonly stops: readonly DriverTripDe
   )
 }
 
+function handlingInfo(handlingClass: string | undefined, fragile: boolean | undefined, t: ReturnType<typeof useT>) {
+  const effective = handlingClass === 'STANDARD' && fragile ? 'FRAGILE' : handlingClass || (fragile ? 'FRAGILE' : 'STANDARD')
+  switch (effective) {
+    case 'FRAGILE':
+      return { label: t('driver.detail.handling.FRAGILE'), tone: 'danger' as const }
+    case 'REFRIGERATED':
+      return { label: t('driver.detail.handling.REFRIGERATED'), tone: 'cyan' as const }
+    case 'HAZARDOUS':
+      return { label: t('driver.detail.handling.HAZARDOUS'), tone: 'danger' as const }
+    case 'HIGH_VALUE':
+      return { label: t('driver.detail.handling.HIGH_VALUE'), tone: 'warning' as const }
+    default:
+      return { label: t('driver.detail.handling.STANDARD'), tone: 'neutral' as const }
+  }
+}
+
+function packageStatusInfo(status: string | undefined, t: ReturnType<typeof useT>) {
+  switch (status) {
+    case 'LOADED':
+      return { label: t('driver.detail.packageStatus.LOADED'), tone: 'azure' as const }
+    case 'DELIVERED':
+      return { label: t('driver.detail.packageStatus.DELIVERED'), tone: 'success' as const }
+    case 'RETURNED':
+      return { label: t('driver.detail.packageStatus.RETURNED'), tone: 'warning' as const }
+    case 'CANCELLED':
+      return { label: t('driver.detail.packageStatus.CANCELLED'), tone: 'danger' as const }
+    case 'PLANNED':
+      return { label: t('driver.detail.packageStatus.PLANNED'), tone: 'cyan' as const }
+    case 'PENDING':
+      return { label: t('driver.detail.packageStatus.PENDING'), tone: 'neutral' as const }
+    default:
+      return undefined
+  }
+}
+
 function StopDetailCard({ stop }: { readonly stop: DriverTripDetailStop }) {
   const t = useT()
   const format = useFormat()
@@ -472,46 +507,56 @@ function StopDetailCard({ stop }: { readonly stop: DriverTripDetailStop }) {
             </AppText>
           </View>
           {visiblePackages.map((pkg) => {
-            const hasSpecialHandling = pkg.handlingClass && pkg.handlingClass !== 'STANDARD'
-            const handlingLabel = hasSpecialHandling
-              ? pkg.handlingClass === 'FRAGILE'
-                ? t('driver.detail.handling.FRAGILE')
-                : pkg.handlingClass === 'REFRIGERATED'
-                  ? t('driver.detail.handling.REFRIGERATED')
-                  : pkg.handlingClass === 'HAZARDOUS'
-                    ? t('driver.detail.handling.HAZARDOUS')
-                    : pkg.handlingClass === 'HIGH_VALUE'
-                      ? t('driver.detail.handling.HIGH_VALUE')
-                      : pkg.handlingClass
-              : undefined
+            const handling = handlingInfo(pkg.handlingClass, pkg.fragile, t)
+            const extraFragile = pkg.fragile && pkg.handlingClass && pkg.handlingClass !== 'FRAGILE' && pkg.handlingClass !== 'STANDARD'
+            const pkgStatus = packageStatusInfo(pkg.status, t)
+            const dims =
+              pkg.lengthCm !== undefined && pkg.widthCm !== undefined && pkg.heightCm !== undefined
+                ? `${Math.round(pkg.lengthCm)} × ${Math.round(pkg.widthCm)} × ${Math.round(pkg.heightCm)} cm`
+                : undefined
+            const showType = pkg.packageTypeName && pkg.packageTypeName !== pkg.name
 
             return (
               <View key={pkg.id} style={styles.packageItem}>
-                <View style={styles.packageInfo}>
-                  <View style={styles.packageNameRow}>
-                    <AppText variant="label">{pkg.name || pkg.code}</AppText>
-                    {handlingLabel ? (
-                      <Chip
-                        tone={
-                          pkg.handlingClass === 'FRAGILE' || pkg.handlingClass === 'HAZARDOUS'
-                            ? 'danger'
-                            : pkg.handlingClass === 'HIGH_VALUE'
-                              ? 'warning'
-                              : 'cyan'
-                        }
-                        label={handlingLabel}
-                      />
-                    ) : null}
-                  </View>
-                  {pkg.barcode || (pkg.code && pkg.code !== pkg.name) ? (
+                <View style={styles.packageHeaderRow}>
+                  <AppText variant="label" style={styles.flexShrink}>
+                    {pkg.name || pkg.code}
+                  </AppText>
+                  {pkg.weightKg !== undefined ? (
+                    <AppText variant="label" color={colors.text2} style={styles.packageWeight}>
+                      {pkg.weightKg} kg
+                    </AppText>
+                  ) : null}
+                </View>
+
+                <View style={styles.chipsRow}>
+                  <Chip tone={handling.tone} label={handling.label} />
+                  {extraFragile ? <Chip tone="danger" label={t('driver.detail.handling.FRAGILE')} /> : null}
+                  {pkgStatus ? <Chip tone={pkgStatus.tone} label={pkgStatus.label} /> : null}
+                </View>
+
+                <View style={styles.packageMetaRow}>
+                  {pkg.barcode || pkg.code ? (
                     <AppText variant="meta" color={colors.text3} style={styles.codeText}>
                       {t('driver.detail.packageCode', { code: pkg.barcode || pkg.code })}
                     </AppText>
                   ) : null}
+                  {dims ? (
+                    <AppText variant="meta" color={colors.text2} style={styles.codeText}>
+                      {t('driver.detail.packageDimensions', { dims })}
+                    </AppText>
+                  ) : null}
                 </View>
-                {pkg.weightKg ? (
-                  <AppText color={colors.text2} style={styles.packageWeight}>
-                    {pkg.weightKg} kg
+
+                {showType ? (
+                  <AppText variant="meta" color={colors.text2}>
+                    {t('driver.detail.packageType', { type: pkg.packageTypeName })}
+                  </AppText>
+                ) : null}
+
+                {pkg.note ? (
+                  <AppText variant="meta" color={colors.text2}>
+                    {t('driver.detail.packageNote', { note: pkg.note })}
                   </AppText>
                 ) : null}
               </View>
@@ -731,23 +776,30 @@ const styles = StyleSheet.create({
     gap: space[2],
   },
   packageItem: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.lineSoft,
+    borderRadius: radius.md,
+    padding: space[3],
+    gap: space[1],
+  },
+  packageHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: space[1],
-  },
-  packageInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  packageNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: space[2],
+  },
+  packageMetaRow: {
+    flexDirection: 'row',
     flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space[2],
+    marginTop: 2,
   },
   packageWeight: {
     marginLeft: space[2],
+    fontVariant: ['tabular-nums'],
   },
   expandButton: {
     flexDirection: 'row',
