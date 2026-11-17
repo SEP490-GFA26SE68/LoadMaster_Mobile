@@ -154,9 +154,12 @@ export function mockDriverApi(): DriverApi {
       pickups: true,
       gps: true,
       notifications: true,
+      payroll: false,
       gpsLocalOnly: true,
     },
     fetchMyTrips,
+    async fetchPayroll() {
+      throw new ApiError('NOT_SUPPORTED')
     async fetchTripDetail(tripId: string): Promise<DriverTripDetail> {
       const database = db()
       const viewer = signedIn(database)

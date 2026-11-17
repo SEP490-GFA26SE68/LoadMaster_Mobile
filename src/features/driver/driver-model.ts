@@ -19,6 +19,8 @@ import type { EtaSource, StopTiming } from './stop-timing'
  * không nút giả.
  */
 export type DriverCapabilities = {
+  /** Mở bảng lương tháng do backend tính. */
+  readonly payroll: boolean
   /** Bấm "Xuất phát" ở màn điểm giao khi kho đã xếp xong (kho mẫu: màn mở được trước khi xe chạy). */
   readonly depart: boolean
   /**
@@ -45,6 +47,49 @@ export type DriverCapabilities = {
   /** Vị trí GPS chỉ ở lại kho mẫu trong máy (không có máy chủ nào nhận). */
   readonly gpsLocalOnly: boolean
 }
+
+export type DriverPayrollTripLine = {
+  readonly tripId: string
+  readonly tripCode: string
+  readonly planKg: number
+  readonly sharePercent: number
+  readonly allocatedKg: number
+  /** Hoa hồng theo khối lượng của tài xế ở chuyến này. */
+  readonly kgAmountVnd: number
+  /** Phần tiền bốc dỡ của tài xế ở chuyến này. */
+  readonly handlingAmountVnd: number
+  readonly totalAmountVnd: number
+}
+
+/**
+ * Bảng lương tài xế nhìn thấy:
+ * - `notCalculated`: công ty chưa cấu hình mức lương cho tháng.
+ * - `baseOnly`: tháng chưa chốt, chỉ biết lương cứng; hoa hồng và bốc dỡ hiện sau khi chốt.
+ * - `calculated`: tháng đã chốt, có đủ lương cứng + hoa hồng + bốc dỡ.
+ */
+export type DriverPayrollStatement =
+  | { readonly kind: 'notCalculated'; readonly period: string }
+  | {
+      readonly kind: 'baseOnly'
+      readonly period: string
+      readonly status: 'DRAFT' | null
+      readonly baseSalaryVnd: number
+    }
+  | {
+      readonly kind: 'calculated'
+      readonly period: string
+      readonly status: 'DRAFT' | 'LOCKED'
+      readonly baseSalaryVnd: number
+      readonly totalKg: number
+      readonly kgRateVndPerKg: number
+      readonly commissionPercent: number
+      readonly kgAmountVnd: number
+      readonly handlingFeeVndPerKg: number
+      readonly handlingDriverPercent: number
+      readonly handlingAmountVnd: number
+      readonly totalSalaryVnd: number
+      readonly trips: readonly DriverPayrollTripLine[]
+    }
 
 /** Một điểm của chuyến trong danh sách điểm: số, tên, loại, số kiện của phương án ở điểm, đã xong chưa, giờ đến / hạn. */
 export type DriverTripStop = {

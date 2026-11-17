@@ -11,6 +11,7 @@ export const SERVER_REFRESH_MS = 30_000
  * thoại, chuông. Chưa có ở máy chủ: yêu cầu nhận hàng của tài xế.
  */
 export const HTTP_DRIVER_CAPABILITIES: DriverCapabilities = {
+  payroll: true,
   depart: false,
   departFromList: true,
   arrive: true,

@@ -8,7 +8,73 @@ import { deliveredHistoryOf, myTripsOf, shownStatusOf, tripDetailOf, tripRowOf }
 import { deliveryPackageOf, isUnloaded, packageOfCode, stopScreenOf, withUnloaded } from './driver-http-stop'
 import { serverEtaSources, serverTripStops, tripStopsOf, type DriverTripStopsDto, type ServerTripStops } from './driver-http-stop-times'
 import { coded, HTTP_DRIVER_CAPABILITIES, refused, SERVER_REFRESH_MS, unsupported } from './driver-http-support'
-import type { DriverTripDetail, DriverTripException, DriverTripRow, DriverTripScreen, StopKey, TripHead } from './driver-model'
+import type { DriverPayrollStatement, DriverTripRow, DriverTripScreen, StopKey, TripHead } from './driver-model'
+
+type DriverPayrollStatementDto = {
+  calculated: boolean
+  period: string
+  status: 'DRAFT' | 'LOCKED' | null
+  baseSalaryVnd: number | null
+  totalKg: number | null
+  rateVndPerKg: number | null
+  kgAmountVnd: number | null
+  commissionPercent: number | null
+  handlingFeeVndPerKg: number | null
+  handlingDriverPercent: number | null
+  handlingAmountVnd: number | null
+  totalSalaryVnd: number | null
+  trips: readonly {
+    tripId: number
+    tripCode: string | null
+    planKg: number
+    sharePercent: number
+    allocatedKg: number
+    kgAmountVnd: number
+    handlingAmountVnd: number
+    totalAmountVnd: number
+  }[] | null
+}
+
+function payrollStatementOf(dto: DriverPayrollStatementDto): DriverPayrollStatement {
+  if (!dto.calculated) {
+    // Tháng chưa chốt: máy chủ chỉ gửi lương cứng.
+    if (dto.baseSalaryVnd !== null && Number.isFinite(dto.baseSalaryVnd)) {
+      return { kind: 'baseOnly', period: dto.period, status: dto.status === 'DRAFT' ? 'DRAFT' : null, baseSalaryVnd: dto.baseSalaryVnd }
+    }
+    return { kind: 'notCalculated', period: dto.period }
+  }
+  const amounts = [
+    dto.baseSalaryVnd, dto.totalKg, dto.rateVndPerKg, dto.kgAmountVnd, dto.commissionPercent,
+    dto.handlingFeeVndPerKg, dto.handlingDriverPercent, dto.handlingAmountVnd, dto.totalSalaryVnd,
+  ]
+  if (dto.status === null || amounts.some((value) => value === null || !Number.isFinite(value))) {
+    throw new ApiError('SERVER_ERROR')
+  }
+  return {
+    kind: 'calculated',
+    period: dto.period,
+    status: dto.status,
+    baseSalaryVnd: dto.baseSalaryVnd as number,
+    totalKg: dto.totalKg as number,
+    kgRateVndPerKg: dto.rateVndPerKg as number,
+    commissionPercent: dto.commissionPercent as number,
+    kgAmountVnd: dto.kgAmountVnd as number,
+    handlingFeeVndPerKg: dto.handlingFeeVndPerKg as number,
+    handlingDriverPercent: dto.handlingDriverPercent as number,
+    handlingAmountVnd: dto.handlingAmountVnd as number,
+    totalSalaryVnd: dto.totalSalaryVnd as number,
+    trips: (dto.trips ?? []).map((line) => ({
+      tripId: String(line.tripId),
+      tripCode: line.tripCode ?? String(line.tripId),
+      planKg: line.planKg,
+      sharePercent: line.sharePercent,
+      allocatedKg: line.allocatedKg,
+      kgAmountVnd: line.kgAmountVnd,
+      handlingAmountVnd: line.handlingAmountVnd,
+      totalAmountVnd: line.totalAmountVnd,
+    })),
+  }
+}
 
 /*
  * Nguồn backend của màn tài xế (như `driver-backend-api.ts` của web): "Chuyến của tôi", xuất phát ở thẻ chuyến, "Đã đến", dỡ (quét / gõ mã
@@ -188,6 +254,11 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
         // activePlan is optional
       }
       return detail
+    },
+
+    async fetchPayroll(period) {
+      driverId()
+      return payrollStatementOf(await client().get<DriverPayrollStatementDto>('/api/driver/payroll', { query: { period } }))
     },
 
     fetchTripScreen,
