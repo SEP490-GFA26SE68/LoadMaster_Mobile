@@ -11,7 +11,7 @@ const EXPECTED: Readonly<Record<Role, readonly WorkTab[]>> = {
   companyManager: ['overview', 'trip-list', 'monitoring'],
   dispatcher: ['trip-list', 'monitoring'],
   warehouse: ['warehouse', 'lookup'],
-  driver: ['trips'],
+  driver: ['trips', 'payroll'],
 }
 
 describe('tab làm việc theo vai trò', () => {

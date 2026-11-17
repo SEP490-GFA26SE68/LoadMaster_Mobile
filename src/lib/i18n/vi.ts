@@ -19,6 +19,7 @@ import { notifications } from './vi/notifications'
 import { officeServer } from './vi/officeServer'
 import { overview } from './vi/overview'
 import { packageLookup } from './vi/packageLookup'
+import { payroll } from './vi/payroll'
 import { pickupRequest } from './vi/pickupRequest'
 import { pickups } from './vi/pickups'
 import { roles } from './vi/roles'
@@ -69,6 +70,7 @@ export const vi = {
   officeServer,
   overview,
   packageLookup,
+  payroll,
   pickupRequest,
   pickups,
   roles,
