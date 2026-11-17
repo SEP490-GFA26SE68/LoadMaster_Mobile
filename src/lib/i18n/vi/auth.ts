@@ -3,7 +3,9 @@ export const auth = {
   login: {
     title: 'Đăng nhập',
     subtitle: 'Lập kế hoạch và theo dõi chất xếp hàng hoá.',
+    greeting: 'Chào mừng bạn trở lại',
     email: 'Email',
+    emailPlaceholder: 'name@company.com',
     password: 'Mật khẩu',
     submit: 'Đăng nhập',
     emailRequired: 'Nhập email',
@@ -54,7 +56,13 @@ export const auth = {
   demo: {
     title: 'Tài khoản dùng thử',
     hint: 'Chạm một tài khoản để điền email và mật khẩu mẫu.',
+    password: 'Mật khẩu: {password}',
     /** Nhóm tài khoản không thuộc công ty nào; các nhóm còn lại mang tên công ty trong dữ liệu. */
     platform: 'Nền tảng',
+  },
+  showcase: {
+    fillRate: 'Tối ưu tỷ lệ lấp đầy xe',
+    reverseOrder: 'Xếp dỡ theo thứ tự lộ trình',
+    sharedPlan: 'Kế hoạch chất xếp đồng bộ',
   },
 } as const

@@ -5,7 +5,9 @@ export const auth = {
   login: {
     title: 'Sign in',
     subtitle: 'Plan and track cargo loading.',
+    greeting: 'Welcome back',
     email: 'Email',
+    emailPlaceholder: 'name@company.com',
     password: 'Password',
     submit: 'Sign in',
     emailRequired: 'Enter your email',
@@ -51,6 +53,12 @@ export const auth = {
   demo: {
     title: 'Demo accounts',
     hint: 'Tap an account to fill in its email and the sample password.',
+    password: 'Password: {password}',
     platform: 'Platform',
+  },
+  showcase: {
+    fillRate: 'Maximize vehicle fill rate',
+    reverseOrder: 'Load in reverse delivery order',
+    sharedPlan: 'Synchronized load planning',
   },
 } satisfies Dictionary<typeof source>
