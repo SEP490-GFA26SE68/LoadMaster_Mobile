@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { ApiError, isApiError } from '@/data/http'
-import type { Role, User } from '@/types/user'
+import { isMobileRole, type Role, type User } from '@/types/user'
 
 import { isActiveOnBackend, roleOfBackend, userFromBackend, type BackendUserProfile } from './backend-user'
 
@@ -95,6 +95,7 @@ export function readSaved(saved: string): { readonly refreshToken: string; reado
 export function roleOf(profile: BackendUserProfile): Role {
   const role = roleOfBackend(profile.userRoleType)
   if (role === null) throw new ApiError('ROLE_UNKNOWN', { params: { role: profile.userRoleType } })
+  if (!isMobileRole(role)) throw new ApiError('ROLE_NOT_SUPPORTED')
   if (!isActiveOnBackend(profile.status) && profile.status !== 'FLAGGED') throw new ApiError('ACCOUNT_SUSPENDED')
   return role
 }

@@ -106,7 +106,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: space[3],
+    flexWrap: 'wrap',
+    gap: space[2],
   },
   historyPill: {
     flexDirection: 'row',

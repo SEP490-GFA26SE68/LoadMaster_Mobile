@@ -53,6 +53,26 @@ describe('màn đăng nhập trên kho mẫu', () => {
     expect(await screen.findByText(/^đã vào: .+ \(driver\)$/)).toBeOnTheScreen()
   })
 
+  test('chạm tài khoản dùng thử của nhân viên kho rồi đăng nhập: vào app thành công', async () => {
+    const warehouse = DEMO_ACCOUNTS.find((account) => account.role === 'warehouse')
+    await renderApp(<Gate />)
+    await fireEvent.press(await screen.findByRole('button', { name: `Nhân viên kho, ${warehouse?.email}` }))
+    await waitFor(() => expect(screen.getByLabelText('Email').props.value).toBe(warehouse?.email))
+    expect(screen.getByLabelText('Mật khẩu').props.value).toBe(SEED_PASSWORD)
+    await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập' }))
+    expect(await screen.findByText(/^đã vào: .+ \(warehouse\)$/)).toBeOnTheScreen()
+  })
+
+  test('tài khoản không phải DRIVER hoặc WAREHOUSE: bị chặn đăng nhập và hiện lỗi không hỗ trợ', async () => {
+    const dispatcher = DEMO_ACCOUNTS.find((account) => account.role === 'dispatcher')
+    await renderApp(<Gate />)
+    await fireEvent.press(await screen.findByRole('button', { name: `Điều phối viên, ${dispatcher?.email}` }))
+    await waitFor(() => expect(screen.getByLabelText('Email').props.value).toBe(dispatcher?.email))
+    await fireEvent.press(screen.getByRole('button', { name: 'Đăng nhập' }))
+    expect(await screen.findByText('Phần mềm không hỗ trợ đăng nhập cho tài khoản.')).toBeOnTheScreen()
+    expect(screen.queryByText(/^đã vào:/)).toBeNull()
+  })
+
   test('kho mẫu không đặt lại được mật khẩu: không có nút "Quên mật khẩu?"', async () => {
     await renderApp(<Gate />)
     expect(await screen.findByRole('button', { name: 'Đăng nhập' })).toBeOnTheScreen()
@@ -138,6 +158,7 @@ describe('màn đăng nhập khi đăng nhập dùng Keycloak của backend', ()
     [new ApiError('INVALID_CREDENTIALS', { status: 400 }), 'Email hoặc mật khẩu không đúng.'],
     [new ApiError('ACCOUNT_SUSPENDED', { status: 400 }), 'Tài khoản đã bị khoá.'],
     [new ApiError('PROFILE_NOT_FOUND', { status: 404 }), 'Tài khoản đăng nhập chưa gắn với người dùng nào của LoadMaster. Liên hệ quản trị công ty.'],
+    [new ApiError('ROLE_NOT_SUPPORTED'), 'Phần mềm không hỗ trợ đăng nhập cho tài khoản.'],
     [new ApiError('ROLE_UNKNOWN', { params: { role: 'ACCOUNTANT' } }), 'Tài khoản có vai trò "ACCOUNTANT" mà app chưa hỗ trợ. Liên hệ quản trị công ty.'],
     [new ApiError('NETWORK_ERROR'), 'Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.'],
   ])('máy chủ không cho vào (%s): hiện câu theo mã, vẫn ở màn đăng nhập', async (error, message) => {

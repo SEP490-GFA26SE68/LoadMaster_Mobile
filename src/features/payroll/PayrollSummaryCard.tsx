@@ -43,11 +43,13 @@ export function PayrollSummaryCard({ statement }: PayrollSummaryCardProps) {
               ) : null}
             </View>
           </View>
-          <Chip tone={statusTone} label={t(`payroll.status.${statement.status}`)} />
+          <View style={styles.chipWrap}>
+            <Chip tone={statusTone} label={t(`payroll.status.${statement.status}`)} />
+          </View>
         </View>
 
         <View style={styles.amountBox}>
-          <AppText variant="display" color={colors.primary} style={styles.amount}>
+          <AppText variant="display" color={colors.primary} numberOfLines={1} adjustsFontSizeToFit style={styles.amount}>
             {format.currency(statement.totalSalaryVnd)}
           </AppText>
         </View>
@@ -95,11 +97,11 @@ function MetricTile({
     <View style={[styles.metricTile, { backgroundColor: paletteTone.bg, borderColor: paletteTone.border }]}>
       <View style={styles.metricHead}>
         {icon}
-        <AppText variant="meta" color={colors.text2} numberOfLines={1} style={styles.metricLabel}>
+        <AppText variant="meta" color={colors.text2} numberOfLines={2} style={styles.metricLabel}>
           {label}
         </AppText>
       </View>
-      <AppText variant="label" color={paletteTone.fg} numberOfLines={1} style={styles.metricValue}>
+      <AppText variant="label" color={paletteTone.fg} numberOfLines={1} adjustsFontSizeToFit style={styles.metricValue}>
         {value}
       </AppText>
     </View>
@@ -123,9 +125,13 @@ const styles = StyleSheet.create({
   },
   titleRow: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[3],
+  },
+  chipWrap: {
+    flexShrink: 0,
   },
   walletBadge: {
     width: 40,
@@ -136,9 +142,11 @@ const styles = StyleSheet.create({
     borderColor: badgeTones.cyan.border,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   titleBlock: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
   },
   amountBox: {
@@ -160,6 +168,8 @@ const styles = StyleSheet.create({
   },
   metricTile: {
     flex: 1,
+    minWidth: 0,
+    justifyContent: 'space-between',
     gap: space[1],
     paddingVertical: space[2],
     paddingHorizontal: space[2],
@@ -168,11 +178,12 @@ const styles = StyleSheet.create({
   },
   metricHead: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: space[1],
   },
   metricLabel: {
-    flexShrink: 1,
+    flex: 1,
+    minWidth: 0,
   },
   metricValue: {
     fontVariant: ['tabular-nums'],

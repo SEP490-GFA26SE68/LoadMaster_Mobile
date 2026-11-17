@@ -15,7 +15,7 @@ import {
   type LucideIcon,
 } from 'lucide-react-native'
 import { useRef, useState } from 'react'
-import { Dimensions, Modal, Pressable, StyleSheet, View } from 'react-native'
+import { Dimensions, Modal, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
 import { Banner } from '@/components/Banner'
@@ -72,6 +72,8 @@ export function TripCard({ trip }: { readonly trip: DriverTripRow; readonly prim
   const t = useT()
   const format = useFormat()
   const router = useRouter()
+  const { width } = useWindowDimensions()
+  const compact = width < 520
   const preparing = myTripGroup(trip) === 'preparing'
   const upcoming = myTripGroup(trip) === 'upcoming' || trip.status === 'PLANNED'
   const departs = useDriverCapabilities().departFromList && trip.status === 'LOADING'
@@ -158,11 +160,12 @@ export function TripCard({ trip }: { readonly trip: DriverTripRow; readonly prim
         </View>
 
         {hasRightMetrics ? (
-          <View style={styles.rightCol}>
+          <View style={[styles.rightCol, compact && styles.rightColCompact]}>
             {trip.packageCount !== undefined ? (
               <RightMetric
                 icon={Package}
                 tone="cyan"
+                compact={compact}
                 label={t('driver.myTrips.labels.totalPackages')}
                 value={t('driver.myTrips.packages', { count: trip.packageCount })}
               />
@@ -172,6 +175,7 @@ export function TripCard({ trip }: { readonly trip: DriverTripRow; readonly prim
               <RightMetric
                 icon={Weight}
                 tone="warning"
+                compact={compact}
                 label={t('driver.myTrips.labels.totalWeight')}
                 value={format.weight(trip.totalWeightKg)}
               />
@@ -181,6 +185,7 @@ export function TripCard({ trip }: { readonly trip: DriverTripRow; readonly prim
               <RightMetric
                 icon={Route}
                 tone="success"
+                compact={compact}
                 label={t('driver.myTrips.labels.totalDistance')}
                 value={distanceText}
               />
@@ -285,18 +290,35 @@ function LeftFact({
 function RightMetric({
   icon: Icon,
   tone,
+  compact,
   label,
   value,
 }: {
   readonly icon: LucideIcon
   readonly tone: BadgeTone
+  readonly compact: boolean
   readonly label: string
   readonly value: string
 }) {
   const paletteTone = badgeTones[tone]
+  if (compact) {
+    return (
+      <View style={[styles.metricCompactBox, { backgroundColor: paletteTone.bg, borderColor: paletteTone.border }]}>
+        <View style={styles.metricCompactHead}>
+          <Icon size={13} color={paletteTone.fg} strokeWidth={1.75} style={styles.factIcon} />
+          <AppText variant="meta" color={colors.text2} numberOfLines={1} style={styles.metricCompactLabel}>
+            {label}
+          </AppText>
+        </View>
+        <AppText variant="meta" color={paletteTone.fg} numberOfLines={1} style={styles.metricValue}>
+          {value}
+        </AppText>
+      </View>
+    )
+  }
   return (
     <View style={[styles.metricRow, { backgroundColor: paletteTone.bg, borderColor: paletteTone.border }]}>
-      <Icon size={14} color={paletteTone.fg} strokeWidth={1.75} />
+      <Icon size={14} color={paletteTone.fg} strokeWidth={1.75} style={styles.factIcon} />
       <AppText variant="meta" color={colors.text2} numberOfLines={1} style={styles.metricLabel}>
         {label}:
       </AppText>
@@ -328,9 +350,11 @@ function TripActionMenu({
   function handleOpenMenu() {
     buttonRef.current?.measureInWindow?.((x, y, width, height) => {
       if (typeof y === 'number' && typeof height === 'number') {
-        const top = y + height + 4
-        const right = Dimensions.get('window').width - (x + width)
-        setCoords({ top: Math.max(10, top), right: Math.max(10, right) })
+        const win = Dimensions.get('window')
+        const rawTop = y + height + 4
+        const top = Math.min(Math.max(12, win.height - 200), Math.max(12, rawTop))
+        const right = Math.max(12, win.width - (x + width))
+        setCoords({ top, right })
       }
     })
     setOpen(true)
@@ -516,24 +540,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: space[3],
+    gap: space[2],
   },
   leftCol: {
     flex: 1,
-    minWidth: 180,
+    minWidth: 0,
     gap: space[2],
   },
   leftFactRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: space[2],
   },
   factIcon: {
+    marginTop: 3,
     flexShrink: 0,
   },
   leftFactText: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
@@ -551,9 +576,14 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   rightCol: {
-    minWidth: 170,
+    minWidth: 185,
+    flexShrink: 0,
     gap: space[1],
     alignItems: 'stretch',
+  },
+  rightColCompact: {
+    minWidth: 0,
+    width: 132,
   },
   metricRow: {
     flexDirection: 'row',
@@ -565,11 +595,28 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     borderWidth: 1,
   },
+  metricCompactBox: {
+    gap: 1,
+    paddingHorizontal: space[2],
+    paddingVertical: 5,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+  },
+  metricCompactHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[1],
+  },
+  metricCompactLabel: {
+    flex: 1,
+    minWidth: 0,
+  },
   metricLabel: {
     flexShrink: 1,
   },
   metricValue: {
     fontWeight: '700',
+    flexShrink: 0,
     fontVariant: ['tabular-nums'],
   },
   tabularValue: {

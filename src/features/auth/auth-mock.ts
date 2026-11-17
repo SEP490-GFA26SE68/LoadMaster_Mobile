@@ -1,5 +1,7 @@
+import { ApiError } from '@/data/http'
 import { getMockDb } from '@/data/mock-db'
 import type { MockDb } from '@/lib/mock-db'
+import { isMobileRole } from '@/types/user'
 
 import type { AuthAdapter } from './auth-adapter'
 
@@ -12,6 +14,10 @@ export function createMockAuth(db: () => MockDb = getMockDb): AuthAdapter {
     async signIn(email, password) {
       await nextTick()
       const user = await db().authenticate(email, password)
+      if (!isMobileRole(user.role)) {
+        await db().signOut()
+        throw new ApiError('ROLE_NOT_SUPPORTED')
+      }
       return { user, saved: user.id }
     },
     async restore(saved) {

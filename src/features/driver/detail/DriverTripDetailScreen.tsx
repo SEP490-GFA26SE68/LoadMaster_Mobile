@@ -26,7 +26,7 @@ import { ErrorState, LoadingState } from '@/components/StateView'
 import { StopDot } from '@/components/StopDot'
 import { TripStatusChip, TripSubStatusTag } from '@/components/TripStatus'
 import { dataErrorMessage, useFormat, useT } from '@/lib/i18n'
-import { badgeTones, colors, CONTENT_MAX_WIDTH, radius, shadow, space, type BadgeTone } from '@/theme/tokens'
+import { badgeTones, colors, radius, shadow, space, type BadgeTone } from '@/theme/tokens'
 import type { TripSubStatus } from '@/types/trip'
 
 import type { DriverTripDetail, DriverTripDetailStop } from '../driver-model'
@@ -104,8 +104,8 @@ function TripDetailHeroCard({ detail }: { readonly detail: DriverTripDetail }) {
       </View>
       {detail.departureTime ? (
         <View style={[styles.heroMetaPill, { backgroundColor: accent.bg, borderColor: accent.border }]}>
-          <Clock size={16} color={accent.fg} />
-          <AppText variant="meta" color={accent.fg}>
+          <Clock size={16} color={accent.fg} style={styles.noShrink} />
+          <AppText variant="meta" color={accent.fg} style={styles.flexShrink}>
             {t('driver.detail.plannedArrival')}: {format.time(detail.departureTime)} {format.date(detail.departureTime)}
           </AppText>
         </View>
@@ -131,12 +131,14 @@ function DispatcherCard({ dispatcher }: { readonly dispatcher: NonNullable<Drive
         accessibilityState={{ expanded: open }}
         onPress={() => setOpen((prev) => !prev)}
         style={({ pressed }) => [styles.accordionHeader, pressed && styles.accordionHeaderPressed]}>
-        <View style={styles.sectionHeadLeft}>
+        <View style={styles.accordionHeaderLeft}>
           <View style={[styles.iconBadge, { backgroundColor: badgeTones.azure.bg }]}>
             <UserIcon size={18} color={badgeTones.azure.fg} />
           </View>
           <View style={styles.accordionTitleCol}>
-            <AppText variant="heading">{t('driver.detail.dispatcherInfo')}</AppText>
+            <AppText variant="heading" style={styles.flexShrink}>
+              {t('driver.detail.dispatcherInfo')}
+            </AppText>
             {!open ? (
               <AppText variant="meta" color={badgeTones.azure.fg} numberOfLines={1}>
                 {dispatcher.name}
@@ -144,7 +146,9 @@ function DispatcherCard({ dispatcher }: { readonly dispatcher: NonNullable<Drive
             ) : null}
           </View>
         </View>
-        {open ? <ChevronUp size={20} color={badgeTones.azure.fg} /> : <ChevronDown size={20} color={colors.text2} />}
+        <View style={styles.chevronWrap}>
+          {open ? <ChevronUp size={20} color={badgeTones.azure.fg} /> : <ChevronDown size={20} color={colors.text2} />}
+        </View>
       </Pressable>
       {open ? (
         <View style={[styles.recipientCard, { borderColor: badgeTones.azure.border, backgroundColor: badgeTones.azure.bg }]}>
@@ -228,12 +232,14 @@ function VehicleDetailCard({ detail }: { readonly detail: DriverTripDetail }) {
         accessibilityState={{ expanded: open }}
         onPress={() => setOpen((prev) => !prev)}
         style={({ pressed }) => [styles.accordionHeader, pressed && styles.accordionHeaderPressed]}>
-        <View style={styles.sectionHeadLeft}>
+        <View style={styles.accordionHeaderLeft}>
           <View style={[styles.iconBadge, { backgroundColor: badgeTones.warning.bg }]}>
             <Truck size={18} color={badgeTones.warning.fg} />
           </View>
           <View style={styles.accordionTitleCol}>
-            <AppText variant="heading">{t('driver.detail.vehicleInfo')}</AppText>
+            <AppText variant="heading" style={styles.flexShrink}>
+              {t('driver.detail.vehicleInfo')}
+            </AppText>
             {!open && detail.vehicle?.licensePlate ? (
               <AppText variant="meta" color={badgeTones.warning.fg} numberOfLines={1}>
                 {detail.vehicle.licensePlate}
@@ -242,7 +248,9 @@ function VehicleDetailCard({ detail }: { readonly detail: DriverTripDetail }) {
             ) : null}
           </View>
         </View>
-        {open ? <ChevronUp size={20} color={badgeTones.warning.fg} /> : <ChevronDown size={20} color={colors.text2} />}
+        <View style={styles.chevronWrap}>
+          {open ? <ChevronUp size={20} color={badgeTones.warning.fg} /> : <ChevronDown size={20} color={colors.text2} />}
+        </View>
       </Pressable>
       {open ? (
         detail.vehicle ? (
@@ -474,13 +482,17 @@ function StopDetailCard({ stop }: { readonly stop: DriverTripDetailStop }) {
         accessibilityState={{ expanded: stopOpen }}
         onPress={() => setStopOpen((prev) => !prev)}
         style={({ pressed }) => [styles.stopAccordionHeader, pressed && styles.accordionHeaderPressed]}>
-        <StopDot number={stop.number} />
+        <View style={styles.noShrink}>
+          <StopDot number={stop.number} />
+        </View>
         <View style={styles.stopAddressCol}>
           <AppText variant="label" color={colors.text} numberOfLines={stopOpen ? undefined : 2} style={styles.stopAddressText}>
             {addressDisplay}
           </AppText>
         </View>
-        {stopOpen ? <ChevronUp size={20} color={borderAccent} /> : <ChevronDown size={20} color={colors.text2} />}
+        <View style={styles.chevronWrap}>
+          {stopOpen ? <ChevronUp size={20} color={borderAccent} /> : <ChevronDown size={20} color={colors.text2} />}
+        </View>
       </Pressable>
 
       {stopOpen ? (
@@ -582,12 +594,14 @@ function StopDetailCard({ stop }: { readonly stop: DriverTripDetailStop }) {
                 onPress={() => setPackagesOpen((prev) => !prev)}
                 style={({ pressed }) => [styles.packagesDropdownHeader, pressed && styles.accordionHeaderPressed]}>
                 <View style={styles.packagesHead}>
-                  <Package size={16} color={badgeTones.cyan.fg} />
-                  <AppText variant="label" color={badgeTones.cyan.fg}>
+                  <Package size={16} color={badgeTones.cyan.fg} style={styles.noShrink} />
+                  <AppText variant="label" color={badgeTones.cyan.fg} style={styles.flexShrink}>
                     {t('driver.detail.packagesInStop', { count: stop.packages.length })}
                   </AppText>
                 </View>
-                {packagesOpen ? <ChevronUp size={18} color={badgeTones.cyan.fg} /> : <ChevronDown size={18} color={badgeTones.cyan.fg} />}
+                <View style={styles.chevronWrap}>
+                  {packagesOpen ? <ChevronUp size={18} color={badgeTones.cyan.fg} /> : <ChevronDown size={18} color={badgeTones.cyan.fg} />}
+                </View>
               </Pressable>
               {packagesOpen ? (
                 <>
@@ -714,13 +728,10 @@ function TripDetailFooter({ detail }: { readonly detail: DriverTripDetail }) {
 }
 
 const styles = StyleSheet.create({
+  // Screen(scroll=true) đã có paddingHorizontal và maxWidth: tránh lồng padding kép làm hẹp thẻ trên màn nhỏ
   content: {
     width: '100%',
-    maxWidth: CONTENT_MAX_WIDTH,
-    alignSelf: 'center',
-    padding: space[4],
     gap: space[4],
-    paddingBottom: space[8],
   },
   heroCard: {
     gap: space[2],
@@ -739,7 +750,7 @@ const styles = StyleSheet.create({
   },
   metaRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: space[2],
   },
   sectionHead: {
@@ -752,12 +763,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: space[2],
     marginBottom: space[2],
   },
   sectionHeadLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 1,
+    minWidth: 0,
     gap: space[2],
+  },
+  accordionHeaderLeft: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+  },
+  chevronWrap: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  noShrink: {
+    flexShrink: 0,
   },
   depotName: {
     fontSize: 16,
@@ -773,11 +805,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: space[2],
   },
   vehiclePayloadCol: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: space[2],
   },
   mapContainer: {
@@ -820,6 +854,7 @@ const styles = StyleSheet.create({
   },
   metaIcon: {
     marginTop: 2,
+    flexShrink: 0,
   },
   recipientSection: {
     gap: space[1],
@@ -834,6 +869,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: space[2],
     backgroundColor: colors.surface,
     padding: space[3],
     borderRadius: radius.md,
@@ -841,16 +878,21 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   recipientInfo: {
+    flex: 1,
+    minWidth: 140,
     gap: 2,
   },
   timingRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: space[2],
     paddingTop: space[2],
     borderTopWidth: 1,
     borderTopColor: colors.lineSoft,
   },
   timingItem: {
+    flex: 1,
+    minWidth: 130,
     gap: 2,
   },
   packagesSection: {
@@ -860,6 +902,8 @@ const styles = StyleSheet.create({
     gap: space[2],
   },
   packagesHead: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[2],
@@ -888,6 +932,7 @@ const styles = StyleSheet.create({
   },
   packageWeight: {
     marginLeft: space[2],
+    flexShrink: 0,
     fontVariant: ['tabular-nums'],
   },
   expandButton: {
@@ -911,6 +956,7 @@ const styles = StyleSheet.create({
   },
   stopActionButtons: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: space[2],
   },
@@ -932,6 +978,7 @@ const styles = StyleSheet.create({
   },
   accordionTitleCol: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
   },
   packagesDropdownHeader: {
@@ -954,6 +1001,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space[2],
     alignSelf: 'flex-start',
+    maxWidth: '100%',
     paddingHorizontal: space[3],
     paddingVertical: space[1],
     borderRadius: radius.pill,
@@ -965,6 +1013,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   platePill: {
     paddingHorizontal: space[2],
@@ -981,11 +1030,13 @@ const styles = StyleSheet.create({
   stopAccordionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space[3],
+    justifyContent: 'space-between',
+    gap: space[2],
     paddingVertical: space[1],
   },
   stopAddressCol: {
     flex: 1,
+    minWidth: 0,
   },
   stopAddressText: {
     flexShrink: 1,
