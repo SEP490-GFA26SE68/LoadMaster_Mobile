@@ -121,21 +121,40 @@ export function routeMapHtml(payload: RouteMapPayload): string {
     el.innerHTML='<i></i>';
     vehicleMarker=marker(el,lngLat);
   }
-  map.on('load', function(){
+  var styleLoaded = false;
+  var markersAdded = false;
+  function renderMapContent(){
     draw();
-    if(data.depot){
-      var d=document.createElement('div');
-      d.className='pin depot';
-      marker(d,data.depot);
+    if(!markersAdded){
+      if(data.depot){
+        var d=document.createElement('div');
+        d.className='pin depot';
+        marker(d,data.depot);
+      }
+      data.stops.forEach(function(s){ marker(stopEl(s), s.lngLat); });
+      placeVehicle(data.vehicle);
+      markersAdded = true;
     }
-    data.stops.forEach(function(s){ marker(stopEl(s), s.lngLat); });
-    placeVehicle(data.vehicle);
+    map.resize();
     fit();
     if(window.ReactNativeWebView) window.ReactNativeWebView.postMessage('ready');
+  }
+  map.on('style.load', function(){
+    styleLoaded = true;
+    renderMapContent();
+  });
+  map.on('load', function(){
+    renderMapContent();
   });
   map.on('error', function(){
-    if(data.styleUrl){ data.styleUrl=undefined; map.setStyle(empty); }
+    if(!styleLoaded && data.styleUrl){
+      data.styleUrl = undefined;
+      map.setStyle(empty);
+    }
   });
+  window.addEventListener('resize', function(){ map.resize(); });
+  setTimeout(function(){ map.resize(); fit(); }, 200);
+  setTimeout(function(){ map.resize(); fit(); }, 600);
   window.__lmVehicle=function(lng,lat){ placeVehicle(lng==null?null:[lng,lat]); };
 })();
 </script>

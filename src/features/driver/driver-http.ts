@@ -1,4 +1,5 @@
 import { api, ApiError, currentUserId, type ApiClient } from '@/data/http'
+import { pathFromEncodedPolylines } from '@/domain/routing/polyline'
 import { driverNotificationsOf, fetchServerNotifications, markServerNotificationsRead } from '@/features/bell/server-notifications'
 
 import type { DriverApi } from './driver-api'
@@ -171,7 +172,20 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
 
     // GET /api/driver/trips/{id}/detail
     async fetchTripDetail(tripId: string): Promise<DriverTripDetail> {
-      return tripDetailOf(await client().get<DriverTripDetailDto>(`/api/driver/trips/${encodeURIComponent(tripId)}/detail`))
+      const detail = tripDetailOf(await client().get<DriverTripDetailDto>(`/api/driver/trips/${encodeURIComponent(tripId)}/detail`))
+      try {
+        const plan = await activePlan(tripId)
+        if (plan?.legs && plan.legs.length > 0) {
+          const ordered = [...plan.legs].sort((a, b) => a.legSequence - b.legSequence)
+          const path = pathFromEncodedPolylines(ordered.map((l) => l.polyline))
+          if (path.length > 0) {
+            return { ...detail, path }
+          }
+        }
+      } catch {
+        // activePlan is optional
+      }
+      return detail
     },
 
     fetchTripScreen,

@@ -94,6 +94,7 @@ export type DriverTripDetailPackageDto = {
   readonly weightKg: number | null
   readonly status: string | null
   readonly unloadOrder: number | null
+  readonly handlingClass?: string | null
 }
 
 export type DriverTripDetailStopDto = {
@@ -133,6 +134,10 @@ export type DriverTripDetailDto = {
   readonly licensePlate: string | null
   readonly maxPayloadKg: number | null
   readonly vehicleTypeName: string | null
+  readonly innerLengthCm?: number | null
+  readonly innerWidthCm?: number | null
+  readonly innerHeightCm?: number | null
+  readonly maxVolumeM3?: number | null
   readonly totalStops: number | null
   readonly totalPackages: number | null
   readonly totalWeightKg: number | null

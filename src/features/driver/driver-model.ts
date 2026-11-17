@@ -1,3 +1,4 @@
+import type { GeoPoint } from '@/domain/routing'
 import type { DriverNotice } from '@/features/notifications/notifications'
 import type { DeliveryIssueKind, LabelVerifyMethod, ManualConfirmReason, StopKind, TripExceptionType } from '@/lib/mock-db'
 import type { TripStatus, TripSubStatus } from '@/types/trip'
@@ -278,6 +279,7 @@ export type DriverTripDetailPackage = {
   readonly weightKg?: number
   readonly status: string
   readonly unloadOrder?: number
+  readonly handlingClass?: string
 }
 
 /** Điểm dừng trong màn hình chi tiết chuyến của tài xế. */
@@ -322,6 +324,10 @@ export type DriverTripDetail = {
     readonly licensePlate: string
     readonly maxPayloadKg?: number
     readonly typeName?: string
+    readonly innerLengthCm?: number
+    readonly innerWidthCm?: number
+    readonly innerHeightCm?: number
+    readonly maxVolumeM3?: number
   }
   readonly totalStops: number
   readonly totalPackages: number
@@ -332,5 +338,6 @@ export type DriverTripDetail = {
   }
   readonly totalDistanceMeters?: number
   readonly totalDurationSeconds?: number
+  readonly path?: readonly GeoPoint[]
   readonly stops: readonly DriverTripDetailStop[]
 }

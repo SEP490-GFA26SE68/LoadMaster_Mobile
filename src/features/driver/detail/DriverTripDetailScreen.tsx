@@ -1,6 +1,19 @@
+import { useState } from 'react'
 import { useRouter } from 'expo-router'
-import { ArrowLeft, Clock, MapPin, Navigation, Package, Phone, Truck, User as UserIcon, Warehouse } from 'lucide-react-native'
-import { Linking, StyleSheet, View } from 'react-native'
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  MapPin,
+  Navigation,
+  Package,
+  Phone,
+  Truck,
+  User as UserIcon,
+  Warehouse,
+} from 'lucide-react-native'
+import { Linking, Pressable, StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
 import { Banner } from '@/components/Banner'
@@ -11,9 +24,10 @@ import { IconButton } from '@/components/IconButton'
 import { Screen } from '@/components/Screen'
 import { ErrorState, LoadingState } from '@/components/StateView'
 import { StopDot } from '@/components/StopDot'
-import { TripStatusChip } from '@/components/TripStatus'
+import { TripStatusChip, TripSubStatusTag } from '@/components/TripStatus'
 import { dataErrorMessage, useFormat, useT } from '@/lib/i18n'
-import { colors, CONTENT_MAX_WIDTH, radius, space } from '@/theme/tokens'
+import { colors, CONTENT_MAX_WIDTH, radius, shadow, space } from '@/theme/tokens'
+import type { TripSubStatus } from '@/types/trip'
 
 import type { DriverTripDetail, DriverTripDetailStop } from '../driver-model'
 import { RouteMap } from '../RouteMap'
@@ -37,14 +51,15 @@ export function DriverTripDetailScreen({ tripId }: { readonly tripId: string }) 
     <Screen
       title={data?.code ?? t('driver.detail.title')}
       leading={<IconButton icon={ArrowLeft} tone="sky" label={t('common.back')} onPress={back} />}
-      below={data ? <TripDetailSummaryBand detail={data} /> : undefined}
       scroll={data !== undefined}
       refresh={data !== undefined ? { refreshing: query.isRefetching, onRefresh: () => void query.refetch() } : undefined}
       footer={data ? <TripDetailFooter detail={data} /> : undefined}>
       {data ? (
         <View style={styles.content}>
+          <TripDetailHeroCard detail={data} />
           {data.dispatcher ? <DispatcherCard dispatcher={data.dispatcher} /> : null}
-          <DepotAndVehicleCard detail={data} />
+          <DepotCard detail={data} />
+          <VehicleDetailCard detail={data} />
           <TripRouteMapSection detail={data} />
           <StopsTimelineSection stops={data.stops} />
         </View>
@@ -57,17 +72,27 @@ export function DriverTripDetailScreen({ tripId }: { readonly tripId: string }) 
   )
 }
 
-function TripDetailSummaryBand({ detail }: { readonly detail: DriverTripDetail }) {
+function TripDetailHeroCard({ detail }: { readonly detail: DriverTripDetail }) {
   const t = useT()
   const format = useFormat()
 
+  const sub: TripSubStatus | null =
+    detail.status === 'LOADING'
+      ? detail.loadingCompleted
+        ? { kind: 'loaded' }
+        : { kind: 'loading', recorded: 0, total: detail.totalPackages }
+      : null
+
   return (
-    <View style={styles.summaryBand}>
-      <View style={styles.summaryRow}>
+    <Card style={styles.heroCard}>
+      <View style={styles.heroHeader}>
         <AppText variant="heading" style={styles.codeText}>
           {detail.code}
         </AppText>
-        <TripStatusChip status={detail.status} />
+        <View style={styles.chipsRow}>
+          <TripStatusChip status={detail.status} />
+          {sub ? <TripSubStatusTag sub={sub} /> : null}
+        </View>
       </View>
       {detail.departureTime ? (
         <View style={styles.metaRow}>
@@ -77,7 +102,7 @@ function TripDetailSummaryBand({ detail }: { readonly detail: DriverTripDetail }
           </AppText>
         </View>
       ) : null}
-    </View>
+    </Card>
   )
 }
 
@@ -106,7 +131,7 @@ function DispatcherCard({ dispatcher }: { readonly dispatcher: NonNullable<Drive
           </AppText>
         </View>
         {dispatcher.phone ? (
-          <Button icon={Phone} variant="secondary" onPress={handleCall}>
+          <Button icon={Phone} variant="secondary" style={styles.compactBtn} onPress={handleCall}>
             {t('driver.detail.dispatcherCall')}
           </Button>
         ) : null}
@@ -115,7 +140,7 @@ function DispatcherCard({ dispatcher }: { readonly dispatcher: NonNullable<Drive
   )
 }
 
-function DepotAndVehicleCard({ detail }: { readonly detail: DriverTripDetail }) {
+function DepotCard({ detail }: { readonly detail: DriverTripDetail }) {
   const t = useT()
 
   const handleNavToDepot = () => {
@@ -125,16 +150,18 @@ function DepotAndVehicleCard({ detail }: { readonly detail: DriverTripDetail }) 
     }
   }
 
-  const payloadUtilization =
-    detail.vehicle?.maxPayloadKg && detail.totalWeightKg !== undefined
-      ? Math.round((detail.totalWeightKg / detail.vehicle.maxPayloadKg) * 100)
-      : undefined
-
   return (
     <Card>
-      <View style={styles.sectionHead}>
-        <Warehouse size={20} color={colors.primary} />
-        <AppText variant="heading">{t('driver.detail.depotInfo')}</AppText>
+      <View style={styles.sectionHeadBetween}>
+        <View style={styles.sectionHeadLeft}>
+          <Warehouse size={20} color={colors.primary} />
+          <AppText variant="heading">{t('driver.detail.depotInfo')}</AppText>
+        </View>
+        {detail.depot.address || (detail.depot.lat && detail.depot.lng) ? (
+          <Button icon={Navigation} variant="secondary" style={styles.compactBtn} onPress={handleNavToDepot}>
+            {t('driver.detail.navToDepot')}
+          </Button>
+        ) : null}
       </View>
       <AppText variant="label" style={styles.depotName}>
         {detail.depot.name}
@@ -147,74 +174,84 @@ function DepotAndVehicleCard({ detail }: { readonly detail: DriverTripDetail }) 
           </AppText>
         </View>
       ) : null}
-      {detail.depot.address || (detail.depot.lat && detail.depot.lng) ? (
-        <View style={styles.depotActionRow}>
-          <Button icon={Navigation} variant="secondary" onPress={handleNavToDepot}>
-            {t('driver.detail.navToDepot')}
-          </Button>
-        </View>
-      ) : null}
+    </Card>
+  )
+}
 
-      <View style={styles.divider} />
+function VehicleDetailCard({ detail }: { readonly detail: DriverTripDetail }) {
+  const t = useT()
 
+  const payloadUtilization =
+    detail.vehicle?.maxPayloadKg && detail.totalWeightKg !== undefined
+      ? Math.round((detail.totalWeightKg / detail.vehicle.maxPayloadKg) * 100)
+      : undefined
+
+  const dimensions =
+    detail.vehicle?.innerLengthCm && detail.vehicle?.innerWidthCm && detail.vehicle?.innerHeightCm
+      ? `${(detail.vehicle.innerLengthCm / 100).toFixed(1)} × ${(detail.vehicle.innerWidthCm / 100).toFixed(1)} × ${(detail.vehicle.innerHeightCm / 100).toFixed(1)} m`
+      : undefined
+
+  return (
+    <Card>
       <View style={styles.sectionHead}>
         <Truck size={20} color={colors.primary} />
         <AppText variant="heading">{t('driver.detail.vehicleInfo')}</AppText>
       </View>
       {detail.vehicle ? (
-        <View style={styles.vehicleDetails}>
-          <AppText variant="label">
-            {t('driver.detail.licensePlate', { plate: detail.vehicle.licensePlate })}
-          </AppText>
-          {detail.vehicle.name ? <AppText color={colors.text2}>{detail.vehicle.name}</AppText> : null}
+        <View style={styles.vehicleGrid}>
+          <View style={styles.vehicleRow}>
+            <AppText color={colors.text3}>{t('driver.detail.licensePlateLabel')}:</AppText>
+            <AppText variant="label" style={styles.codeText}>{detail.vehicle.licensePlate}</AppText>
+          </View>
+          {detail.vehicle.typeName ? (
+            <View style={styles.vehicleRow}>
+              <AppText color={colors.text3}>{t('driver.detail.vehicleType')}:</AppText>
+              <AppText variant="label">{detail.vehicle.typeName}</AppText>
+            </View>
+          ) : detail.vehicle.name ? (
+            <View style={styles.vehicleRow}>
+              <AppText color={colors.text3}>{t('driver.detail.vehicleNameLabel')}:</AppText>
+              <AppText variant="label">{detail.vehicle.name}</AppText>
+            </View>
+          ) : null}
+          {dimensions ? (
+            <View style={styles.vehicleRow}>
+              <AppText color={colors.text3}>{t('driver.detail.cargoDimensions')}:</AppText>
+              <AppText variant="label">{dimensions}</AppText>
+            </View>
+          ) : null}
+          {detail.vehicle.maxVolumeM3 ? (
+            <View style={styles.vehicleRow}>
+              <AppText color={colors.text3}>{t('driver.detail.cargoVolume')}:</AppText>
+              <AppText variant="label">{detail.vehicle.maxVolumeM3} m³</AppText>
+            </View>
+          ) : null}
           {detail.vehicle.maxPayloadKg ? (
-            <View style={styles.vehicleMetaRow}>
-              <AppText color={colors.text3}>
-                {t('driver.detail.maxPayload', { weight: detail.vehicle.maxPayloadKg })}
-              </AppText>
-              {payloadUtilization !== undefined ? (
-                <Chip
-                  tone={
-                    payloadUtilization > 100
-                      ? 'danger'
-                      : payloadUtilization > 85
-                        ? 'warning'
-                        : 'cyan'
-                  }
-                  label={t('driver.detail.payloadUtilization', {
-                    percent: payloadUtilization,
-                  })}
-                />
-              ) : null}
+            <View style={styles.vehicleRow}>
+              <AppText color={colors.text3}>{t('driver.detail.maxPayloadLabel')}:</AppText>
+              <View style={styles.vehiclePayloadCol}>
+                <AppText variant="label">{detail.vehicle.maxPayloadKg} kg</AppText>
+                {payloadUtilization !== undefined ? (
+                  <Chip
+                    tone={
+                      payloadUtilization > 100
+                        ? 'danger'
+                        : payloadUtilization > 85
+                          ? 'warning'
+                          : 'cyan'
+                    }
+                    label={t('driver.detail.payloadUtilization', {
+                      percent: payloadUtilization,
+                    })}
+                  />
+                ) : null}
+              </View>
             </View>
           ) : null}
         </View>
       ) : (
         <AppText color={colors.text3}>--</AppText>
       )}
-
-      <View style={styles.divider} />
-
-      <View style={styles.factsGrid}>
-        <View style={styles.factItem}>
-          <AppText variant="meta" color={colors.text3}>
-            {t('driver.detail.summary')}
-          </AppText>
-          <AppText variant="heading" color={colors.primary}>
-            {t('driver.detail.stopsCount', { count: detail.totalStops })}
-          </AppText>
-        </View>
-        <View style={styles.factItem}>
-          <AppText variant="meta" color={colors.text3}>
-            {t('driver.detail.packagesCount', { count: detail.totalPackages })}
-          </AppText>
-          {detail.totalWeightKg !== undefined ? (
-            <AppText variant="label" color={colors.text2}>
-              {detail.totalWeightKg} kg
-            </AppText>
-          ) : null}
-        </View>
-      </View>
     </Card>
   )
 }
@@ -280,7 +317,12 @@ function TripRouteMapSection({ detail }: { readonly detail: DriverTripDetail }) 
         </View>
       ) : null}
       <View style={styles.mapContainer}>
-        <RouteMap label={t('driver.detail.routeMap')} depot={depot} stops={stops} />
+        <RouteMap
+          label={t('driver.detail.routeMap')}
+          depot={depot}
+          stops={stops}
+          path={detail.path}
+        />
       </View>
     </Card>
   )
@@ -304,6 +346,7 @@ function StopsTimelineSection({ stops }: { readonly stops: readonly DriverTripDe
 function StopDetailCard({ stop }: { readonly stop: DriverTripDetailStop }) {
   const t = useT()
   const format = useFormat()
+  const [expanded, setExpanded] = useState(false)
 
   const handleCall = () => {
     if (stop.contactPhone) {
@@ -321,6 +364,10 @@ function StopDetailCard({ stop }: { readonly stop: DriverTripDetailStop }) {
   const statusTone =
     stop.status === 'COMPLETED' ? 'success' : stop.status === 'ARRIVED' ? 'azure' : 'neutral'
 
+  const INITIAL_PKG_LIMIT = 3
+  const visiblePackages = expanded ? stop.packages : stop.packages.slice(0, INITIAL_PKG_LIMIT)
+  const hasMorePackages = stop.packages.length > INITIAL_PKG_LIMIT
+
   return (
     <Card style={styles.stopCard}>
       <View style={styles.stopHead}>
@@ -330,8 +377,24 @@ function StopDetailCard({ stop }: { readonly stop: DriverTripDetailStop }) {
             {stop.name}
           </AppText>
           <View style={styles.chipsRow}>
-            <Chip tone={statusTone} label={stop.status} />
-            <Chip tone="cyan" label={stop.kind} />
+            <Chip
+              tone={statusTone}
+              label={
+                stop.status === 'COMPLETED'
+                  ? t('driver.detail.stopStatus.COMPLETED')
+                  : stop.status === 'ARRIVED'
+                    ? t('driver.detail.stopStatus.ARRIVED')
+                    : t('driver.detail.stopStatus.PENDING')
+              }
+            />
+            <Chip
+              tone="cyan"
+              label={
+                stop.kind === 'PICKUP'
+                  ? t('driver.detail.stopKind.PICKUP')
+                  : t('driver.detail.stopKind.DELIVERY')
+              }
+            />
             {stop.plannedStatus && stop.plannedStatus !== 'OK' ? (
               <Chip tone={stop.plannedStatus === 'MISSED' ? 'danger' : 'warning'} label={stop.plannedStatus} />
             ) : null}
@@ -346,26 +409,34 @@ function StopDetailCard({ stop }: { readonly stop: DriverTripDetailStop }) {
         </AppText>
       </View>
 
-      <View style={styles.recipientCard}>
-        <View style={styles.recipientInfo}>
-          <AppText variant="label" color={colors.text}>
-            {stop.contactName ?? t('driver.detail.contact')}
-          </AppText>
-          <AppText color={colors.text2}>
-            {stop.contactPhone ?? t('driver.detail.noPhone')}
+      <View style={styles.recipientSection}>
+        <View style={styles.recipientHeaderRow}>
+          <UserIcon size={15} color={colors.primary} />
+          <AppText variant="meta" color={colors.text3}>
+            {t('driver.detail.customerInfo')}
           </AppText>
         </View>
-        <View style={styles.stopActionButtons}>
-          {stop.address || (stop.lat && stop.lng) ? (
-            <Button icon={Navigation} variant="secondary" onPress={handleNavigate}>
-              {t('driver.detail.navigate')}
-            </Button>
-          ) : null}
-          {stop.contactPhone ? (
-            <Button icon={Phone} variant="secondary" onPress={handleCall}>
-              {t('driver.detail.call')}
-            </Button>
-          ) : null}
+        <View style={styles.recipientCard}>
+          <View style={styles.recipientInfo}>
+            <AppText variant="label" color={colors.text}>
+              {stop.contactName ?? t('driver.detail.contact')}
+            </AppText>
+            {stop.contactPhone ? (
+              <AppText color={colors.text2}>{stop.contactPhone}</AppText>
+            ) : null}
+          </View>
+          <View style={styles.stopActionButtons}>
+            {stop.address || (stop.lat && stop.lng) ? (
+              <Button icon={Navigation} variant="secondary" style={styles.compactBtn} onPress={handleNavigate}>
+                {t('driver.detail.navigate')}
+              </Button>
+            ) : null}
+            {stop.contactPhone ? (
+              <Button icon={Phone} variant="secondary" style={styles.compactBtn} onPress={handleCall}>
+                {t('driver.detail.call')}
+              </Button>
+            ) : null}
+          </View>
         </View>
       </View>
 
@@ -400,19 +471,71 @@ function StopDetailCard({ stop }: { readonly stop: DriverTripDetailStop }) {
               {t('driver.detail.packagesInStop', { count: stop.packages.length })}
             </AppText>
           </View>
-          {stop.packages.map((pkg) => (
-            <View key={pkg.id} style={styles.packageItem}>
-              <View style={styles.packageInfo}>
-                <AppText variant="label" style={styles.codeText}>
-                  {pkg.barcode || pkg.code}
-                </AppText>
-                {pkg.name ? <AppText color={colors.text2}>{pkg.name}</AppText> : null}
+          {visiblePackages.map((pkg) => {
+            const hasSpecialHandling = pkg.handlingClass && pkg.handlingClass !== 'STANDARD'
+            const handlingLabel = hasSpecialHandling
+              ? pkg.handlingClass === 'FRAGILE'
+                ? t('driver.detail.handling.FRAGILE')
+                : pkg.handlingClass === 'REFRIGERATED'
+                  ? t('driver.detail.handling.REFRIGERATED')
+                  : pkg.handlingClass === 'HAZARDOUS'
+                    ? t('driver.detail.handling.HAZARDOUS')
+                    : pkg.handlingClass === 'HIGH_VALUE'
+                      ? t('driver.detail.handling.HIGH_VALUE')
+                      : pkg.handlingClass
+              : undefined
+
+            return (
+              <View key={pkg.id} style={styles.packageItem}>
+                <View style={styles.packageInfo}>
+                  <View style={styles.packageNameRow}>
+                    <AppText variant="label">{pkg.name || pkg.code}</AppText>
+                    {handlingLabel ? (
+                      <Chip
+                        tone={
+                          pkg.handlingClass === 'FRAGILE' || pkg.handlingClass === 'HAZARDOUS'
+                            ? 'danger'
+                            : pkg.handlingClass === 'HIGH_VALUE'
+                              ? 'warning'
+                              : 'cyan'
+                        }
+                        label={handlingLabel}
+                      />
+                    ) : null}
+                  </View>
+                  {pkg.barcode || (pkg.code && pkg.code !== pkg.name) ? (
+                    <AppText variant="meta" color={colors.text3} style={styles.codeText}>
+                      {t('driver.detail.packageCode', { code: pkg.barcode || pkg.code })}
+                    </AppText>
+                  ) : null}
+                </View>
+                {pkg.weightKg ? (
+                  <AppText color={colors.text2} style={styles.packageWeight}>
+                    {pkg.weightKg} kg
+                  </AppText>
+                ) : null}
               </View>
-              {pkg.weightKg ? (
-                <AppText color={colors.text3}>{pkg.weightKg} kg</AppText>
-              ) : null}
-            </View>
-          ))}
+            )
+          })}
+          {hasMorePackages ? (
+            <Pressable
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.expandButton, pressed && styles.expandButtonPressed]}
+              onPress={() => setExpanded((prev) => !prev)}>
+              <AppText variant="label" color={colors.primary}>
+                {expanded
+                  ? t('driver.detail.collapsePackages')
+                  : t('driver.detail.viewMorePackages', {
+                      count: stop.packages.length - INITIAL_PKG_LIMIT,
+                    })}
+              </AppText>
+              {expanded ? (
+                <ChevronUp size={16} color={colors.primary} />
+              ) : (
+                <ChevronDown size={16} color={colors.primary} />
+              )}
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
     </Card>
@@ -465,18 +588,17 @@ const styles = StyleSheet.create({
     gap: space[4],
     paddingBottom: space[8],
   },
-  summaryBand: {
-    paddingHorizontal: space[4],
-    paddingVertical: space[3],
-    backgroundColor: colors.bg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    gap: space[1],
+  heroCard: {
+    gap: space[2],
+    borderRadius: radius.xl,
+    ...shadow.card,
   },
-  summaryRow: {
+  heroHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: space[2],
   },
   codeText: {
     fontVariant: ['tabular-nums'],
@@ -492,6 +614,17 @@ const styles = StyleSheet.create({
     gap: space[2],
     marginBottom: space[2],
   },
+  sectionHeadBetween: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: space[2],
+  },
+  sectionHeadLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+  },
   depotName: {
     fontSize: 16,
     marginBottom: space[1],
@@ -499,20 +632,19 @@ const styles = StyleSheet.create({
   flexShrink: {
     flexShrink: 1,
   },
-  divider: {
-    height: 1,
-    backgroundColor: colors.lineSoft,
-    marginVertical: space[3],
+  vehicleGrid: {
+    gap: space[2],
   },
-  vehicleDetails: {
-    gap: space[1],
-  },
-  factsGrid: {
+  vehicleRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
+    gap: space[2],
   },
-  factItem: {
-    gap: space[1],
+  vehiclePayloadCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
   },
   mapContainer: {
     height: 220,
@@ -544,6 +676,7 @@ const styles = StyleSheet.create({
   },
   chipsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: space[2],
   },
   addressRow: {
@@ -553,6 +686,15 @@ const styles = StyleSheet.create({
   },
   metaIcon: {
     marginTop: 2,
+  },
+  recipientSection: {
+    gap: space[1],
+  },
+  recipientHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[1],
+    marginBottom: 2,
   },
   recipientCard: {
     flexDirection: 'row',
@@ -595,17 +737,30 @@ const styles = StyleSheet.create({
     paddingVertical: space[1],
   },
   packageInfo: {
+    flex: 1,
     gap: 2,
   },
-  depotActionRow: {
-    marginTop: space[2],
-    flexDirection: 'row',
-  },
-  vehicleMetaRow: {
+  packageNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[2],
     flexWrap: 'wrap',
+  },
+  packageWeight: {
+    marginLeft: space[2],
+  },
+  expandButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space[1],
+    paddingVertical: space[2],
+    marginTop: space[1],
+    borderRadius: radius.sm,
+    backgroundColor: colors.surface,
+  },
+  expandButtonPressed: {
+    backgroundColor: colors.lineSoft,
   },
   routeMetricsRow: {
     flexDirection: 'row',
@@ -617,5 +772,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space[2],
+  },
+  compactBtn: {
+    minHeight: 38,
+    paddingHorizontal: space[3],
+    paddingVertical: space[1],
   },
 })

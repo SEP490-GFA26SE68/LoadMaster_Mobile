@@ -100,6 +100,10 @@ export function tripDetailOf(dto: DriverTripDetailDto): DriverTripDetail {
           licensePlate: dto.licensePlate ?? '',
           maxPayloadKg: dto.maxPayloadKg ?? undefined,
           typeName: dto.vehicleTypeName ?? undefined,
+          innerLengthCm: dto.innerLengthCm ?? undefined,
+          innerWidthCm: dto.innerWidthCm ?? undefined,
+          innerHeightCm: dto.innerHeightCm ?? undefined,
+          maxVolumeM3: dto.maxVolumeM3 ?? undefined,
         }
       : undefined,
     totalStops: dto.totalStops ?? (dto.stops?.length ?? 0),
@@ -138,6 +142,7 @@ export function tripDetailOf(dto: DriverTripDetailDto): DriverTripDetail {
         weightKg: pkg.weightKg ?? undefined,
         status: pkg.status ?? '',
         unloadOrder: pkg.unloadOrder ?? undefined,
+        handlingClass: pkg.handlingClass ?? undefined,
       })),
     })),
   }

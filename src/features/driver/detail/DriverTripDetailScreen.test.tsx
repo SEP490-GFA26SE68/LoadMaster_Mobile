@@ -29,14 +29,31 @@ describe('màn hình Chi tiết chuyến đi của tài xế', () => {
     // Mã chuyến và tiêu đề
     expect(await screen.findByRole('header', { name: LOADED_TRIP })).toBeOnTheScreen()
 
+    // Hero Card có cả trạng thái chính và trạng thái phụ (sub-status)
+    expect(screen.getByText('Đang xếp hàng')).toBeOnTheScreen()
+    expect(screen.getByText('Xếp xong — chờ xuất phát')).toBeOnTheScreen()
+
     // Kho xuất phát
     expect(await screen.findByText('Kho Long Bình')).toBeOnTheScreen()
 
-    // Phương tiện vận chuyển
+    // Phương tiện vận chuyển đầy đủ thông tin
     expect(screen.getByText('Phương tiện vận chuyển')).toBeOnTheScreen()
+    expect(screen.getByText('Biển số xe:')).toBeOnTheScreen()
+    expect(screen.getByText('Loại xe:')).toBeOnTheScreen()
+    expect(screen.getByText('Thể tích thùng:')).toBeOnTheScreen()
+    expect(screen.getByText('8.43 m³')).toBeOnTheScreen()
 
-    // Điểm dừng và kiện hàng
-    expect(await screen.findByText('PKG-004')).toBeOnTheScreen()
+    // Không còn phần Tổng quan chuyến thừa
+    expect(screen.queryByText('Tổng quan chuyến')).toBeNull()
+
+    // Trạng thái điểm dừng đã Việt hóa và có nhãn Thông tin khách nhận
+    expect(screen.getAllByText('Chờ giao').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Giao hàng').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Thông tin khách nhận').length).toBeGreaterThan(0)
+
+    // Điểm dừng và kiện hàng (kèm loại dễ vỡ)
+    expect(await screen.findByText(/PKG-004/)).toBeOnTheScreen()
+    expect(screen.getAllByText('Dễ vỡ').length).toBeGreaterThan(0)
   })
 
   test('bấm nút gọi điện mở liên kết điện thoại tel:', async () => {

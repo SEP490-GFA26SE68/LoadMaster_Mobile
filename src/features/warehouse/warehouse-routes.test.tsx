@@ -111,7 +111,7 @@ describe('nhân viên kho trên app', () => {
     await openApp('/account')
 
     expect(await screen.findByRole('header', { name: 'Tài khoản' })).toBeOnTheScreen()
-    expect(screen.getByText('Lê Văn Hải')).toBeOnTheScreen()
+    expect(screen.getAllByText('Lê Văn Hải')[0]).toBeOnTheScreen()
     expect(screen.getByText('Nhân viên kho')).toBeOnTheScreen()
     expect(screen.getByText(WAREHOUSE_EMAIL)).toBeOnTheScreen()
     expect(screen.queryByText('Bản này chưa có màn làm việc cho vai trò của bạn.')).toBeNull()

@@ -174,6 +174,10 @@ export function mockDriverApi(): DriverApi {
             licensePlate: vehicle.name,
             maxPayloadKg: vehicle.maxPayloadKg,
             typeName: vehicle.name,
+            innerLengthCm: 310,
+            innerWidthCm: 160,
+            innerHeightCm: 170,
+            maxVolumeM3: 8.43,
           }
           : undefined,
         totalStops: trip.stops.length,
@@ -210,6 +214,7 @@ export function mockDriverApi(): DriverApi {
               name: pkg.name,
               weightKg: pkg.weightKg,
               status: 'PENDING',
+              handlingClass: 'FRAGILE',
             })),
         })),
       }
