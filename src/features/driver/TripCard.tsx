@@ -1,22 +1,21 @@
 import { useRouter } from 'expo-router'
-import { CircleCheck, Clock, Ellipsis, Info, TriangleAlert, Truck } from 'lucide-react-native'
+import { CircleCheck, Clock, Ellipsis, Info, Navigation, TriangleAlert, Truck } from 'lucide-react-native'
 import { useState } from 'react'
 import { Modal, Pressable, StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
-import { Button } from '@/components/Button'
+import { Banner } from '@/components/Banner'
 import { Card } from '@/components/Card'
 import { StopDot } from '@/components/StopDot'
 import { TripStatusChip, TripSubStatusTag } from '@/components/TripStatus'
 import { calendarDate } from '@/lib/calendar-date'
-import { useFormat, useT } from '@/lib/i18n'
+import { dataErrorMessage, useFormat, useT } from '@/lib/i18n'
 import { badgeTones, colors, radius, shadow, space } from '@/theme/tokens'
 
-import { DepartButton } from './DepartButton'
 import type { DriverTripRow } from './driver-model'
 import { myTripGroup } from './my-trips'
 import { EtaSourceLine, StopListTime } from './StopTimingParts'
-import { useDriverCapabilities } from './useDriverQueries'
+import { useDriverCapabilities, useStartDeliveryMutation } from './useDriverQueries'
 
 /** Đường mở một chuyến ở màn điểm giao (hoặc tổng kết khi chuyến đã giao). */
 export function tripPath(tripId: string) {
@@ -40,25 +39,22 @@ function dayOf(value: string): Date | string {
  * - Các điểm dừng hiển thị rõ Địa chỉ điểm giao, Số lượng kiện, Thời gian dự kiến đến.
  * - Hàng nút thao tác được thiết kế nhỏ gọn, tinh tế và căn ở góc phải cuối thẻ.
  */
-export function TripCard({ trip, primary = false }: { readonly trip: DriverTripRow; readonly primary?: boolean }) {
+export function TripCard({ trip }: { readonly trip: DriverTripRow; readonly primary?: boolean }) {
   const t = useT()
   const format = useFormat()
   const router = useRouter()
   const preparing = myTripGroup(trip) === 'preparing'
   const upcoming = myTripGroup(trip) === 'upcoming' || trip.status === 'PLANNED'
-  // Máy chủ: chuyến Đang xếp hàng xuất phát ngay ở thẻ — máy chủ không mở màn điểm giao trước khi xe chạy; nút bật khi kho đã xếp xong
   const departs = useDriverCapabilities().departFromList && trip.status === 'LOADING'
-
-  const action = preparing
-    ? t('driver.myTrips.preview')
-    : trip.status === 'IN_TRANSIT'
-      ? t('driver.myTrips.resume')
-      : trip.status === 'DELIVERED'
-        ? t('driver.myTrips.viewSummary')
-        : t('driver.myTrips.open')
+  const start = useStartDeliveryMutation(trip.id)
 
   return (
     <Card>
+      {start.isError ? (
+        <Banner tone="danger" onDismiss={() => start.reset()}>
+          {dataErrorMessage(start.error, t)}
+        </Banner>
+      ) : null}
       <View style={styles.head}>
         <View style={styles.headLeft}>
           <AppText variant="label" style={styles.code}>
@@ -68,7 +64,11 @@ export function TripCard({ trip, primary = false }: { readonly trip: DriverTripR
           {trip.sub === null ? null : <TripSubStatusTag sub={trip.sub} />}
           {trip.manualSub === null ? null : <TripSubStatusTag sub={trip.manualSub} />}
         </View>
-        <TripActionMenu trip={trip} onOpenDetail={() => router.push(driverTripDetailPath(trip.id))} />
+        <TripActionMenu
+          trip={trip}
+          onOpenDetail={() => router.push(driverTripDetailPath(trip.id))}
+          start={start}
+        />
       </View>
 
       {trip.name === undefined ? null : <AppText variant="heading">{trip.name}</AppText>}
@@ -161,53 +161,6 @@ export function TripCard({ trip, primary = false }: { readonly trip: DriverTripR
           ) : null}
         </AppText>
       ) : null}
-
-      {/* Hàng nút thao tác nhỏ gọn ở góc phải cuối thẻ */}
-      <View style={styles.footerActionRow}>
-        {departs ? (
-          <View style={styles.actionButtonsRow}>
-            <Button
-              variant="secondary"
-              style={styles.compactBtn}
-              onPress={() => router.push(driverTripDetailPath(trip.id))}>
-              {t('driver.myTrips.viewDetail')}
-            </Button>
-            <DepartButton
-              tripId={trip.id}
-              tripCode={trip.code}
-              primary={primary}
-              blockedReason={preparing ? t('driver.myTrips.departNote') : undefined}
-              href={tripPath(trip.id)}
-              style={styles.compactBtn}
-            />
-          </View>
-        ) : upcoming ? (
-          <View style={styles.actionButtonsRow}>
-            <Button
-              variant={primary ? 'primary' : 'secondary'}
-              style={styles.compactBtn}
-              onPress={() => router.push(driverTripDetailPath(trip.id))}>
-              {t('driver.myTrips.viewDetail')}
-            </Button>
-          </View>
-        ) : (
-          <View style={styles.actionButtonsRow}>
-            <Button
-              variant="secondary"
-              style={styles.compactBtn}
-              onPress={() => router.push(driverTripDetailPath(trip.id))}>
-              {t('driver.myTrips.viewDetail')}
-            </Button>
-            <Button
-              variant={primary ? 'primary' : 'secondary'}
-              style={styles.compactBtn}
-              accessibilityLabel={t('driver.myTrips.openLabel', { action, tripId: trip.code })}
-              onPress={() => router.push(tripPath(trip.id))}>
-              {action}
-            </Button>
-          </View>
-        )}
-      </View>
     </Card>
   )
 }
@@ -216,13 +169,30 @@ export function TripCard({ trip, primary = false }: { readonly trip: DriverTripR
 function TripActionMenu({
   trip,
   onOpenDetail,
+  start,
 }: {
   readonly trip: DriverTripRow
   readonly onOpenDetail: () => void
+  readonly start: ReturnType<typeof useStartDeliveryMutation>
 }) {
   const t = useT()
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const preparing = myTripGroup(trip) === 'preparing'
+  const departs = useDriverCapabilities().departFromList && trip.status === 'LOADING'
+
+  function handleDepart() {
+    if (preparing || start.isPending) return
+    setOpen(false)
+    start.mutate(undefined, {
+      onSuccess: () => router.push(tripPath(trip.id)),
+    })
+  }
+
+  function handleResume() {
+    setOpen(false)
+    router.push(tripPath(trip.id))
+  }
 
   return (
     <View style={styles.menuAnchor}>
@@ -239,6 +209,8 @@ function TripActionMenu({
           <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)}>
             <View style={styles.dropdownMenu}>
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('driver.myTrips.viewDetail')}
                 style={({ pressed }) => [styles.dropdownItem, pressed && styles.dropdownItemPressed]}
                 onPress={() => {
                   setOpen(false)
@@ -247,15 +219,64 @@ function TripActionMenu({
                 <Info size={18} color={colors.primary} />
                 <AppText variant="label">{t('driver.myTrips.viewDetail')}</AppText>
               </Pressable>
+
+              {departs ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('driver.myTrips.openLabel', { action: t('driver.start'), tripId: trip.code })}
+                  accessibilityHint={preparing ? t('driver.myTrips.departNote') : undefined}
+                  accessibilityState={{ disabled: preparing || start.isPending }}
+                  disabled={preparing || start.isPending}
+                  style={({ pressed }) => [
+                    styles.dropdownItem,
+                    preparing && styles.dropdownItemDisabled,
+                    pressed && !preparing && styles.dropdownItemPressed,
+                  ]}
+                  onPress={handleDepart}>
+                  <Navigation size={18} color={preparing ? colors.textDisabled : colors.success} />
+                  <View style={styles.dropdownTextCol}>
+                    <AppText variant="label" color={preparing ? colors.textDisabled : colors.text}>
+                      {t('driver.start')}
+                    </AppText>
+                    {preparing ? (
+                      <AppText variant="meta" color={colors.text3}>
+                        {t('driver.myTrips.departNote')}
+                      </AppText>
+                    ) : null}
+                  </View>
+                </Pressable>
+              ) : null}
+
               {trip.status === 'IN_TRANSIT' ? (
                 <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('driver.myTrips.resume')}
                   style={({ pressed }) => [styles.dropdownItem, pressed && styles.dropdownItemPressed]}
-                  onPress={() => {
-                    setOpen(false)
-                    router.push(tripPath(trip.id))
-                  }}>
+                  onPress={handleResume}>
                   <Truck size={18} color={colors.primary} />
                   <AppText variant="label">{t('driver.myTrips.resume')}</AppText>
+                </Pressable>
+              ) : null}
+
+              {trip.status === 'DELIVERED' ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('driver.myTrips.viewSummary')}
+                  style={({ pressed }) => [styles.dropdownItem, pressed && styles.dropdownItemPressed]}
+                  onPress={handleResume}>
+                  <CircleCheck size={18} color={colors.primary} />
+                  <AppText variant="label">{t('driver.myTrips.viewSummary')}</AppText>
+                </Pressable>
+              ) : null}
+
+              {preparing && !departs ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('driver.myTrips.preview')}
+                  style={({ pressed }) => [styles.dropdownItem, pressed && styles.dropdownItemPressed]}
+                  onPress={handleResume}>
+                  <Info size={18} color={colors.primary} />
+                  <AppText variant="label">{t('driver.myTrips.preview')}</AppText>
                 </Pressable>
               ) : null}
             </View>
@@ -391,6 +412,12 @@ const styles = StyleSheet.create({
   dropdownItemPressed: {
     backgroundColor: colors.surface,
   },
+  dropdownItemDisabled: {
+    opacity: 0.5,
+  },
+  dropdownTextCol: {
+    flex: 1,
+  },
   factsContainer: {
     gap: space[1],
   },
@@ -464,22 +491,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-  },
-  footerActionRow: {
-    marginTop: space[2],
-    alignItems: 'flex-end',
-  },
-  actionButtonsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: space[2],
-    flexWrap: 'wrap',
-  },
-  compactBtn: {
-    minHeight: 38,
-    height: 38,
-    paddingHorizontal: space[3],
-    borderRadius: radius.md,
   },
 })

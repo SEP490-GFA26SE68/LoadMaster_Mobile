@@ -39,12 +39,15 @@ describe('màn Chuyến của tôi', () => {
     if (first === undefined) throw new Error('seed không có chuyến nào cho tài xế mẫu')
 
     await renderApp(<MyTripsScreen />, { auth: createMockAuth() })
-    const detailButtons = await screen.findAllByRole('button', { name: 'Chi tiết chuyến' })
-    expect(detailButtons.length).toBeGreaterThan(0)
+    const menuButtons = await screen.findAllByRole('button', { name: 'Tùy chọn' })
+    expect(menuButtons.length).toBeGreaterThan(0)
 
-    const firstDetailButton = detailButtons[0]
-    if (firstDetailButton === undefined) throw new Error('Không có nút Chi tiết chuyến')
-    fireEvent.press(firstDetailButton)
+    const firstMenuButton = menuButtons[0]
+    if (firstMenuButton === undefined) throw new Error('Không có nút Tùy chọn')
+    fireEvent.press(firstMenuButton)
+
+    const detailButton = await screen.findByRole('button', { name: 'Chi tiết chuyến' })
+    fireEvent.press(detailButton)
     expect(router.push).toHaveBeenCalledWith(driverTripDetailPath(first.id))
   })
 

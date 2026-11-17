@@ -63,11 +63,18 @@ describe('Chuyến của tôi trên máy chủ: Xuất phát ở thẻ chuyến'
     serve({ 'GET /api/driver/trips': () => ok([loaded, preparing]), 'POST /api/driver/trips/43/start': () => ok({ tripId: 43 }) })
     await renderApp(<MyTripsScreen />, { auth: createMockAuth() })
 
+    const options = await screen.findAllByRole('button', { name: 'Tùy chọn' })
+    expect(options.length).toBeGreaterThanOrEqual(2)
+
+    // Chuyến chưa xếp xong: nút mờ kèm lý do
+    fireEvent.press(options[1])
     const blocked = await screen.findByRole('button', { name: 'Xuất phát TRIP-0044' })
     expect(blocked).toBeDisabled()
-    expect(screen.getByText('Kho chưa xếp xong — xuất phát được khi kho hoàn tất xếp hàng.')).toBeOnTheScreen()
+    expect(screen.getAllByText('Kho chưa xếp xong — xuất phát được khi kho hoàn tất xếp hàng.').length).toBeGreaterThanOrEqual(1)
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Xuất phát TRIP-0043' }))
+    // Chuyến đã xếp xong: xuất phát rồi mở điểm giao
+    fireEvent.press(options[0])
+    await fireEvent.press(await screen.findByRole('button', { name: 'Xuất phát TRIP-0043' }))
     expect(router.push).toHaveBeenCalledWith({ pathname: '/trip/[tripId]', params: { tripId: '43' } })
     expect(posted('/api/driver/trips/43/start')).toBe(true)
     expect(posted('/api/driver/trips/44/start')).toBe(false)
@@ -77,6 +84,8 @@ describe('Chuyến của tôi trên máy chủ: Xuất phát ở thẻ chuyến'
     serve({ 'GET /api/driver/trips': () => ok([loaded]), 'POST /api/driver/trips/43/start': () => fail(409, 'LOADING_NOT_COMPLETED') })
     await renderApp(<MyTripsScreen />, { auth: createMockAuth() })
 
+    const options = await screen.findAllByRole('button', { name: 'Tùy chọn' })
+    fireEvent.press(options[0])
     await fireEvent.press(await screen.findByRole('button', { name: 'Xuất phát TRIP-0043' }))
     expect(await screen.findByText('Kho chưa xếp xong hàng cho chuyến này, chưa xuất phát được.')).toBeOnTheScreen()
     expect(router.push).not.toHaveBeenCalled()
