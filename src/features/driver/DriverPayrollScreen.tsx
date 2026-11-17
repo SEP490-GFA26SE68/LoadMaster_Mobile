@@ -61,10 +61,29 @@ export function DriverPayrollScreen() {
         <ErrorState message={dataErrorMessage(query.error, t)} onRetry={() => void query.refetch()} />
       ) : query.data.kind === 'notCalculated' ? (
         <EmptyState title={t('driver.payroll.notCalculatedTitle')} description={t('driver.payroll.notCalculatedDescription')} />
+      ) : query.data.kind === 'baseOnly' ? (
+        <BaseOnly statement={query.data} />
       ) : (
         <Statement statement={query.data} />
       )}
     </Screen>
+  )
+}
+
+/** Tháng chưa chốt: tài xế thấy trước lương cứng; hoa hồng và bốc dỡ chỉ hiện sau khi công ty chốt lương. */
+function BaseOnly({ statement }: { statement: Extract<DriverPayrollStatement, { kind: 'baseOnly' }> }) {
+  const t = useT()
+  const format = useFormat()
+  return (
+    <View style={styles.content}>
+      <Card>
+        <AppText variant="meta" color={colors.text2}>{t('driver.payroll.status')}</AppText>
+        <AppText>{t('driver.payroll.statusPending')}</AppText>
+        <AppText variant="meta" color={colors.text2}>{t('driver.payroll.baseSalary')}</AppText>
+        <AppText variant="display">{format.currency(statement.baseSalaryVnd)}</AppText>
+        <AppText color={colors.text2}>{t('driver.payroll.pendingNote')}</AppText>
+      </Card>
+    </View>
   )
 }
 
@@ -85,18 +104,20 @@ function Statement({ statement }: { statement: Extract<DriverPayrollStatement, {
         <Fact
           label={t('driver.payroll.kgAmount')}
           detail={t('driver.payroll.kgBasis', {
+            percent: format.ratio(statement.commissionPercent),
             quantity: format.weight(statement.totalKg),
             rate: format.currency(statement.kgRateVndPerKg),
           })}
           value={format.currency(statement.kgAmountVnd)}
         />
         <Fact
-          label={t('driver.payroll.kmAmount')}
-          detail={t('driver.payroll.kmBasis', {
-            quantity: format.ratio(statement.totalKm),
-            rate: format.currency(statement.kmRateVndPerKm),
+          label={t('driver.payroll.handlingAmount')}
+          detail={t('driver.payroll.handlingBasis', {
+            quantity: format.weight(statement.totalKg),
+            fee: format.currency(statement.handlingFeeVndPerKg),
+            percent: format.ratio(statement.handlingDriverPercent),
           })}
-          value={format.currency(statement.kmAmountVnd)}
+          value={format.currency(statement.handlingAmountVnd)}
         />
       </Card>
 
@@ -111,13 +132,10 @@ function Statement({ statement }: { statement: Extract<DriverPayrollStatement, {
               <AppText>{shareLabel(trip.sharePercent, format)}</AppText>
             </View>
             <AppText color={colors.text2}>
-              {t('driver.payroll.allocated', {
-                kg: format.weight(trip.allocatedKg),
-                km: format.ratio(trip.allocatedKm),
-              })}
+              {t('driver.payroll.allocated', { kg: format.weight(trip.allocatedKg) })}
             </AppText>
             <Fact label={t('driver.payroll.kgAmount')} value={format.currency(trip.kgAmountVnd)} compact />
-            <Fact label={t('driver.payroll.kmAmount')} value={format.currency(trip.kmAmountVnd)} compact />
+            <Fact label={t('driver.payroll.handlingAmount')} value={format.currency(trip.handlingAmountVnd)} compact />
           </Card>
         ))
       )}

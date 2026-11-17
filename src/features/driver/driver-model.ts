@@ -51,17 +51,29 @@ export type DriverPayrollTripLine = {
   readonly tripId: string
   readonly tripCode: string
   readonly planKg: number
-  readonly planKm: number
   readonly sharePercent: number
   readonly allocatedKg: number
-  readonly allocatedKm: number
+  /** Hoa hồng theo khối lượng của tài xế ở chuyến này. */
   readonly kgAmountVnd: number
-  readonly kmAmountVnd: number
+  /** Phần tiền bốc dỡ của tài xế ở chuyến này. */
+  readonly handlingAmountVnd: number
   readonly totalAmountVnd: number
 }
 
+/**
+ * Bảng lương tài xế nhìn thấy:
+ * - `notCalculated`: công ty chưa cấu hình mức lương cho tháng.
+ * - `baseOnly`: tháng chưa chốt, chỉ biết lương cứng; hoa hồng và bốc dỡ hiện sau khi chốt.
+ * - `calculated`: tháng đã chốt, có đủ lương cứng + hoa hồng + bốc dỡ.
+ */
 export type DriverPayrollStatement =
   | { readonly kind: 'notCalculated'; readonly period: string }
+  | {
+      readonly kind: 'baseOnly'
+      readonly period: string
+      readonly status: 'DRAFT' | null
+      readonly baseSalaryVnd: number
+    }
   | {
       readonly kind: 'calculated'
       readonly period: string
@@ -69,10 +81,11 @@ export type DriverPayrollStatement =
       readonly baseSalaryVnd: number
       readonly totalKg: number
       readonly kgRateVndPerKg: number
+      readonly commissionPercent: number
       readonly kgAmountVnd: number
-      readonly totalKm: number
-      readonly kmRateVndPerKm: number
-      readonly kmAmountVnd: number
+      readonly handlingFeeVndPerKg: number
+      readonly handlingDriverPercent: number
+      readonly handlingAmountVnd: number
       readonly totalSalaryVnd: number
       readonly trips: readonly DriverPayrollTripLine[]
     }

@@ -17,27 +17,35 @@ type DriverPayrollStatementDto = {
   totalKg: number | null
   rateVndPerKg: number | null
   kgAmountVnd: number | null
-  totalKm: number | null
-  rateVndPerKm: number | null
-  kmAmountVnd: number | null
+  commissionPercent: number | null
+  handlingFeeVndPerKg: number | null
+  handlingDriverPercent: number | null
+  handlingAmountVnd: number | null
   totalSalaryVnd: number | null
   trips: readonly {
     tripId: number
     tripCode: string | null
     planKg: number
-    planKm: number
     sharePercent: number
     allocatedKg: number
-    allocatedKm: number
     kgAmountVnd: number
-    kmAmountVnd: number
+    handlingAmountVnd: number
     totalAmountVnd: number
   }[] | null
 }
 
 function payrollStatementOf(dto: DriverPayrollStatementDto): DriverPayrollStatement {
-  if (!dto.calculated) return { kind: 'notCalculated', period: dto.period }
-  const amounts = [dto.baseSalaryVnd, dto.totalKg, dto.rateVndPerKg, dto.kgAmountVnd, dto.totalKm, dto.rateVndPerKm, dto.kmAmountVnd, dto.totalSalaryVnd]
+  if (!dto.calculated) {
+    // Tháng chưa chốt: máy chủ chỉ gửi lương cứng.
+    if (dto.baseSalaryVnd !== null && Number.isFinite(dto.baseSalaryVnd)) {
+      return { kind: 'baseOnly', period: dto.period, status: dto.status === 'DRAFT' ? 'DRAFT' : null, baseSalaryVnd: dto.baseSalaryVnd }
+    }
+    return { kind: 'notCalculated', period: dto.period }
+  }
+  const amounts = [
+    dto.baseSalaryVnd, dto.totalKg, dto.rateVndPerKg, dto.kgAmountVnd, dto.commissionPercent,
+    dto.handlingFeeVndPerKg, dto.handlingDriverPercent, dto.handlingAmountVnd, dto.totalSalaryVnd,
+  ]
   if (dto.status === null || amounts.some((value) => value === null || !Number.isFinite(value))) {
     throw new ApiError('SERVER_ERROR')
   }
@@ -48,21 +56,20 @@ function payrollStatementOf(dto: DriverPayrollStatementDto): DriverPayrollStatem
     baseSalaryVnd: dto.baseSalaryVnd as number,
     totalKg: dto.totalKg as number,
     kgRateVndPerKg: dto.rateVndPerKg as number,
+    commissionPercent: dto.commissionPercent as number,
     kgAmountVnd: dto.kgAmountVnd as number,
-    totalKm: dto.totalKm as number,
-    kmRateVndPerKm: dto.rateVndPerKm as number,
-    kmAmountVnd: dto.kmAmountVnd as number,
+    handlingFeeVndPerKg: dto.handlingFeeVndPerKg as number,
+    handlingDriverPercent: dto.handlingDriverPercent as number,
+    handlingAmountVnd: dto.handlingAmountVnd as number,
     totalSalaryVnd: dto.totalSalaryVnd as number,
     trips: (dto.trips ?? []).map((line) => ({
       tripId: String(line.tripId),
       tripCode: line.tripCode ?? String(line.tripId),
       planKg: line.planKg,
-      planKm: line.planKm,
       sharePercent: line.sharePercent,
       allocatedKg: line.allocatedKg,
-      allocatedKm: line.allocatedKm,
       kgAmountVnd: line.kgAmountVnd,
-      kmAmountVnd: line.kmAmountVnd,
+      handlingAmountVnd: line.handlingAmountVnd,
       totalAmountVnd: line.totalAmountVnd,
     })),
   }
