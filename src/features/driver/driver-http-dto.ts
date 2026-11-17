@@ -9,6 +9,11 @@ export type DriverTripDto = {
   readonly tripCode: string | null
   readonly vehicleLicensePlate: string | null
   readonly stopCount: number | null
+  readonly totalPackages?: number | null
+  readonly totalWeightKg?: number | string | null
+  readonly totalDistanceMeters?: number | null
+  readonly totalDurationSeconds?: number | null
+  readonly estimatedCompletionTime?: string | null
   /** `LocalDateTime` của backend: không kèm múi giờ. */
   readonly departureTime: string | null
   readonly status: string | null
@@ -21,11 +26,18 @@ export type DriverTripDto = {
 export type StopPackageDto = {
   readonly packageId: number | null
   readonly packageName: string | null
+  readonly packageTypeName?: string | null
   readonly trackingBarcode: string | null
   /** Mã của bên gửi và mã QR in trên nhãn — tài xế quét hoặc gõ được cả hai. */
   readonly packageCode?: string | null
   readonly qrToken?: string | null
   readonly weight: number | null
+  readonly lengthCm?: number | null
+  readonly widthCm?: number | null
+  readonly heightCm?: number | null
+  readonly handlingClass?: string | null
+  readonly fragile?: boolean | null
+  readonly note?: string | null
   readonly unloadOrder: number | null
   /** Kiện đã dỡ ở điểm này (máy chủ đọc từ các lần xác nhận dỡ). */
   readonly unloaded?: boolean | null
@@ -84,3 +96,87 @@ export type CompleteStopDto = { readonly tripCompleted: boolean | null }
 
 /** `POST /api/driver/location` */
 export type LocationPointDto = { readonly recordedAt: string }
+
+/** `GET /api/driver/trips/{id}/exceptions` */
+export type DriverTripExceptionDto = {
+  readonly id: string | number
+  readonly tripId?: string | number | null
+  readonly type: string | null
+  readonly description: string | null
+  readonly delayMinutes: number | null
+  readonly status: string | null
+  readonly stopNumber?: number | null
+  readonly reportedAt: string | null
+  readonly reportedBy?: string | null
+  readonly escalation?: { readonly reason?: string | null; readonly at?: string | null; readonly by?: string | null } | null
+  readonly resolution?: { readonly at?: string | null; readonly by?: string | null; readonly note?: string | null } | null
+}
+
+/** `GET /api/driver/trips/{id}/detail` */
+export type DriverTripDetailPackageDto = {
+  readonly packageId: number | null
+  readonly packageCode: string | null
+  readonly trackingBarcode: string | null
+  readonly packageName: string | null
+  readonly packageTypeName?: string | null
+  readonly weightKg: number | null
+  readonly lengthCm?: number | null
+  readonly widthCm?: number | null
+  readonly heightCm?: number | null
+  readonly status: string | null
+  readonly unloadOrder: number | null
+  readonly handlingClass?: string | null
+  readonly fragile?: boolean | null
+  readonly note?: string | null
+}
+
+export type DriverTripDetailStopDto = {
+  readonly stopId: number
+  readonly stopSequence: number
+  readonly stopName: string | null
+  readonly address: string | null
+  readonly lat: number | null
+  readonly lng: number | null
+  readonly status: string | null
+  readonly stopType: string | null
+  readonly plannedArrival: string | null
+  readonly actualArrival: string | null
+  readonly deadline: string | null
+  readonly plannedStatus: string | null
+  readonly eta: string | null
+  readonly etaStatus: string | null
+  readonly contactName: string | null
+  readonly contactPhone: string | null
+  readonly packages: readonly DriverTripDetailPackageDto[] | null
+}
+
+export type DriverTripDetailDto = {
+  readonly tripId: number
+  readonly tripCode: string | null
+  readonly tripName: string | null
+  readonly status: string | null
+  readonly departureTime: string | null
+  readonly completedAt: string | null
+  readonly loadingCompleted: boolean | null
+  readonly depotName: string | null
+  readonly depotAddress: string | null
+  readonly depotLat: number | null
+  readonly depotLng: number | null
+  readonly vehicleId: number | null
+  readonly vehicleName: string | null
+  readonly licensePlate: string | null
+  readonly maxPayloadKg: number | null
+  readonly vehicleTypeName: string | null
+  readonly innerLengthCm?: number | null
+  readonly innerWidthCm?: number | null
+  readonly innerHeightCm?: number | null
+  readonly maxVolumeM3?: number | null
+  readonly totalStops: number | null
+  readonly totalPackages: number | null
+  readonly totalWeightKg: number | null
+  readonly dispatcherName?: string | null
+  readonly dispatcherPhone?: string | null
+  readonly totalDistanceMeters?: number | null
+  readonly totalDurationSeconds?: number | null
+  readonly stops: readonly DriverTripDetailStopDto[] | null
+}

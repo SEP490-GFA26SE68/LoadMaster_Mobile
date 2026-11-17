@@ -5,7 +5,9 @@ export const auth = {
   login: {
     title: 'Sign in',
     subtitle: 'Plan and track cargo loading.',
+    greeting: 'Welcome back',
     email: 'Email',
+    emailPlaceholder: 'name@company.com',
     password: 'Password',
     submit: 'Sign in',
     emailRequired: 'Enter your email',
@@ -15,6 +17,10 @@ export const auth = {
     setNewPassword: 'Set a new password',
     resetDone: 'Your new password is set. Sign in with it.',
     resetNotApplied: 'The server still asks for a new password even though you just set one. Ask your company administrator to check the account.',
+    footer: {
+      tagline: '3D Cargo Load Planning & Optimization System',
+      projectInfo: 'Capstone Project · FPT University · © 2026 LoadMaster',
+    },
   },
   forgot: {
     title: 'Reset password',
@@ -51,6 +57,12 @@ export const auth = {
   demo: {
     title: 'Demo accounts',
     hint: 'Tap an account to fill in its email and the sample password.',
+    password: 'Password: {password}',
     platform: 'Platform',
+  },
+  showcase: {
+    fillRate: 'Maximize vehicle fill rate',
+    reverseOrder: 'Load in reverse delivery order',
+    sharedPlan: 'Synchronized load planning',
   },
 } satisfies Dictionary<typeof source>

@@ -19,6 +19,7 @@ import { notifications } from './en/notifications'
 import { officeServer } from './en/officeServer'
 import { overview } from './en/overview'
 import { packageLookup } from './en/packageLookup'
+import { payroll } from './en/payroll'
 import { pickupRequest } from './en/pickupRequest'
 import { pickups } from './en/pickups'
 import { roles } from './en/roles'
@@ -59,6 +60,7 @@ export const en = {
   officeServer,
   overview,
   packageLookup,
+  payroll,
   pickupRequest,
   pickups,
   roles,

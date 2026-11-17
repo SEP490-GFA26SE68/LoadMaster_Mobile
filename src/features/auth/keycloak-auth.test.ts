@@ -80,6 +80,16 @@ describe('đăng nhập', () => {
     await expect(auth.accessToken()).resolves.toBe('AT-RT-1')
   })
 
+  test('vai trò WAREHOUSE_WORKER và WAREHOUSE: được phép đăng nhập vào app', async () => {
+    const { auth: authWarehouseWorker } = setup({ readProfile: async () => ({ ...PROFILE, userRoleType: 'WAREHOUSE_WORKER' }) })
+    const session1 = await authWarehouseWorker.signIn(EMAIL, PASSWORD)
+    expect(session1.user.role).toBe('warehouse')
+
+    const { auth: authWarehouse } = setup({ readProfile: async () => ({ ...PROFILE, userRoleType: 'WAREHOUSE' }) })
+    const session2 = await authWarehouse.signIn(EMAIL, PASSWORD)
+    expect(session2.user.role).toBe('warehouse')
+  })
+
   test('tài khoản chưa khai họ tên: hiện tên đăng nhập', async () => {
     const { auth } = setup({ readProfile: async () => ({ ...PROFILE, fullName: null, phoneNumber: null, companyId: null }) })
     const { user } = await auth.signIn(EMAIL, PASSWORD)
@@ -125,6 +135,10 @@ describe('đăng nhập', () => {
   })
 
   const refused: readonly (readonly [string, () => Promise<unknown>, Record<string, unknown>])[] = [
+    ['vai trò điều phối viên không được hỗ trợ', async () => ({ ...PROFILE, userRoleType: 'DISPATCHER' }), { code: 'ROLE_NOT_SUPPORTED' }],
+    ['vai trò quản trị công ty không được hỗ trợ', async () => ({ ...PROFILE, userRoleType: 'ADMIN' }), { code: 'ROLE_NOT_SUPPORTED' }],
+    ['vai trò quản lý công ty không được hỗ trợ', async () => ({ ...PROFILE, userRoleType: 'MANAGER' }), { code: 'ROLE_NOT_SUPPORTED' }],
+    ['vai trò quản trị hệ thống không được hỗ trợ', async () => ({ ...PROFILE, userRoleType: 'SYSTEM_ADMIN' }), { code: 'ROLE_NOT_SUPPORTED' }],
     ['vai trò app chưa biết', async () => ({ ...PROFILE, userRoleType: 'ACCOUNTANT' }), { code: 'ROLE_UNKNOWN', params: { role: 'ACCOUNTANT' } }],
     ['tài khoản bị khoá', async () => ({ ...PROFILE, status: 'INACTIVE' }), { code: 'ACCOUNT_SUSPENDED' }],
     [

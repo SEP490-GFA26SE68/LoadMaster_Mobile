@@ -7,11 +7,11 @@ import {
   selectNotifications,
 } from '@/features/notifications/notifications'
 import { ApiError } from '@/data/http'
-import { MockDbError, vnDate, type AuditEvent, type MockDb, type TripMonitoring } from '@/lib/mock-db'
+import { MockDbError, tripStatus, vnDate, type AuditEvent, type MockDb, type Trip, type TripMonitoring } from '@/lib/mock-db'
 import type { User } from '@/types/user'
 
 import type { DriverApi } from './driver-api'
-import type { DriverNotification, DriverNotificationKind, DriverTripRow, DriverTrips } from './driver-model'
+import type { DriverNotification, DriverNotificationKind, DriverTripDetail, DriverTripRow, DriverTrips } from './driver-model'
 import { driverPlan, isVisibleTo, myTrips, MY_TRIP_GROUPS, type MyTripGroup, type MyTripRow } from './my-trips'
 import { stopListTimings } from './stop-timing'
 import { tripScreen } from './trip-screen'
@@ -30,8 +30,17 @@ function signedIn(db: MockDb): User {
 /** Chuyến đang chạy và đã có tuyến: kho tính được vị trí xe và giờ đến từ đó. */
 const isLive = (row: Pick<MyTripRow, 'status' | 'schedule'>) => row.status === 'IN_TRANSIT' && row.schedule.routePlan !== undefined
 
-function tripRow(row: MyTripRow, live: TripMonitoring | undefined): DriverTripRow {
+function tripRow(row: MyTripRow, live: TripMonitoring | undefined, sourceTrip?: Trip): DriverTripRow {
   const { byStop, sources } = stopListTimings(row.schedule, row.status === 'IN_TRANSIT' ? live : undefined)
+  const routePlan = row.schedule.routePlan
+  const totalWeightKg =
+    sourceTrip !== undefined
+      ? Math.round(sourceTrip.packages.reduce((sum, pkg) => sum + pkg.weightKg * pkg.quantity, 0) * 100) / 100
+      : undefined
+  const totalDistanceMeters = routePlan !== undefined ? Math.round(routePlan.totalKm * 1000) : undefined
+  const estimatedDurationSeconds = routePlan !== undefined ? Math.round(routePlan.totalMinutes * 60) : undefined
+  const lastRouteStop = routePlan !== undefined && routePlan.stops.length > 0 ? routePlan.stops[routePlan.stops.length - 1] : undefined
+  const estimatedCompletionTime = lastRouteStop?.eta
   return {
     id: row.id,
     code: row.code ?? row.id,
@@ -43,6 +52,10 @@ function tripRow(row: MyTripRow, live: TripMonitoring | undefined): DriverTripRo
     manualSub: row.manualSub,
     stopCount: row.stopCount,
     packageCount: row.packageCount,
+    ...(totalWeightKg === undefined ? {} : { totalWeightKg }),
+    ...(totalDistanceMeters === undefined ? {} : { totalDistanceMeters }),
+    ...(estimatedDurationSeconds === undefined ? {} : { estimatedDurationSeconds }),
+    ...(estimatedCompletionTime === undefined ? {} : { estimatedCompletionTime }),
     currentStop: row.currentStop,
     completedAt: row.completedAt,
     issueCount: row.issueCount,
@@ -56,6 +69,7 @@ async function fetchMyTrips(): Promise<DriverTrips> {
   const db = getMockDb()
   const viewer = signedIn(db)
   const [trips, vehicles] = await Promise.all([db.listTrips(), db.listVehicles()])
+  const tripById = new Map(trips.map((trip) => [trip.id, trip]))
   // Chuyến còn lập kế hoạch và chuyến đã huỷ không hiện ở "Chuyến của tôi": không cần đọc revision của chúng
   const visible = trips.filter((trip) => isVisibleTo(trip, viewer) && trip.phase !== 'planning' && trip.phase !== 'cancelled')
   const entries = await Promise.all(visible.map(async (trip) => ({ trip, revisions: await db.listRevisions(trip.id) })))
@@ -64,10 +78,10 @@ async function fetchMyTrips(): Promise<DriverTrips> {
     await Promise.all(rows.inTransit.filter(isLive).map(async (row) => [row.id, await db.getTripMonitoring(row.id)] as const)),
   )
   const groups = Object.fromEntries(
-    MY_TRIP_GROUPS.map((group) => [group, rows[group].map((row) => tripRow(row, live.get(row.id)))]),
+    MY_TRIP_GROUPS.map((group) => [group, rows[group].map((row) => tripRow(row, live.get(row.id), tripById.get(row.id)))]),
   ) as Record<MyTripGroup, DriverTripRow[]>
   const waits = [...live.values()].flatMap((entry) => (entry.refreshMs === null ? [] : [entry.refreshMs]))
-  return { groups, refreshMs: waits.length === 0 ? null : Math.min(...waits) }
+  return { groups, history: groups.recent, refreshMs: waits.length === 0 ? null : Math.min(...waits) }
 }
 
 async function fetchTripScreen(tripId: string) {
@@ -146,6 +160,85 @@ export function mockDriverApi(): DriverApi {
     fetchMyTrips,
     async fetchPayroll() {
       throw new ApiError('NOT_SUPPORTED')
+    async fetchTripDetail(tripId: string): Promise<DriverTripDetail> {
+      const database = db()
+      const viewer = signedIn(database)
+      const trip = await database.getTrip(tripId)
+      if (!isVisibleTo(trip, viewer)) throw new MockDbError('NOT_FOUND', { collection: 'trips', id: tripId })
+      const vehicles = await database.listVehicles()
+      const vehicle = vehicles.find((v) => v.id === trip.vehicleId)
+      const users = await database.listUsers()
+      const dispatcher = users.find((u) => u.role === 'dispatcher')
+      const status = tripStatus(trip)
+      return {
+        id: trip.id,
+        code: trip.id,
+        name: trip.name,
+        status,
+        departureTime: trip.departureAt,
+        completedAt: trip.delivery?.completedAt,
+        loadingCompleted: trip.loading?.completedAt !== undefined,
+        depot: {
+          name: trip.depot?.name ?? '',
+          address: trip.depot?.address ?? '',
+          lat: trip.depot?.lat,
+          lng: trip.depot?.lng,
+        },
+        vehicle: vehicle
+          ? {
+            id: vehicle.id,
+            name: vehicle.name,
+            licensePlate: vehicle.name,
+            maxPayloadKg: vehicle.maxPayloadKg,
+            typeName: vehicle.name,
+            innerLengthCm: 310,
+            innerWidthCm: 160,
+            innerHeightCm: 170,
+            maxVolumeM3: 8.43,
+          }
+          : undefined,
+        totalStops: trip.stops.length,
+        totalPackages: trip.packages.length,
+        totalWeightKg: undefined,
+        dispatcher: dispatcher
+          ? {
+            name: dispatcher.fullName,
+            phone: dispatcher.phone,
+          }
+          : undefined,
+        totalDistanceMeters: 45200,
+        totalDurationSeconds: 4800,
+        stops: trip.stops.map((stop, idx) => ({
+          id: stop.id,
+          number: idx + 1,
+          name: stop.name,
+          address: stop.address,
+          lat: stop.lat,
+          lng: stop.lng,
+          status: trip.delivery?.completedAt !== undefined ? 'COMPLETED' : 'PENDING',
+          kind: 'DELIVERY',
+          plannedArrival: undefined,
+          actualArrival: undefined,
+          deadline: stop.deadline,
+          contactName: stop.contactName,
+          contactPhone: stop.phone,
+          packages: trip.packages
+            .filter((p) => p.deliveryStop === idx + 1)
+            .map((pkg) => ({
+              id: pkg.id,
+              code: pkg.id,
+              barcode: pkg.id,
+              name: pkg.name,
+              weightKg: pkg.weightKg,
+              lengthCm: pkg.lengthCm,
+              widthCm: pkg.widthCm,
+              heightCm: pkg.heightCm,
+              status: trip.loading?.completedAt !== undefined ? 'LOADED' : 'PENDING',
+              handlingClass: pkg.handlingClass ?? 'STANDARD',
+              fragile: pkg.handlingClass === 'FRAGILE',
+            })),
+        })),
+      }
     },
     fetchTripScreen,
     async startDelivery(tripId) {
@@ -168,6 +261,22 @@ export function mockDriverApi(): DriverApi {
     },
     async completeStop(tripId, stop) {
       await db().completeStop(tripId, stop.number)
+    },
+    async fetchTripExceptions(tripId) {
+      const list = await db().listTripExceptions(tripId)
+      return list.map((item) => ({
+        id: item.id,
+        type: item.type,
+        description: item.description,
+        delayMinutes: item.delayMinutes,
+        status: item.status,
+        stopNumber: item.stopNumber,
+        reportedAt: item.reportedAt,
+        reportedBy: item.reportedBy ?? undefined,
+        escalationReason: item.escalation?.reason,
+        resolutionNote: item.resolution?.note,
+        resolvedAt: item.resolution?.at,
+      }))
     },
     async reportTripException(tripId, input) {
       const { id } = await db().reportTripException(tripId, input)

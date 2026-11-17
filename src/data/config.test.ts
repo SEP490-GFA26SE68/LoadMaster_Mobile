@@ -8,6 +8,7 @@ describe('resolveDataConfig', () => {
       sources: {
         auth: 'mock',
         driver: 'mock',
+        payroll: 'mock',
         warehouse: 'mock',
         packages: 'mock',
         trips: 'mock',
@@ -26,6 +27,7 @@ describe('resolveDataConfig', () => {
       sources: {
         auth: 'http',
         driver: 'mock',
+        payroll: 'mock',
         warehouse: 'mock',
         packages: 'mock',
         trips: 'mock',

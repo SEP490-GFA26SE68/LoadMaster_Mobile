@@ -43,6 +43,7 @@ export const backendErrors = {
   PROFILE_UNAVAILABLE: 'Your account profile could not be read from the server. Try signing in again.',
   PROFILE_NOT_FOUND: 'This sign-in is not linked to any LoadMaster user. Contact your company administrator.',
   ROLE_UNKNOWN: 'Your account has a role ("{role}") this app does not support. Contact your company administrator.',
+  ROLE_NOT_SUPPORTED: 'The software does not support login for this account.',
   RESET_REQUEST_REFUSED: 'The code was not sent: you just asked for one or asked too many times. Wait a few minutes and try again.',
   RESET_CODE_INVALID: 'The code is wrong or has expired. Check it, or send a new code.',
   RESET_SESSION_EXPIRED: 'The password reset has expired. Start again from the email step.',
@@ -66,4 +67,7 @@ export const backendErrors = {
   LOADING_MANUAL_CONFIRM_PENDING: 'A manual confirmation is still waiting for the dispatcher — loading cannot be completed yet.',
   STAGING_NOT_READY: 'Not every package is staged yet, or a shortage is still waiting for the dispatcher — loading cannot start.',
   SEAL_NOT_ALLOWED: 'A seal number can only be recorded after loading is complete and before the truck departs.',
+  PAYROLL_INVALID_PERIOD: 'Invalid payroll period. Please choose another month.',
+  PAYROLL_PERIOD_NOT_FOUND: 'This payroll period was not found.',
+  PAYROLL_RATE_NOT_CONFIGURED: 'Payroll rates have not been configured for this period.',
 } satisfies Dictionary<typeof source>

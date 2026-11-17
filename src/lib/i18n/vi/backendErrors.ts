@@ -50,6 +50,8 @@ export const backendErrors = {
   PROFILE_UNAVAILABLE: 'Không đọc được hồ sơ tài khoản từ máy chủ. Thử đăng nhập lại.',
   PROFILE_NOT_FOUND: 'Tài khoản đăng nhập chưa gắn với người dùng nào của LoadMaster. Liên hệ quản trị công ty.',
   ROLE_UNKNOWN: 'Tài khoản có vai trò "{role}" mà app chưa hỗ trợ. Liên hệ quản trị công ty.',
+  /** Chỉ DRIVER và WAREHOUSE được phép đăng nhập vào mobile app. */
+  ROLE_NOT_SUPPORTED: 'Phần mềm không hỗ trợ đăng nhập cho tài khoản.',
   // Đặt lại mật khẩu qua mã gửi tới email. Máy chủ trả 400 không kèm mã: mỗi bước một câu chung
   RESET_REQUEST_REFUSED: 'Chưa gửi được mã: bạn vừa yêu cầu mã hoặc đã yêu cầu quá nhiều lần. Đợi vài phút rồi thử lại.',
   RESET_CODE_INVALID: 'Mã không đúng hoặc đã hết hạn. Kiểm tra lại mã, hoặc gửi mã mới.',
@@ -77,4 +79,8 @@ export const backendErrors = {
   /** Mã `STAGING_INCOMPLETE` của máy chủ — không kèm số kiện như mã cùng tên của kho mẫu, nên adapter đổi sang mã này. */
   STAGING_NOT_READY: 'Chưa soạn đủ hàng vào khu chờ, hoặc còn kiện báo thiếu chờ điều phối viên quyết — chưa xếp được.',
   SEAL_NOT_ALLOWED: 'Chỉ ghi được số seal khi đã xếp xong và xe chưa xuất phát.',
+  // Màn phiếu lương nối backend (`payroll-http.ts`)
+  PAYROLL_INVALID_PERIOD: 'Kỳ lương không hợp lệ. Chọn lại tháng cần xem.',
+  PAYROLL_PERIOD_NOT_FOUND: 'Không tìm thấy kỳ lương này.',
+  PAYROLL_RATE_NOT_CONFIGURED: 'Công ty chưa cấu hình đơn giá lương cho kỳ này.',
 } as const

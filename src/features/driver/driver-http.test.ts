@@ -31,6 +31,7 @@ describe('httpDriverApi: chuyến và điểm hiện tại', () => {
     })
     expect(trips.groups.loaded.map(({ id, sub }) => [id, sub])).toEqual([['43', { kind: 'loaded' }]])
     expect(trips.groups.preparing.map(({ id, sub }) => [id, sub])).toEqual([['44', null]])
+    expect(trips.groups.upcoming.map(({ id }) => id)).toEqual(['47'])
     // Giao xong gần nhất trước; chuyến chưa tới kho và chuyến đã huỷ không hiện
     expect(trips.groups.recent.map(({ id, completedAt }) => [id, completedAt])).toEqual([
       ['46', '2026-10-16T11:00:00+07:00'],
@@ -273,4 +274,84 @@ describe('httpDriverApi: xuất phát, đã đến, vị trí, sự cố trên �
     // Người mới chưa đọc điểm nào: câu lỗi chỉ còn số điểm, không mang tên điểm người trước đã đọc
     expect(await failure(() => driver.completeStop('41', STOP_KEY))).toMatchObject({ code: 'STOP_NOT_COMPLETABLE', params: { name: '2' } })
   })
+
+  test('fetchTripDetail: gọi GET /api/driver/trips/{id}/detail và map đúng dto sang DriverTripDetail', async () => {
+    const detailDto = {
+      tripId: 41,
+      tripCode: 'TRIP-0041',
+      tripName: 'Chuyến giao miền Đông',
+      status: 'IN_TRANSIT',
+      departureTime: '2026-10-16T07:30:00',
+      depotName: 'Kho Long Bình',
+      depotAddress: 'Biên Hoà, Đồng Nai',
+      depotLat: 10.929,
+      depotLng: 106.874,
+      vehicleId: 101,
+      vehicleName: '51C-123.45',
+      licensePlate: '51C-123.45',
+      maxPayloadKg: 5000,
+      vehicleTypeName: 'Xe tải 5 tấn',
+      totalStops: 1,
+      totalPackages: 1,
+      totalWeightKg: 25,
+      dispatcherName: 'Nguyễn Thanh Tùng',
+      dispatcherPhone: '0901234567',
+      totalDistanceMeters: 45000,
+      totalDurationSeconds: 3600,
+      stops: [
+        {
+          stopId: 902,
+          stopSequence: 1,
+          stopName: 'Điện máy Xanh Biên Hoà',
+          address: 'Biên Hoà',
+          lat: 10.95,
+          lng: 106.82,
+          contactName: 'Anh Bình',
+          contactPhone: '0901234567',
+          status: 'PENDING',
+          stopType: 'DELIVERY',
+          packages: [
+            {
+              packageId: 501,
+              packageCode: 'PKG-001',
+              trackingBarcode: 'PKG-001',
+              packageName: 'Thùng tivi',
+              weightKg: 25,
+              status: 'PENDING',
+              unloadOrder: 1,
+            },
+          ],
+        },
+      ],
+    }
+
+    const { driver, calls } = backend({
+      'GET /api/driver/trips/41/detail': () => ok(detailDto),
+    })
+
+    const detail = await driver.fetchTripDetail('41')
+    expect(calls[0]).toMatchObject({ method: 'GET', path: '/api/driver/trips/41/detail' })
+    expect(detail).toMatchObject({
+      id: '41',
+      code: 'TRIP-0041',
+      name: 'Chuyến giao miền Đông',
+      status: 'IN_TRANSIT',
+      depot: { name: 'Kho Long Bình', address: 'Biên Hoà, Đồng Nai' },
+      vehicle: { licensePlate: '51C-123.45', maxPayloadKg: 5000 },
+      dispatcher: { name: 'Nguyễn Thanh Tùng', phone: '0901234567' },
+      totalDistanceMeters: 45000,
+      totalDurationSeconds: 3600,
+      stops: [
+        {
+          id: '902',
+          number: 1,
+          name: 'Điện máy Xanh Biên Hoà',
+          contactName: 'Anh Bình',
+          contactPhone: '0901234567',
+          packages: [{ code: 'PKG-001', weightKg: 25 }],
+        },
+      ],
+    })
+  })
 })
+

@@ -1,6 +1,6 @@
-import { Eye, EyeOff } from 'lucide-react-native'
+import { Eye, EyeOff, type LucideIcon } from 'lucide-react-native'
 import { useId, useState } from 'react'
-import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native'
+import { Platform, Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native'
 
 import { useT } from '@/lib/i18n'
 import { colors, radius, space, TOUCH, type as scale } from '@/theme/tokens'
@@ -9,6 +9,8 @@ import { AppText } from './AppText'
 
 export type TextFieldProps = Omit<TextInputProps, 'style' | 'secureTextEntry'> & {
   label: string
+  /** Biểu tượng minh hoạ ở đầu ô */
+  icon?: LucideIcon
   /** Gợi ý dưới ô (chữ phụ); có lỗi thì câu lỗi thay chỗ gợi ý. Trình đọc màn hình đọc gợi ý sau tên ô. */
   hint?: string
   error?: string | undefined
@@ -19,7 +21,18 @@ export type TextFieldProps = Omit<TextInputProps, 'style' | 'secureTextEntry'> &
 }
 
 /** Ô nhập có nhãn phía trên, gợi ý hoặc câu lỗi phía dưới. Tên truy cập của ô là chữ nhãn. `multiline` cho ghi chú nhiều dòng. */
-export function TextField({ label, hint, error, secure = false, code = false, multiline = false, onFocus, onBlur, ...rest }: TextFieldProps) {
+export function TextField({
+  label,
+  icon: Icon,
+  hint,
+  error,
+  secure = false,
+  code = false,
+  multiline = false,
+  onFocus,
+  onBlur,
+  ...rest
+}: TextFieldProps) {
   const t = useT()
   const labelId = useId()
   const [focused, setFocused] = useState(false)
@@ -31,6 +44,15 @@ export function TextField({ label, hint, error, secure = false, code = false, mu
         {label}
       </AppText>
       <View style={[styles.box, focused && styles.boxFocused, error !== undefined && styles.boxError]}>
+        {Icon !== undefined && (
+          <View style={styles.iconContainer} pointerEvents="none">
+            <Icon
+              size={20}
+              color={focused ? colors.primary : error !== undefined ? colors.danger : colors.text3}
+              strokeWidth={1.8}
+            />
+          </View>
+        )}
         <TextInput
           accessibilityLabel={label}
           accessibilityLabelledBy={labelId}
@@ -50,7 +72,7 @@ export function TextField({ label, hint, error, secure = false, code = false, mu
             setFocused(false)
             onBlur?.(event)
           }}
-          style={[styles.input, multiline && styles.multiline, code && styles.code]}
+          style={[styles.input, Icon !== undefined && styles.inputWithIcon, multiline && styles.multiline, code && styles.code]}
         />
         {secure && (
           <Pressable
@@ -76,12 +98,77 @@ export function TextField({ label, hint, error, secure = false, code = false, mu
 
 const styles = StyleSheet.create({
   field: { gap: space[1] },
-  box: { minHeight: TOUCH, flexDirection: 'row', alignItems: 'center', borderRadius: radius.md, borderWidth: 1, borderColor: colors.lineStrong, backgroundColor: colors.bg },
-  boxFocused: { borderColor: colors.focus, borderWidth: 2 },
-  boxError: { borderColor: colors.danger },
-  input: { flex: 1, minHeight: TOUCH, paddingHorizontal: space[3], color: colors.text, fontSize: scale.body.fontSize },
+  box: {
+    minHeight: TOUCH,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.lineStrong,
+    backgroundColor: colors.bg,
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none' as any,
+        transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+      } as any,
+    }),
+  },
+  boxFocused: {
+    borderColor: colors.focus,
+    borderWidth: 1.5,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 0 0 3px rgba(0, 169, 187, 0.2)',
+      } as any,
+      ios: {
+        shadowColor: colors.focus,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3,
+      },
+    }),
+  },
+  boxError: {
+    borderColor: colors.danger,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 0 0 3px rgba(219, 66, 65, 0.2)',
+      } as any,
+    }),
+  },
+  iconContainer: {
+    paddingLeft: space[3],
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  input: {
+    flex: 1,
+    minHeight: TOUCH,
+    paddingHorizontal: space[3],
+    color: colors.text,
+    fontSize: scale.body.fontSize,
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none' as any,
+        outlineWidth: 0,
+      },
+    }),
+  },
+  inputWithIcon: {
+    paddingLeft: space[2],
+  },
   // Ghi chú: ba dòng, chữ bắt đầu từ trên
   multiline: { minHeight: 96, paddingVertical: space[3], textAlignVertical: 'top' },
   code: { fontVariant: ['tabular-nums'] },
-  toggle: { width: TOUCH, height: TOUCH, alignItems: 'center', justifyContent: 'center' },
+  toggle: {
+    width: TOUCH,
+    height: TOUCH,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none' as any,
+      },
+    }),
+  },
 })

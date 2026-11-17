@@ -89,20 +89,28 @@ function stopScreen(trip: Trip, view: DeliveryView, stops: readonly StopDelivery
     arrived: view.arrivedAt !== undefined,
     arrivedAt: view.arrivedAt,
     timing: stopTiming(trip, stop.number, view.arrivedAt, liveNow),
-    items: view.items.map(({ item, unloaded, issue, returned, verification }) => ({
-      id: item.id,
-      label: item.label ?? item.id,
-      name: item.name,
-      weightKg: item.weightKg,
-      unloadingOrder: item.unloadingOrder,
-      // Thiếu vùng hoặc lớp thì dòng kiện bỏ hẳn chỗ xếp, như `DeliveryItemRow` của web
-      place: item.area === undefined || item.layer === undefined ? undefined : { area: item.area, layer: item.layer },
-      unloaded,
-      via: unloaded ? verifyVia(verification) : undefined,
-      rejectedReason: rejectedReason(unloaded, verification),
-      issueKind: issue?.kind,
-      returned,
-    })),
+    items: view.items.map(({ item, unloaded, issue, returned, verification }) => {
+      const pkg = trip.packages.find((p) => p.id === item.packageId)
+      return {
+        id: item.id,
+        label: item.label ?? item.id,
+        name: item.name,
+        weightKg: item.weightKg,
+        lengthCm: pkg?.lengthCm,
+        widthCm: pkg?.widthCm,
+        heightCm: pkg?.heightCm,
+        handlingClass: pkg?.handlingClass ?? 'STANDARD',
+        fragile: pkg?.handlingClass === 'FRAGILE',
+        unloadingOrder: item.unloadingOrder,
+        // Thiếu vùng hoặc lớp thì dòng kiện bỏ hẳn chỗ xếp, như `DeliveryItemRow` của web
+        place: item.area === undefined || item.layer === undefined ? undefined : { area: item.area, layer: item.layer },
+        unloaded,
+        via: unloaded ? verifyVia(verification) : undefined,
+        rejectedReason: rejectedReason(unloaded, verification),
+        issueKind: issue?.kind,
+        returned,
+      }
+    }),
     pickupItems: view.pickupItems.map(({ item, done, verification }) => ({
       id: item.id,
       label: item.id,

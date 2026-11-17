@@ -100,6 +100,25 @@ describe('việc phụ ở điểm giao', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Báo sự cố' }))
     expect(await screen.findByText(/^Đã báo sự cố EXC-\d+\.$/)).toBeOnTheScreen()
     expect(screen.queryByRole('header', { name: `Báo sự cố chuyến ${LOADED_TRIP}` })).toBeNull()
+
+    // Xem lại sự cố trên đường đã báo qua thẻ tóm tắt ngay trên màn giao hàng
+    const historyBanner = await screen.findByRole('button', { name: 'Sự cố trên đường đã báo (1)' })
+    await fireEvent.press(historyBanner)
+    expect(await screen.findByRole('header', { name: `Sự cố trên đường — chuyến ${LOADED_TRIP}` })).toBeOnTheScreen()
+    expect(screen.getByText('Kẹt xe trên Xa lộ Hà Nội')).toBeOnTheScreen()
+    expect(screen.getByText('Chậm 20 phút')).toBeOnTheScreen()
+    expect(screen.getAllByText('Chưa xử lý').length).toBeGreaterThan(0)
+  })
+
+  test('hiển thị nổi bật quy tắc dỡ hàng LIFO và thông tin kiện hàng đầy đủ (loại hàng, kích thước)', async () => {
+    await departLoadedTrip({ arrive: true })
+    await renderTrip()
+
+    expect(await screen.findByText('Quy tắc dỡ hàng bắt buộc (LIFO — Xếp sau ra trước)')).toBeOnTheScreen()
+    expect(screen.getByText(/Tài xế cần dỡ hàng theo đúng quy tắc/)).toBeOnTheScreen()
+    expect(screen.getByText('Dỡ tiếp theo')).toBeOnTheScreen()
+    expect(screen.getAllByText(/Kích thước: .* cm/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Hàng tiêu chuẩn|Dễ vỡ/).length).toBeGreaterThan(0)
   })
 
   test('nhận hàng dọc đường: kiểm từng ô, gửi xong tờ chuyển sang mười luật thay vì đóng', async () => {

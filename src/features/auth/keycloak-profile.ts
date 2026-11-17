@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { ApiError, isApiError } from '@/data/http'
-import type { Role, User } from '@/types/user'
+import { isMobileRole, type Role, type User } from '@/types/user'
 
 import { isActiveOnBackend, roleOfBackend, userFromBackend, type BackendUserProfile } from './backend-user'
 
@@ -26,6 +26,26 @@ const profileSchema = z.object({
     .number()
     .nullish()
     .transform((value) => value ?? null),
+  companyName: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
+  companyCode: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
+  companyTaxCode: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
+  companyBillingEmail: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
+  companyStatus: z
+    .string()
+    .nullish()
+    .transform((value) => value ?? undefined),
   userRoleType: z.string(),
   // Hai trường máy chủ thêm sau: máy chủ cũ không gửi, gửi `null` cũng coi như không có
   userType: z
@@ -75,6 +95,7 @@ export function readSaved(saved: string): { readonly refreshToken: string; reado
 export function roleOf(profile: BackendUserProfile): Role {
   const role = roleOfBackend(profile.userRoleType)
   if (role === null) throw new ApiError('ROLE_UNKNOWN', { params: { role: profile.userRoleType } })
+  if (!isMobileRole(role)) throw new ApiError('ROLE_NOT_SUPPORTED')
   if (!isActiveOnBackend(profile.status) && profile.status !== 'FLAGGED') throw new ApiError('ACCOUNT_SUSPENDED')
   return role
 }
@@ -91,6 +112,11 @@ export function userOf(profile: BackendUserProfile, role: Role, standIn: User | 
     status: profile.status === 'FLAGGED' ? 'flagged' : 'active',
     lastActiveAt: null,
     ...(profile.companyId === null ? {} : { companyId: String(profile.companyId) }),
+    companyName: profile.companyName,
+    companyCode: profile.companyCode,
+    companyTaxCode: profile.companyTaxCode,
+    companyBillingEmail: profile.companyBillingEmail,
+    companyStatus: profile.companyStatus,
     userType: profile.userType === 'TRIAL' ? 'TRIAL' : 'OFFICIAL',
     subscriptionExpired: Boolean(profile.subscriptionExpired),
   }

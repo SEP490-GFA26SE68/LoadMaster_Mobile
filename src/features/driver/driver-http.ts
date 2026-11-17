@@ -1,9 +1,10 @@
 import { api, ApiError, currentUserId, type ApiClient } from '@/data/http'
+import { pathFromEncodedPolylines } from '@/domain/routing/polyline'
 import { driverNotificationsOf, fetchServerNotifications, markServerNotificationsRead } from '@/features/bell/server-notifications'
 
 import type { DriverApi } from './driver-api'
-import type { CompleteStopDto, CurrentStopDto, DriverTripDto, LocationPointDto, RoutePlanDetailDto } from './driver-http-dto'
-import { myTripsOf, shownStatusOf, tripRowOf } from './driver-http-mapping'
+import type { CompleteStopDto, CurrentStopDto, DriverTripDetailDto, DriverTripDto, DriverTripExceptionDto, LocationPointDto, RoutePlanDetailDto } from './driver-http-dto'
+import { deliveredHistoryOf, myTripsOf, shownStatusOf, tripDetailOf, tripRowOf } from './driver-http-mapping'
 import { deliveryPackageOf, isUnloaded, packageOfCode, stopScreenOf, withUnloaded } from './driver-http-stop'
 import { serverEtaSources, serverTripStops, tripStopsOf, type DriverTripStopsDto, type ServerTripStops } from './driver-http-stop-times'
 import { coded, HTTP_DRIVER_CAPABILITIES, refused, SERVER_REFRESH_MS, unsupported } from './driver-http-support'
@@ -227,12 +228,32 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     capabilities: HTTP_DRIVER_CAPABILITIES,
 
     async fetchMyTrips() {
-      const all = myTripsOf(await listTrips())
+      const dtos = await listTrips()
+      const all = myTripsOf(dtos)
       // Chuyến đang chạy và chuyến xếp xong chờ xuất phát có danh sách điểm (như web); nhóm khác chưa có việc ở từng điểm
       const [inTransit, loaded] = await Promise.all([Promise.all(all.inTransit.map(withStops)), Promise.all(all.loaded.map(withStops))])
       const groups = { ...all, inTransit, loaded }
+      const history = deliveredHistoryOf(dtos)
       const active = groups.inTransit.length + groups.loaded.length + groups.preparing.length > 0
-      return { groups, refreshMs: active ? SERVER_REFRESH_MS : null }
+      return { groups, history, refreshMs: active ? SERVER_REFRESH_MS : null }
+    },
+
+    // GET /api/driver/trips/{id}/detail
+    async fetchTripDetail(tripId: string): Promise<DriverTripDetail> {
+      const detail = tripDetailOf(await client().get<DriverTripDetailDto>(`/api/driver/trips/${encodeURIComponent(tripId)}/detail`))
+      try {
+        const plan = await activePlan(tripId)
+        if (plan?.legs && plan.legs.length > 0) {
+          const ordered = [...plan.legs].sort((a, b) => a.legSequence - b.legSequence)
+          const path = pathFromEncodedPolylines(ordered.map((l) => l.polyline))
+          if (path.length > 0) {
+            return { ...detail, path }
+          }
+        }
+      } catch {
+        // activePlan is optional
+      }
+      return detail
     },
 
     async fetchPayroll(period) {
@@ -350,6 +371,28 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
 
     // Điện thoại gửi thẳng vị trí lên backend: không có công tắc nào ở máy chủ để bật / tắt
     async setDriverGps() {},
+
+    // GET /api/driver/trips/{id}/exceptions
+    async fetchTripExceptions(tripId) {
+      try {
+        const list = await client().get<readonly DriverTripExceptionDto[]>(`/api/driver/trips/${encodeURIComponent(tripId)}/exceptions`)
+        return (list ?? []).map((item): DriverTripException => ({
+          id: String(item.id),
+          type: (item.type as DriverTripException['type']) ?? 'OTHER',
+          description: item.description ?? '',
+          delayMinutes: item.delayMinutes ?? 0,
+          status: (item.status as DriverTripException['status']) ?? 'OPEN',
+          stopNumber: item.stopNumber ?? undefined,
+          reportedAt: item.reportedAt ?? '',
+          reportedBy: item.reportedBy ?? undefined,
+          escalationReason: item.escalation?.reason ?? undefined,
+          resolutionNote: item.resolution?.note ?? undefined,
+          resolvedAt: item.resolution?.at ?? undefined,
+        }))
+      } catch {
+        return []
+      }
+    },
 
     // POST /api/driver/trips/{id}/exceptions
     async reportTripException(tripId, input) {

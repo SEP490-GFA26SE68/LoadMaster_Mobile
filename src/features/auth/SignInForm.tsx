@@ -1,12 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Lock, LogIn, Mail } from 'lucide-react-native'
 import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
+import { StyleSheet, View } from 'react-native'
 
+import { AppText } from '@/components/AppText'
 import { Banner } from '@/components/Banner'
 import { Button } from '@/components/Button'
+import { Lumo } from '@/components/Lumo'
 import { TextField } from '@/components/TextField'
 import { dataConfig } from '@/data/config'
 import { dataErrorMessage, useT } from '@/lib/i18n'
+import { colors, space } from '@/theme/tokens'
 
 import { isPasswordChangeRequired } from './auth-adapter'
 import { AuthCard } from './AuthLayout'
@@ -29,12 +34,20 @@ type SignInFormProps = {
   readonly onForgot?: ((email: string) => void) | undefined
 }
 
-/** Thẻ đăng nhập bằng email và mật khẩu. Nút "Đăng nhập" là nút chính duy nhất của màn. */
+/**
+ * Thẻ đăng nhập bằng email và mật khẩu (V2.3 nâng cấp đồng bộ Web V2.3):
+ * - Linh vật Lumo chào đón kèm lời chúc thân thiện
+ * - Ô nhập có icon trực quan (Mail, Lock)
+ * - Nút chính Đăng nhập nổi bật chuẩn nhận diện Cyan kính
+ */
 export function SignInForm({ initialEmail, afterReset, onForgot }: SignInFormProps) {
   const t = useT()
   const auth = useAuth()
   const [failure, setFailure] = useState<Failure | null>(null)
-  const form = useForm<SignInValues>({ resolver: zodResolver(signInSchema), defaultValues: { email: initialEmail, password: '' } })
+  const form = useForm<SignInValues>({
+    resolver: zodResolver(signInSchema),
+    defaultValues: { email: initialEmail, password: '' },
+  })
 
   const submit = form.handleSubmit(async ({ email, password }) => {
     setFailure(null)
@@ -46,23 +59,46 @@ export function SignInForm({ initialEmail, afterReset, onForgot }: SignInFormPro
         setFailure({ message: t('auth.login.resetNotApplied'), passwordChange: false })
         return
       }
-      setFailure({ message: dataErrorMessage(error, t), passwordChange: isPasswordChangeRequired(error) && onForgot !== undefined })
+      setFailure({
+        message: dataErrorMessage(error, t),
+        passwordChange: isPasswordChangeRequired(error) && onForgot !== undefined,
+      })
     }
   })
 
   const forgot = onForgot === undefined ? undefined : () => onForgot(form.getValues('email').trim())
 
+  const headerSlot = (
+    <View style={styles.greetingCard}>
+      <Lumo size={72} />
+      <View style={styles.greetingText}>
+        <AppText variant="meta" color={colors.primary} style={styles.greetingBadge}>
+          {t('auth.login.greeting')}
+        </AppText>
+        <AppText variant="title" color={colors.text} accessibilityRole="header" style={styles.greetingTitle}>
+          {t('auth.login.title')}
+        </AppText>
+        <AppText variant="meta" color={colors.text2}>
+          {t('auth.login.subtitle')}
+        </AppText>
+      </View>
+    </View>
+  )
+
   return (
     <>
-      <AuthCard title={t('auth.login.title')}>
+      <AuthCard headerSlot={headerSlot}>
         {failure === null && afterReset && <Banner tone="success">{t('auth.login.resetDone')}</Banner>}
         {failure !== null && <Banner tone="danger">{failure.message}</Banner>}
+
         <Controller
           control={form.control}
           name="email"
           render={({ field, fieldState }) => (
             <TextField
               label={t('auth.login.email')}
+              placeholder={t('auth.login.emailPlaceholder')}
+              icon={Mail}
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -76,12 +112,14 @@ export function SignInForm({ initialEmail, afterReset, onForgot }: SignInFormPro
             />
           )}
         />
+
         <Controller
           control={form.control}
           name="password"
           render={({ field, fieldState }) => (
             <TextField
               label={t('auth.login.password')}
+              icon={Lock}
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -94,14 +132,22 @@ export function SignInForm({ initialEmail, afterReset, onForgot }: SignInFormPro
             />
           )}
         />
-        <Button loading={form.formState.isSubmitting} onPress={() => void submit()}>
-          {t('auth.login.submit')}
-        </Button>
-        {forgot !== undefined && (
-          <Button variant="secondary" onPress={forgot}>
-            {failure?.passwordChange === true ? t('auth.login.setNewPassword') : t('auth.login.forgot')}
+
+        <View style={styles.actions}>
+          <Button
+            icon={LogIn}
+            loading={form.formState.isSubmitting}
+            onPress={() => void submit()}
+          >
+            {t('auth.login.submit')}
           </Button>
-        )}
+
+          {forgot !== undefined && (
+            <Button variant="secondary" onPress={forgot}>
+              {failure?.passwordChange === true ? t('auth.login.setNewPassword') : t('auth.login.forgot')}
+            </Button>
+          )}
+        </View>
       </AuthCard>
 
       {dataConfig.sources.auth === 'mock' && (
@@ -115,3 +161,33 @@ export function SignInForm({ initialEmail, afterReset, onForgot }: SignInFormPro
     </>
   )
 }
+
+const styles = StyleSheet.create({
+  greetingCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingBottom: space[2],
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 195, 212, 0.12)',
+  },
+  greetingText: {
+    flex: 1,
+    gap: 2,
+  },
+  greetingBadge: {
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    fontSize: 11,
+  },
+  greetingTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.text,
+  },
+  actions: {
+    gap: 10,
+    marginTop: space[1],
+  },
+})

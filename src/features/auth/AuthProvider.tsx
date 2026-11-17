@@ -2,9 +2,9 @@ import { useQueryClient } from '@tanstack/react-query'
 import { createContext, use, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Alert } from 'react-native'
 
-import { connectAuth } from '@/data/http'
+import { ApiError, connectAuth } from '@/data/http'
 import { useT } from '@/lib/i18n'
-import type { User } from '@/types/user'
+import { isMobileRole, type User } from '@/types/user'
 
 import { lockedUser } from './account-lock'
 import type { AuthAdapter } from './auth-adapter'
@@ -23,6 +23,7 @@ type AuthValue = {
   /** Thất bại thì ném lỗi có mã (`dataErrorMessage`); không cất gì. */
   signIn(email: string, password: string): Promise<void>
   signOut(): Promise<void>
+  updateUser(updates: Partial<User>): void
 }
 
 const AuthContext = createContext<AuthValue | null>(null)
@@ -119,12 +120,19 @@ export function AuthProvider({ children, adapter: injected }: { children: ReactN
       dismissSessionNotice: () => setSessionNotice(null),
       async signIn(email, password) {
         const session = await adapter.signIn(email, password)
+        if (!isMobileRole(session.user.role)) {
+          await adapter.signOut().catch(() => undefined)
+          throw new ApiError('ROLE_NOT_SUPPORTED')
+        }
         queryClient.clear()
         setSessionNotice(null)
         await saveSession(session.saved)
         setState({ status: 'signedIn', user: session.user })
       },
       signOut,
+      updateUser(updates) {
+        setState((previous) => (previous.status === 'signedIn' ? { status: 'signedIn', user: { ...previous.user, ...updates } } : previous))
+      },
     }),
     [adapter, queryClient, sessionNotice, signOut, state],
   )

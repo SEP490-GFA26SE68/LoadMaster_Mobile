@@ -3,7 +3,9 @@ export const auth = {
   login: {
     title: 'Đăng nhập',
     subtitle: 'Lập kế hoạch và theo dõi chất xếp hàng hoá.',
+    greeting: 'Chào mừng bạn trở lại',
     email: 'Email',
+    emailPlaceholder: 'name@company.com',
     password: 'Mật khẩu',
     submit: 'Đăng nhập',
     emailRequired: 'Nhập email',
@@ -15,6 +17,10 @@ export const auth = {
     resetDone: 'Đã đặt mật khẩu mới. Đăng nhập bằng mật khẩu vừa đặt.',
     /** Vừa đặt lại mật khẩu xong mà máy chủ vẫn đòi đặt mật khẩu mới: không mời người dùng làm lại vòng đó. */
     resetNotApplied: 'Máy chủ vẫn đòi đặt mật khẩu mới dù bạn vừa đặt xong. Báo cho quản trị công ty để kiểm tra tài khoản.',
+    footer: {
+      tagline: 'Hệ thống lập kế hoạch & tối ưu chất xếp hàng hoá 3D',
+      projectInfo: 'Đồ án tốt nghiệp Capstone Project · Trường Đại học FPT · © 2026 LoadMaster',
+    },
   },
   /** Đặt lại mật khẩu qua mã gửi tới email: ba bước email → mã → mật khẩu mới. */
   forgot: {
@@ -54,7 +60,13 @@ export const auth = {
   demo: {
     title: 'Tài khoản dùng thử',
     hint: 'Chạm một tài khoản để điền email và mật khẩu mẫu.',
+    password: 'Mật khẩu: {password}',
     /** Nhóm tài khoản không thuộc công ty nào; các nhóm còn lại mang tên công ty trong dữ liệu. */
     platform: 'Nền tảng',
+  },
+  showcase: {
+    fillRate: 'Tối ưu tỷ lệ lấp đầy xe',
+    reverseOrder: 'Xếp dỡ theo thứ tự lộ trình',
+    sharedPlan: 'Kế hoạch chất xếp đồng bộ',
   },
 } as const
