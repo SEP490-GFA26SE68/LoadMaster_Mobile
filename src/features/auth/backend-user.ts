@@ -34,7 +34,10 @@ const ROLE_OF_BACKEND: Readonly<Record<string, Role>> = {
   COMPANY_MANAGER: 'companyManager',
   DISPATCHER: 'dispatcher',
   WAREHOUSE_WORKER: 'warehouse',
+  WAREHOUSE: 'warehouse',
+  warehouse: 'warehouse',
   DRIVER: 'driver',
+  driver: 'driver',
 }
 
 export function roleOfBackend(code: string): Role | null {

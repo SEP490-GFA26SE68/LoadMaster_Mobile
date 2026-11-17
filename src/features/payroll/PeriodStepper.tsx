@@ -68,6 +68,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.md,
+    flexShrink: 0,
   },
   navButtonPressed: {
     backgroundColor: colors.skySolidPressed,
@@ -77,6 +78,7 @@ const styles = StyleSheet.create({
   },
   center: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

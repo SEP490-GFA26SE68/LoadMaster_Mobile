@@ -61,30 +61,30 @@ export function PayrollTripCard({ line }: PayrollTripCardProps) {
       <View style={styles.tilesRow}>
         <View style={[styles.metricTile, styles.warningTile]}>
           <View style={styles.tileHead}>
-            <Weight color={badgeTones.warning.fg} size={14} strokeWidth={1.75} />
-            <AppText variant="meta" color={colors.text2} numberOfLines={1} style={styles.tileLabel}>
+            <Weight color={badgeTones.warning.fg} size={14} strokeWidth={1.75} style={styles.noShrink} />
+            <AppText variant="meta" color={colors.text2} numberOfLines={2} style={styles.tileLabel}>
               {t('payroll.trips.allocatedKg')}
             </AppText>
           </View>
           <AppText variant="meta" color={colors.text3} numberOfLines={1}>
             {`${allocatedKgText}${baseKgText}`}
           </AppText>
-          <AppText variant="label" color={badgeTones.warning.fg} style={styles.tabular}>
+          <AppText variant="label" color={badgeTones.warning.fg} numberOfLines={1} adjustsFontSizeToFit style={styles.tabular}>
             {format.currency(line.kgAmountVnd)}
           </AppText>
         </View>
 
         <View style={[styles.metricTile, styles.successTile]}>
           <View style={styles.tileHead}>
-            <Route color={badgeTones.success.fg} size={14} strokeWidth={1.75} />
-            <AppText variant="meta" color={colors.text2} numberOfLines={1} style={styles.tileLabel}>
+            <Route color={badgeTones.success.fg} size={14} strokeWidth={1.75} style={styles.noShrink} />
+            <AppText variant="meta" color={colors.text2} numberOfLines={2} style={styles.tileLabel}>
               {t('payroll.trips.allocatedKm')}
             </AppText>
           </View>
           <AppText variant="meta" color={colors.text3} numberOfLines={1}>
             {`${allocatedKmText}${baseKmText}`}
           </AppText>
-          <AppText variant="label" color={badgeTones.success.fg} style={styles.tabular}>
+          <AppText variant="label" color={badgeTones.success.fg} numberOfLines={1} adjustsFontSizeToFit style={styles.tabular}>
             {format.currency(line.kmAmountVnd)}
           </AppText>
         </View>
@@ -140,6 +140,7 @@ const styles = StyleSheet.create({
   },
   codeGroup: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
@@ -152,6 +153,7 @@ const styles = StyleSheet.create({
   amountGroup: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 0,
     gap: space[1],
   },
   amountPill: {
@@ -172,6 +174,7 @@ const styles = StyleSheet.create({
   },
   metricTile: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
     padding: space[2],
     borderRadius: radius.sm,
@@ -187,11 +190,16 @@ const styles = StyleSheet.create({
   },
   tileHead: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: space[1],
   },
+  noShrink: {
+    flexShrink: 0,
+    marginTop: 2,
+  },
   tileLabel: {
-    flexShrink: 1,
+    flex: 1,
+    minWidth: 0,
   },
   tabular: {
     fontVariant: ['tabular-nums'],
