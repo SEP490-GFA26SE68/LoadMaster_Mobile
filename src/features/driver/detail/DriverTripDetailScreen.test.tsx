@@ -65,4 +65,28 @@ describe('màn hình Chi tiết chuyến đi của tài xế', () => {
 
     expect(await screen.findByRole('button', { name: 'Thử lại' })).toBeOnTheScreen()
   })
+
+  test('tài xế thấy thông tin điều phối viên, quãng đường và nút chỉ đường Google Maps', async () => {
+    await renderApp(<DriverTripDetailScreen tripId={LOADED_TRIP} />)
+
+    // Điều phối viên
+    expect(await screen.findByText('Điều phối viên phụ trách')).toBeOnTheScreen()
+    expect(screen.getByText('Gọi điều phối')).toBeOnTheScreen()
+
+    // Quãng đường và thời gian
+    expect(screen.getByText(/Tổng quãng đường: 45.2 km/)).toBeOnTheScreen()
+
+    // Nút chỉ đường tới kho
+    const navDepot = screen.getByRole('button', { name: 'Chỉ đường tới kho' })
+    fireEvent.press(navDepot)
+    expect(Linking.openURL).toHaveBeenCalledWith(expect.stringContaining('google.com/maps/dir/'))
+
+    // Nút chỉ đường tới điểm dừng
+    const navButtons = screen.getAllByRole('button', { name: 'Chỉ đường' })
+    expect(navButtons.length).toBeGreaterThan(0)
+    const firstNav = navButtons[0]
+    if (firstNav === undefined) throw new Error('Không tìm thấy nút chỉ đường')
+    fireEvent.press(firstNav)
+    expect(Linking.openURL).toHaveBeenCalledWith(expect.stringContaining('google.com/maps/dir/'))
+  })
 })

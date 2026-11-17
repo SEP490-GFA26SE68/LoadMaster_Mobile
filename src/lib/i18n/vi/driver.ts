@@ -72,6 +72,15 @@ export const driver = {
     departTrip: 'Xuất phát',
     viewSummary: 'Xem tổng kết',
     toTrips: 'Về danh sách chuyến',
+    dispatcherInfo: 'Điều phối viên phụ trách',
+    dispatcherCall: 'Gọi điều phối',
+    navigate: 'Chỉ đường',
+    navToDepot: 'Chỉ đường tới kho',
+    distance: 'Tổng quãng đường: {dist} km',
+    duration: 'Thời gian dự kiến: {dur}',
+    payloadUtilization: 'Tải trọng sử dụng: {percent}%',
+    minutes: '{mins} phút',
+    hoursAndMinutes: '{hours} giờ {mins} phút',
   },
 
   /** Chuyến mở được nhưng không giao được: nói lý do, có lối về danh sách. */

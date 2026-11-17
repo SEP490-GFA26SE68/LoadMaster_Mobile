@@ -293,6 +293,10 @@ describe('httpDriverApi: xuất phát, đã đến, vị trí, sự cố trên �
       totalStops: 1,
       totalPackages: 1,
       totalWeightKg: 25,
+      dispatcherName: 'Nguyễn Thanh Tùng',
+      dispatcherPhone: '0901234567',
+      totalDistanceMeters: 45000,
+      totalDurationSeconds: 3600,
       stops: [
         {
           stopId: 902,
@@ -333,6 +337,9 @@ describe('httpDriverApi: xuất phát, đã đến, vị trí, sự cố trên �
       status: 'IN_TRANSIT',
       depot: { name: 'Kho Long Bình', address: 'Biên Hoà, Đồng Nai' },
       vehicle: { licensePlate: '51C-123.45', maxPayloadKg: 5000 },
+      dispatcher: { name: 'Nguyễn Thanh Tùng', phone: '0901234567' },
+      totalDistanceMeters: 45000,
+      totalDurationSeconds: 3600,
       stops: [
         {
           id: '902',

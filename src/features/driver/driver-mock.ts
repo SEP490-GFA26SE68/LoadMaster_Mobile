@@ -150,6 +150,8 @@ export function mockDriverApi(): DriverApi {
       if (!isVisibleTo(trip, viewer)) throw new MockDbError('NOT_FOUND', { collection: 'trips', id: tripId })
       const vehicles = await database.listVehicles()
       const vehicle = vehicles.find((v) => v.id === trip.vehicleId)
+      const users = await database.listUsers()
+      const dispatcher = users.find((u) => u.role === 'dispatcher')
       const status = tripStatus(trip)
       return {
         id: trip.id,
@@ -177,6 +179,14 @@ export function mockDriverApi(): DriverApi {
         totalStops: trip.stops.length,
         totalPackages: trip.packages.length,
         totalWeightKg: undefined,
+        dispatcher: dispatcher
+          ? {
+              name: dispatcher.fullName,
+              phone: dispatcher.phone,
+            }
+          : undefined,
+        totalDistanceMeters: 45200,
+        totalDurationSeconds: 4800,
         stops: trip.stops.map((stop, idx) => ({
           id: stop.id,
           number: idx + 1,

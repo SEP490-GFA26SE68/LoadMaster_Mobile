@@ -326,5 +326,11 @@ export type DriverTripDetail = {
   readonly totalStops: number
   readonly totalPackages: number
   readonly totalWeightKg?: number
+  readonly dispatcher?: {
+    readonly name: string
+    readonly phone?: string
+  }
+  readonly totalDistanceMeters?: number
+  readonly totalDurationSeconds?: number
   readonly stops: readonly DriverTripDetailStop[]
 }

@@ -105,6 +105,14 @@ export function tripDetailOf(dto: DriverTripDetailDto): DriverTripDetail {
     totalStops: dto.totalStops ?? (dto.stops?.length ?? 0),
     totalPackages: dto.totalPackages ?? 0,
     totalWeightKg: dto.totalWeightKg ?? undefined,
+    dispatcher: dto.dispatcherName
+      ? {
+          name: dto.dispatcherName,
+          phone: dto.dispatcherPhone ?? undefined,
+        }
+      : undefined,
+    totalDistanceMeters: dto.totalDistanceMeters ?? undefined,
+    totalDurationSeconds: dto.totalDurationSeconds ?? undefined,
     stops: (dto.stops ?? []).map((stop) => ({
       id: String(stop.stopId),
       number: stop.stopSequence,

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { createElement, useEffect, useMemo, useRef, useState } from 'react'
+import { Platform, StyleSheet, View } from 'react-native'
 import { WebView } from 'react-native-webview'
 
 import { colors, radius } from '@/theme/tokens'
@@ -39,6 +39,18 @@ export function RouteMap({
   if (stops.length === 0 && depot === undefined) return null
   if (unavailable) {
     return <RouteSketch depot={depot} stops={stops} path={path} vehicle={vehicle} />
+  }
+
+  if (Platform.OS === 'web') {
+    return (
+      <View accessible accessibilityLabel={label} accessibilityRole="image" style={styles.frame}>
+        {createElement('iframe', {
+          srcDoc: html,
+          style: { width: '100%', height: '100%', border: 'none', backgroundColor: 'transparent' },
+          title: label,
+        })}
+      </View>
+    )
   }
 
   return (
