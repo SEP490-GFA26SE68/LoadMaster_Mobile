@@ -36,6 +36,7 @@ export const account = {
   billingEmail: 'Billing / contact email',
   companyStatus: 'Company status',
   passwordSection: 'Password',
+  editPassword: 'Change password',
   currentPassword: 'Current password',
   newPassword: 'New password',
   confirmPassword: 'Confirm new password',

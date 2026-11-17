@@ -103,6 +103,10 @@ describe('Tài khoản: thông tin cá nhân và thông tin công ty', () => {
     await signInAs('taixe@loadmaster.vn')
     await renderApp(<AccountScreen />)
 
+    // Ban đầu mật khẩu ẩn dưới dạng dấu chấm, chỉ hiện form khi bấm "Thay đổi mật khẩu"
+    expect(await screen.findByText('••••••••')).toBeOnTheScreen()
+    await fireEvent.press(await screen.findByRole('button', { name: 'Thay đổi mật khẩu' }))
+
     // Điền mật khẩu hiện tại và mật khẩu mới
     await fireEvent.changeText(await screen.findByLabelText('Mật khẩu hiện tại'), SEED_PASSWORD)
     await fireEvent.changeText(screen.getByLabelText('Mật khẩu mới'), 'MatKhauMoi123')
@@ -113,5 +117,6 @@ describe('Tài khoản: thông tin cá nhân và thông tin công ty', () => {
 
     // Kiểm tra kết quả
     expect(await screen.findByText('Đã đổi mật khẩu. Lần đăng nhập sau dùng mật khẩu mới.')).toBeOnTheScreen()
+    expect(screen.getByText('••••••••')).toBeOnTheScreen()
   })
 })

@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router'
 import { CircleCheck, Clock, Ellipsis, Info, Navigation, TriangleAlert, Truck } from 'lucide-react-native'
-import { useState } from 'react'
-import { Modal, Pressable, StyleSheet, View } from 'react-native'
+import { useRef, useState } from 'react'
+import { Dimensions, Modal, Pressable, StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
 import { Banner } from '@/components/Banner'
@@ -177,9 +177,22 @@ function TripActionMenu({
 }) {
   const t = useT()
   const router = useRouter()
+  const buttonRef = useRef<View>(null)
   const [open, setOpen] = useState(false)
+  const [coords, setCoords] = useState<{ top: number; right: number }>({ top: 50, right: 16 })
   const preparing = myTripGroup(trip) === 'preparing'
   const departs = useDriverCapabilities().departFromList && trip.status === 'LOADING'
+
+  function handleOpenMenu() {
+    buttonRef.current?.measureInWindow?.((x, y, width, height) => {
+      if (typeof y === 'number' && typeof height === 'number') {
+        const top = y + height + 4
+        const right = Dimensions.get('window').width - (x + width)
+        setCoords({ top: Math.max(10, top), right: Math.max(10, right) })
+      }
+    })
+    setOpen(true)
+  }
 
   function handleDepart() {
     if (preparing || start.isPending) return
@@ -195,19 +208,19 @@ function TripActionMenu({
   }
 
   return (
-    <View style={styles.menuAnchor}>
+    <View style={styles.menuAnchor} ref={buttonRef}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t('driver.myTrips.actionsMenu')}
-        onPress={() => setOpen(true)}
+        onPress={handleOpenMenu}
         style={({ pressed }) => [styles.menuIconBtn, pressed && styles.menuIconBtnPressed]}
         hitSlop={8}>
         <Ellipsis color={colors.text2} size={20} />
       </Pressable>
       {open ? (
-        <Modal transparent animationType="fade" visible={open} onRequestClose={() => setOpen(false)}>
+        <Modal transparent animationType="none" visible={open} onRequestClose={() => setOpen(false)}>
           <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)}>
-            <View style={styles.dropdownMenu}>
+            <View style={[styles.dropdownMenu, { top: coords.top, right: coords.right }]}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t('driver.myTrips.viewDetail')}
@@ -386,12 +399,10 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: space[4],
+    backgroundColor: 'transparent',
   },
   dropdownMenu: {
+    position: 'absolute',
     minWidth: 220,
     backgroundColor: colors.bg,
     borderRadius: radius.md,
@@ -400,6 +411,7 @@ const styles = StyleSheet.create({
     padding: space[2],
     gap: space[1],
     ...shadow.card,
+    elevation: 8,
   },
   dropdownItem: {
     flexDirection: 'row',

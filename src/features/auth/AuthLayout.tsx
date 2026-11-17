@@ -109,6 +109,16 @@ export function AuthLayout({ children }: { children: ReactNode }) {
                 </AppText>
               </View>
             </View>
+
+            {/* Footer thông tin dự án */}
+            <View style={styles.footer}>
+              <AppText variant="meta" color={colors.skyText2} style={styles.footerTagline}>
+                LoadMaster • {t('auth.login.footer.tagline')}
+              </AppText>
+              <AppText variant="meta" color="rgba(231, 252, 253, 0.6)" style={styles.footerProject}>
+                {t('auth.login.footer.projectInfo')}
+              </AppText>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -194,5 +204,22 @@ const styles = StyleSheet.create({
   showcaseText: {
     fontWeight: '500',
     flex: 1,
+  },
+  footer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space[1],
+    paddingTop: space[4],
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  footerTagline: {
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  footerProject: {
+    textAlign: 'center',
+    fontSize: 12,
+    lineHeight: 18,
   },
 })

@@ -1,6 +1,6 @@
 import { Eye, EyeOff, type LucideIcon } from 'lucide-react-native'
 import { useId, useState } from 'react'
-import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native'
+import { Platform, Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native'
 
 import { useT } from '@/lib/i18n'
 import { colors, radius, space, TOUCH, type as scale } from '@/theme/tokens'
@@ -103,16 +103,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: radius.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.lineStrong,
     backgroundColor: colors.bg,
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none' as any,
+        transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+      } as any,
+    }),
   },
   boxFocused: {
     borderColor: colors.focus,
-    borderWidth: 2,
+    borderWidth: 1.5,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 0 0 3px rgba(0, 169, 187, 0.2)',
+      } as any,
+      ios: {
+        shadowColor: colors.focus,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3,
+      },
+    }),
   },
   boxError: {
     borderColor: colors.danger,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 0 0 3px rgba(219, 66, 65, 0.2)',
+      } as any,
+    }),
   },
   iconContainer: {
     paddingLeft: space[3],
@@ -125,6 +147,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[3],
     color: colors.text,
     fontSize: scale.body.fontSize,
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none' as any,
+        outlineWidth: 0,
+      },
+    }),
   },
   inputWithIcon: {
     paddingLeft: space[2],
@@ -132,5 +160,15 @@ const styles = StyleSheet.create({
   // Ghi chú: ba dòng, chữ bắt đầu từ trên
   multiline: { minHeight: 96, paddingVertical: space[3], textAlignVertical: 'top' },
   code: { fontVariant: ['tabular-nums'] },
-  toggle: { width: TOUCH, height: TOUCH, alignItems: 'center', justifyContent: 'center' },
+  toggle: {
+    width: TOUCH,
+    height: TOUCH,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none' as any,
+      },
+    }),
+  },
 })

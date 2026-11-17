@@ -56,6 +56,7 @@ export function AccountScreen({ passwordReset }: { readonly passwordReset?: Pass
   const [profileFeedback, setProfileFeedback] = useState<{ tone: 'success' | 'danger'; message: string } | null>(null)
 
   // Trạng thái đổi mật khẩu trực tiếp
+  const [isEditingPassword, setIsEditingPassword] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -139,6 +140,7 @@ export function AccountScreen({ passwordReset }: { readonly passwordReset?: Pass
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
+      setIsEditingPassword(false)
       setPasswordFeedback({ tone: 'success', message: t('account.passwordChanged') })
     } catch {
       setPasswordFeedback({ tone: 'danger', message: t('account.changePasswordError') })
@@ -264,7 +266,20 @@ export function AccountScreen({ passwordReset }: { readonly passwordReset?: Pass
 
       {/* 4. Password Management Card */}
       <View style={styles.card}>
-        <AppText variant="heading">{t('account.passwordSection')}</AppText>
+        <View style={styles.cardHeader}>
+          <AppText variant="heading">{t('account.passwordSection')}</AppText>
+          {!isEditingPassword ? (
+            <Button
+              variant="secondary"
+              onPress={() => {
+                setIsEditingPassword(true)
+                setPasswordFeedback(null)
+                setPasswordError(undefined)
+              }}>
+              {t('account.editPassword')}
+            </Button>
+          ) : null}
+        </View>
 
         {passwordFeedback ? (
           <Banner tone={passwordFeedback.tone} onDismiss={() => setPasswordFeedback(null)}>
@@ -278,33 +293,50 @@ export function AccountScreen({ passwordReset }: { readonly passwordReset?: Pass
           </Banner>
         ) : null}
 
-        <View style={styles.formGap}>
-          <TextField
-            label={t('account.currentPassword')}
-            secure
-            value={currentPassword}
-            onChangeText={setCurrentPassword}
-          />
-          <TextField
-            label={t('account.newPassword')}
-            secure
-            value={newPassword}
-            onChangeText={setNewPassword}
-            error={passwordError}
-          />
-          <TextField
-            label={t('account.confirmPassword')}
-            secure
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-          />
-          <Button
-            variant="secondary"
-            onPress={() => void handleDirectChangePassword()}
-            disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}>
-            {t('account.changePasswordDirect')}
-          </Button>
-        </View>
+        {!isEditingPassword ? (
+          <Row label={t('account.passwordSection')} value="••••••••" />
+        ) : (
+          <View style={styles.formGap}>
+            <TextField
+              label={t('account.currentPassword')}
+              secure
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+            />
+            <TextField
+              label={t('account.newPassword')}
+              secure
+              value={newPassword}
+              onChangeText={setNewPassword}
+              error={passwordError}
+            />
+            <TextField
+              label={t('account.confirmPassword')}
+              secure
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+            <View style={styles.formActions}>
+              <Button
+                variant="secondary"
+                onPress={() => {
+                  setIsEditingPassword(false)
+                  setCurrentPassword('')
+                  setNewPassword('')
+                  setConfirmPassword('')
+                  setPasswordError(undefined)
+                }}
+                disabled={isChangingPassword}>
+                {t('account.cancel')}
+              </Button>
+              <Button
+                onPress={() => void handleDirectChangePassword()}
+                disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}>
+                {isChangingPassword ? t('account.saving') : t('account.changePasswordDirect')}
+              </Button>
+            </View>
+          </View>
+        )}
 
         {reset !== null ? (
           <Button variant="secondary" onPress={() => setPassword('changing')}>

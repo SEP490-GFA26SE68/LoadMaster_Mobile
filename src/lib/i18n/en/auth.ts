@@ -17,6 +17,10 @@ export const auth = {
     setNewPassword: 'Set a new password',
     resetDone: 'Your new password is set. Sign in with it.',
     resetNotApplied: 'The server still asks for a new password even though you just set one. Ask your company administrator to check the account.',
+    footer: {
+      tagline: '3D Cargo Load Planning & Optimization System',
+      projectInfo: 'Capstone Project · FPT University · © 2026 LoadMaster',
+    },
   },
   forgot: {
     title: 'Reset password',

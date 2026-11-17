@@ -36,6 +36,7 @@ export const account = {
   billingEmail: 'Email thanh toán / liên hệ',
   companyStatus: 'Trạng thái công ty',
   passwordSection: 'Mật khẩu',
+  editPassword: 'Thay đổi mật khẩu',
   currentPassword: 'Mật khẩu hiện tại',
   newPassword: 'Mật khẩu mới',
   confirmPassword: 'Xác nhận mật khẩu mới',

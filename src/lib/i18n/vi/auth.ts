@@ -17,6 +17,10 @@ export const auth = {
     resetDone: 'Đã đặt mật khẩu mới. Đăng nhập bằng mật khẩu vừa đặt.',
     /** Vừa đặt lại mật khẩu xong mà máy chủ vẫn đòi đặt mật khẩu mới: không mời người dùng làm lại vòng đó. */
     resetNotApplied: 'Máy chủ vẫn đòi đặt mật khẩu mới dù bạn vừa đặt xong. Báo cho quản trị công ty để kiểm tra tài khoản.',
+    footer: {
+      tagline: 'Hệ thống lập kế hoạch & tối ưu chất xếp hàng hoá 3D',
+      projectInfo: 'Đồ án tốt nghiệp Capstone Project · Trường Đại học FPT · © 2026 LoadMaster',
+    },
   },
   /** Đặt lại mật khẩu qua mã gửi tới email: ba bước email → mã → mật khẩu mới. */
   forgot: {
