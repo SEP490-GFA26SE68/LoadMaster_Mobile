@@ -74,6 +74,10 @@ export type DriverTripRow = {
   readonly manualSub: TripSubStatus | null
   readonly stopCount: number
   readonly packageCount: number | undefined
+  readonly totalWeightKg?: number
+  readonly totalDistanceMeters?: number
+  readonly estimatedDurationSeconds?: number
+  readonly estimatedCompletionTime?: string
   /** Đang vận chuyển: điểm chưa hoàn tất đầu tiên. */
   readonly currentStop: number | undefined
   readonly completedAt: string | undefined
@@ -90,6 +94,8 @@ export type DriverTripRow = {
 
 export type DriverTrips = {
   readonly groups: Readonly<Record<MyTripGroup, readonly DriverTripRow[]>>
+  /** Toàn bộ lịch sử chuyến đã giao (mới nhất trước), dùng cho màn Lịch sử giao hàng. */
+  readonly history?: readonly DriverTripRow[]
   /** Bao lâu nữa nên đọc lại giờ đến dự kiến của chuyến đang chạy; `null` khi không cần. */
   readonly refreshMs: number | null
 }

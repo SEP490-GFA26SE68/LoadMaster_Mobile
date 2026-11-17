@@ -1,20 +1,32 @@
 import { useRouter } from 'expo-router'
-import { CircleCheck, Clock, Ellipsis, Info, Navigation, TriangleAlert, Truck } from 'lucide-react-native'
+import {
+  Calendar,
+  CircleCheck,
+  Clock,
+  Ellipsis,
+  Info,
+  MapPin,
+  Navigation,
+  Package,
+  Route,
+  TriangleAlert,
+  Truck,
+  Weight,
+  type LucideIcon,
+} from 'lucide-react-native'
 import { useRef, useState } from 'react'
 import { Dimensions, Modal, Pressable, StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
 import { Banner } from '@/components/Banner'
 import { Card } from '@/components/Card'
-import { StopDot } from '@/components/StopDot'
 import { TripStatusChip, TripSubStatusTag } from '@/components/TripStatus'
 import { calendarDate } from '@/lib/calendar-date'
 import { dataErrorMessage, useFormat, useT } from '@/lib/i18n'
-import { badgeTones, colors, radius, shadow, space } from '@/theme/tokens'
+import { badgeTones, colors, radius, shadow, space, type BadgeTone } from '@/theme/tokens'
 
 import type { DriverTripRow } from './driver-model'
 import { myTripGroup } from './my-trips'
-import { EtaSourceLine, StopListTime } from './StopTimingParts'
 import { useDriverCapabilities, useStartDeliveryMutation } from './useDriverQueries'
 
 /** Đường mở một chuyến ở màn điểm giao (hoặc tổng kết khi chuyến đã giao). */
@@ -32,12 +44,29 @@ function dayOf(value: string): Date | string {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) ? calendarDate(value) : value
 }
 
+function formatDuration(seconds: number, t: ReturnType<typeof useT>): string {
+  const totalMinutes = Math.round(seconds / 60)
+  if (totalMinutes < 60) {
+    return t('driver.detail.minutes', { mins: totalMinutes })
+  }
+  const hours = Math.floor(totalMinutes / 60)
+  const mins = totalMinutes % 60
+  return t('driver.detail.hoursAndMinutes', { hours, mins })
+}
+
+function cardAccentOf(trip: DriverTripRow): BadgeTone {
+  if (trip.status === 'IN_TRANSIT') return 'azure'
+  if (trip.status === 'DELIVERED') return 'success'
+  if (trip.status === 'LOADING') return trip.sub?.kind === 'loaded' ? 'cyan' : 'warning'
+  return 'neutral'
+}
+
 /**
- * Một chuyến ở "Chuyến của tôi" (như `MyTripCard` của web):
- * - Hàng đầu: mã chuyến, trạng thái chính, tiến độ xếp (sub-status) và menu tùy chọn (3 chấm).
- * - Thông tin rõ ràng dạng Field: Value (Ngày chạy, Số điểm dừng, Biển số xe tải).
- * - Các điểm dừng hiển thị rõ Địa chỉ điểm giao, Số lượng kiện, Thời gian dự kiến đến.
- * - Hàng nút thao tác được thiết kế nhỏ gọn, tinh tế và căn ở góc phải cuối thẻ.
+ * Một chuyến ở "Chuyến của tôi" hoặc "Lịch sử giao hàng":
+ * Bố cục 2 cột gọn gàng, nhấn màu các thông tin quan trọng:
+ * - Cột trái: Ngày chạy theo kế hoạch, Tổng số điểm dừng, Biển số xe tải.
+ * - Cột phải: Số lượng kiện, Tổng khối lượng kiện, Tổng quãng đường.
+ * - Dải nhấn cuối thẻ: Thời gian dự kiến hoàn thành (hoặc Hoàn thành lúc với chuyến đã giao).
  */
 export function TripCard({ trip }: { readonly trip: DriverTripRow; readonly primary?: boolean }) {
   const t = useT()
@@ -47,14 +76,32 @@ export function TripCard({ trip }: { readonly trip: DriverTripRow; readonly prim
   const upcoming = myTripGroup(trip) === 'upcoming' || trip.status === 'PLANNED'
   const departs = useDriverCapabilities().departFromList && trip.status === 'LOADING'
   const start = useStartDeliveryMutation(trip.id)
+  const accent = badgeTones[cardAccentOf(trip)]
+
+  const distanceText =
+    trip.totalDistanceMeters !== undefined ? `${format.lengthValue(trip.totalDistanceMeters / 1000)} km` : undefined
+
+  const durationText =
+    trip.estimatedDurationSeconds !== undefined ? formatDuration(trip.estimatedDurationSeconds, t) : undefined
+
+  const completionText =
+    trip.estimatedCompletionTime !== undefined && durationText !== undefined
+      ? `${format.time(trip.estimatedCompletionTime)} · ${format.date(trip.estimatedCompletionTime)} (${durationText})`
+      : trip.estimatedCompletionTime !== undefined
+        ? `${format.time(trip.estimatedCompletionTime)} · ${format.date(trip.estimatedCompletionTime)}`
+        : durationText
+
+  const hasRightMetrics =
+    trip.packageCount !== undefined || trip.totalWeightKg !== undefined || distanceText !== undefined
 
   return (
-    <Card>
+    <Card style={[styles.card, { borderLeftColor: accent.fg }]}>
       {start.isError ? (
         <Banner tone="danger" onDismiss={() => start.reset()}>
           {dataErrorMessage(start.error, t)}
         </Banner>
       ) : null}
+
       <View style={styles.head}>
         <View style={styles.headLeft}>
           <AppText variant="label" style={styles.code}>
@@ -73,55 +120,94 @@ export function TripCard({ trip }: { readonly trip: DriverTripRow; readonly prim
 
       {trip.name === undefined ? null : <AppText variant="heading">{trip.name}</AppText>}
 
-      {/* Thông tin chuyến: nhãn Field rõ ràng */}
-      <View style={styles.factsContainer}>
-        {trip.date !== undefined ? (
-          <View style={styles.factRow}>
-            <AppText color={colors.text3} variant="meta">
-              {t('driver.myTrips.labels.plannedDate')}:{' '}
-            </AppText>
-            <AppText variant="label" color={colors.text}>
-              {format.date(dayOf(trip.date))}
-            </AppText>
-          </View>
-        ) : null}
+      {/* Bố cục 2 cột gọn: trái = lịch trình & xe, phải = 3 chỉ số kiện / khối lượng / quãng đường */}
+      <View style={styles.columns}>
+        <View style={styles.leftCol}>
+          {trip.date !== undefined ? (
+            <LeftFact
+              icon={Calendar}
+              iconColor={colors.primary}
+              label={t('driver.myTrips.labels.plannedDate')}
+              value={format.date(dayOf(trip.date))}
+            />
+          ) : null}
 
-        <View style={styles.factRow}>
-          <AppText color={colors.text3} variant="meta">
-            {t('driver.myTrips.labels.totalStops')}:{' '}
-          </AppText>
-          <AppText variant="label" color={colors.text}>
-            {t('driver.myTrips.stops', { count: trip.stopCount })}
-          </AppText>
-          {trip.packageCount !== undefined ? (
-            <>
-              <AppText color={colors.text3} variant="meta">
-                {' · '}{t('driver.myTrips.labels.totalPackages')}:{' '}
-              </AppText>
-              <AppText variant="label" color={colors.text}>
-                {t('driver.myTrips.packages', { count: trip.packageCount })}
-              </AppText>
-            </>
+          <LeftFact
+            icon={MapPin}
+            iconColor={badgeTones.azure.fg}
+            label={t('driver.myTrips.labels.totalStops')}
+            value={t('driver.myTrips.stops', { count: trip.stopCount })}
+            valueColor={badgeTones.azure.fg}
+          />
+
+          {trip.vehicleName !== '' ? (
+            <View style={styles.leftFactRow}>
+              <Truck size={15} color={badgeTones.cyan.fg} strokeWidth={1.75} style={styles.factIcon} />
+              <View style={styles.leftFactText}>
+                <AppText color={colors.text3} variant="meta">
+                  {t('driver.myTrips.labels.vehiclePlate')}:{' '}
+                </AppText>
+                <View style={styles.platePill}>
+                  <AppText variant="meta" color={badgeTones.cyan.fg} style={styles.plateText}>
+                    {trip.vehicleName}
+                  </AppText>
+                </View>
+              </View>
+            </View>
           ) : null}
         </View>
 
-        {trip.vehicleName !== '' ? (
-          <View style={styles.factRow}>
-            <AppText color={colors.text3} variant="meta">
-              {t('driver.myTrips.labels.vehiclePlate')}:{' '}
-            </AppText>
-            <AppText variant="label" color={colors.text}>
-              {trip.vehicleName}
-            </AppText>
+        {hasRightMetrics ? (
+          <View style={styles.rightCol}>
+            {trip.packageCount !== undefined ? (
+              <RightMetric
+                icon={Package}
+                tone="cyan"
+                label={t('driver.myTrips.labels.totalPackages')}
+                value={t('driver.myTrips.packages', { count: trip.packageCount })}
+              />
+            ) : null}
+
+            {trip.totalWeightKg !== undefined ? (
+              <RightMetric
+                icon={Weight}
+                tone="warning"
+                label={t('driver.myTrips.labels.totalWeight')}
+                value={format.weight(trip.totalWeightKg)}
+              />
+            ) : null}
+
+            {distanceText !== undefined ? (
+              <RightMetric
+                icon={Route}
+                tone="success"
+                label={t('driver.myTrips.labels.totalDistance')}
+                value={distanceText}
+              />
+            ) : null}
           </View>
         ) : null}
       </View>
 
-      {trip.status === 'IN_TRANSIT' && trip.currentStop !== undefined ? (
-        <AppText variant="label">{t('driver.myTrips.atStop', { number: trip.currentStop, total: trip.stopCount })}</AppText>
+      {completionText !== undefined && trip.status !== 'DELIVERED' ? (
+        <View style={[styles.highlightStrip, styles.azureStrip]}>
+          <Clock color={badgeTones.azure.fg} size={16} strokeWidth={1.75} style={styles.stripIcon} />
+          <View style={styles.stripText}>
+            <AppText variant="meta" color={colors.text2}>
+              {t('driver.myTrips.labels.estimatedCompletion')}:{' '}
+            </AppText>
+            <AppText variant="label" color={badgeTones.azure.fg} style={styles.tabularValue}>
+              {completionText}
+            </AppText>
+          </View>
+        </View>
       ) : null}
 
-      {trip.stops.length > 0 ? <TripStops trip={trip} /> : null}
+      {trip.status === 'IN_TRANSIT' && trip.currentStop !== undefined ? (
+        <AppText variant="label" color={colors.primary}>
+          {t('driver.myTrips.atStop', { number: trip.currentStop, total: trip.stopCount })}
+        </AppText>
+      ) : null}
 
       {trip.recheck > 0 ? (
         <View style={[styles.box, styles.danger]}>
@@ -151,17 +237,73 @@ export function TripCard({ trip }: { readonly trip: DriverTripRow; readonly prim
       ) : null}
 
       {trip.status === 'DELIVERED' && trip.completedAt !== undefined ? (
-        <AppText color={colors.text2}>
-          {t('driver.myTrips.completedAt', { time: format.time(trip.completedAt), date: format.date(trip.completedAt) })}
-          {trip.issueCount > 0 ? (
-            <AppText variant="label" color={badgeTones.warning.fg}>
-              {' · '}
-              {t('driver.myTrips.issues', { count: trip.issueCount })}
-            </AppText>
-          ) : null}
-        </AppText>
+        <View style={[styles.highlightStrip, styles.successStrip]}>
+          <CircleCheck color={badgeTones.success.fg} size={16} strokeWidth={1.75} style={styles.stripIcon} />
+          <AppText variant="meta" color={badgeTones.success.fg} style={styles.boxText}>
+            {t('driver.myTrips.completedAt', { time: format.time(trip.completedAt), date: format.date(trip.completedAt) })}
+            {trip.issueCount > 0 ? (
+              <AppText variant="meta" color={badgeTones.warning.fg}>
+                {' · '}
+                {t('driver.myTrips.issues', { count: trip.issueCount })}
+              </AppText>
+            ) : null}
+          </AppText>
+        </View>
       ) : null}
     </Card>
+  )
+}
+
+function LeftFact({
+  icon: Icon,
+  iconColor,
+  label,
+  value,
+  valueColor = colors.text,
+}: {
+  readonly icon: LucideIcon
+  readonly iconColor: string
+  readonly label: string
+  readonly value: string
+  readonly valueColor?: string
+}) {
+  return (
+    <View style={styles.leftFactRow}>
+      <Icon size={15} color={iconColor} strokeWidth={1.75} style={styles.factIcon} />
+      <View style={styles.leftFactText}>
+        <AppText color={colors.text3} variant="meta">
+          {label}:{' '}
+        </AppText>
+        <AppText variant="label" color={valueColor} style={styles.tabularValue}>
+          {value}
+        </AppText>
+      </View>
+    </View>
+  )
+}
+
+function RightMetric({
+  icon: Icon,
+  tone,
+  label,
+  value,
+}: {
+  readonly icon: LucideIcon
+  readonly tone: BadgeTone
+  readonly label: string
+  readonly value: string
+}) {
+  const paletteTone = badgeTones[tone]
+  return (
+    <View style={[styles.metricRow, { backgroundColor: paletteTone.bg, borderColor: paletteTone.border }]}>
+      <Icon size={14} color={paletteTone.fg} strokeWidth={1.75} />
+      <AppText variant="meta" color={colors.text2} numberOfLines={1} style={styles.metricLabel}>
+        {label}:
+      </AppText>
+      <AppText variant="meta" color={paletteTone.fg} style={styles.metricValue}>
+        {value}
+      </AppText>
+    </View>
   )
 }
 
@@ -300,70 +442,10 @@ function TripActionMenu({
   )
 }
 
-/**
- * Các điểm của chuyến trong thẻ:
- * Hiển thị rõ ràng Địa chỉ điểm giao, Số lượng kiện, Thời gian dự kiến đến (kèm trạng thái hạn).
- */
-function TripStops({ trip }: { readonly trip: DriverTripRow }) {
-  const t = useT()
-  return (
-    <View style={styles.stops} accessibilityLabel={t('driver.myTrips.stopsLabel', { tripId: trip.code })}>
-      {trip.stops.map((stop) => {
-        const amount =
-          stop.kind === 'PICKUP'
-            ? t('driver.stopKinds.PICKUP')
-            : stop.packageCount === undefined
-              ? undefined
-              : t('driver.myTrips.packages', { count: stop.packageCount })
-        const spoken = [
-          t('common.stop', { number: stop.number }),
-          stop.name,
-          ...(amount === undefined ? [] : [amount]),
-          ...(stop.done ? [t('driver.stopList.state.done')] : []),
-        ].join(', ')
-        return (
-          <View key={stop.number} style={styles.stop}>
-            <View style={styles.stopRow} accessible accessibilityLabel={spoken}>
-              <StopDot number={stop.number} />
-              <View style={styles.stopMain}>
-                <View style={styles.stopLabelLine}>
-                  <AppText color={colors.text3} variant="meta">
-                    {t('driver.myTrips.labels.deliveryAddress')}:
-                  </AppText>
-                  {amount === undefined ? null : (
-                    <View style={styles.stopAmountBadge}>
-                      <AppText color={colors.text3} variant="meta">
-                        {t('driver.myTrips.labels.packageQuantity')}:{' '}
-                      </AppText>
-                      <AppText variant="label" color={colors.text}>
-                        {amount}
-                      </AppText>
-                    </View>
-                  )}
-                </View>
-                <AppText variant="label" style={styles.stopName}>
-                  {stop.name}
-                </AppText>
-              </View>
-              {stop.done ? <CircleCheck color={badgeTones.success.fg} size={20} strokeWidth={1.5} /> : null}
-            </View>
-            {stop.timing === undefined ? null : (
-              <View style={styles.stopTime}>
-                <AppText color={colors.text3} variant="meta">
-                  {t('driver.myTrips.labels.plannedArrival')}:{' '}
-                </AppText>
-                <StopListTime timing={stop.timing} />
-              </View>
-            )}
-          </View>
-        )
-      })}
-      <EtaSourceLine sources={trip.etaSources} mock={!trip.etaFromServer} />
-    </View>
-  )
-}
-
 const styles = StyleSheet.create({
+  card: {
+    borderLeftWidth: 4,
+  },
   head: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -430,13 +512,95 @@ const styles = StyleSheet.create({
   dropdownTextCol: {
     flex: 1,
   },
-  factsContainer: {
-    gap: space[1],
+  columns: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: space[3],
   },
-  factRow: {
+  leftCol: {
+    flex: 1,
+    minWidth: 180,
+    gap: space[2],
+  },
+  leftFactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+  },
+  factIcon: {
+    flexShrink: 0,
+  },
+  leftFactText: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
+  },
+  platePill: {
+    paddingHorizontal: space[2],
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    backgroundColor: badgeTones.cyan.bg,
+    borderWidth: 1,
+    borderColor: badgeTones.cyan.border,
+  },
+  plateText: {
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  rightCol: {
+    minWidth: 170,
+    gap: space[1],
+    alignItems: 'stretch',
+  },
+  metricRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space[2],
+    paddingHorizontal: space[2],
+    paddingVertical: 5,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+  },
+  metricLabel: {
+    flexShrink: 1,
+  },
+  metricValue: {
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  tabularValue: {
+    flexShrink: 1,
+    fontVariant: ['tabular-nums'],
+  },
+  highlightStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[2],
+    paddingHorizontal: space[3],
+    paddingVertical: space[2],
+    borderRadius: radius.md,
+    borderWidth: 1,
+  },
+  azureStrip: {
+    backgroundColor: badgeTones.azure.bg,
+    borderColor: badgeTones.azure.border,
+  },
+  successStrip: {
+    backgroundColor: badgeTones.success.bg,
+    borderColor: badgeTones.success.border,
+  },
+  stripIcon: {
+    flexShrink: 0,
+  },
+  stripText: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
   },
   box: {
     flexDirection: 'row',
@@ -460,48 +624,5 @@ const styles = StyleSheet.create({
   },
   boxText: {
     flex: 1,
-  },
-  stops: {
-    gap: space[2],
-    paddingTop: space[2],
-    borderTopWidth: 1,
-    borderTopColor: colors.lineSoft,
-  },
-  stop: {
-    gap: space[1],
-    paddingBottom: space[2],
-    borderBottomWidth: 1,
-    borderBottomColor: colors.lineSoft,
-  },
-  stopRow: {
-    minHeight: 40,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: space[3],
-  },
-  stopMain: {
-    flex: 1,
-    gap: 2,
-  },
-  stopLabelLine: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: space[2],
-  },
-  stopName: {
-    flex: 1,
-    minWidth: 0,
-  },
-  stopAmountBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  // Căn thẳng hàng với tên địa chỉ
-  stopTime: {
-    paddingLeft: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
   },
 })

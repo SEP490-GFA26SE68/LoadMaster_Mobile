@@ -26,12 +26,25 @@ export function vnInstant(value: string | null | undefined): string | undefined 
 /** Trạng thái chuyến màn tài xế dùng; trạng thái khác (chưa tới kho, đã huỷ) không hiện. */
 type ShownStatus = 'IN_TRANSIT' | 'LOADING' | 'DELIVERED' | 'PLANNED'
 
+function optionalNumber(value: number | string | null | undefined): number | undefined {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : undefined
+  }
+  return undefined
+}
+
 /**
- * Một chuyến của "Chuyến của tôi": backend chưa có tên tuyến, số kiện, điểm đang giao, sự cố — để trống. Chuyến Đang xếp hàng mà kho đã
- * xếp xong (`loadingCompleted`) mang dòng phụ "Xếp xong — chờ xuất phát".
+ * Một chuyến của "Chuyến của tôi": mang đủ thông tin tổng quan cơ bản (ngày chạy, số điểm dừng, biển số xe, số kiện, khối lượng,
+ * quãng đường, thời gian dự kiến hoàn thành). Chuyến Đang xếp hàng mà kho đã xếp xong (`loadingCompleted`) mang dòng phụ "Xếp xong — chờ xuất phát".
  */
 export function tripRowOf(dto: DriverTripDto, status: ShownStatus): DriverTripRow {
   const id = String(dto.tripId)
+  const totalWeightKg = optionalNumber(dto.totalWeightKg)
+  const totalDistanceMeters = optionalNumber(dto.totalDistanceMeters)
+  const estimatedDurationSeconds = optionalNumber(dto.totalDurationSeconds)
+  const estimatedCompletionTime = vnInstant(dto.estimatedCompletionTime)
   return {
     id,
     code: dto.tripCode ?? id,
@@ -42,7 +55,11 @@ export function tripRowOf(dto: DriverTripDto, status: ShownStatus): DriverTripRo
     sub: status === 'LOADING' && dto.loadingCompleted === true ? { kind: 'loaded' } : null,
     manualSub: null,
     stopCount: dto.stopCount ?? 0,
-    packageCount: undefined,
+    packageCount: dto.totalPackages ?? undefined,
+    ...(totalWeightKg === undefined ? {} : { totalWeightKg }),
+    ...(totalDistanceMeters === undefined ? {} : { totalDistanceMeters }),
+    ...(estimatedDurationSeconds === undefined ? {} : { estimatedDurationSeconds }),
+    ...(estimatedCompletionTime === undefined ? {} : { estimatedCompletionTime }),
     currentStop: undefined,
     completedAt: status === 'DELIVERED' ? vnInstant(dto.completedAt) : undefined,
     issueCount: 0,
@@ -74,6 +91,14 @@ export function myTripsOf(dtos: readonly DriverTripDto[]): DriverTrips['groups']
     .toSorted((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))
     .slice(0, RECENT_LIMIT)
   return { inTransit: of('IN_TRANSIT'), loaded: of('LOADING', loaded), preparing: of('LOADING', (dto) => !loaded(dto)), upcoming: of('PLANNED'), recent }
+}
+
+/** Toàn bộ chuyến đã giao của tài xế, sắp xếp mới nhất trước (không cắt theo `RECENT_LIMIT`). */
+export function deliveredHistoryOf(dtos: readonly DriverTripDto[]): DriverTripRow[] {
+  return dtos
+    .filter((dto) => dto.status === 'DELIVERED')
+    .map((dto) => tripRowOf(dto, 'DELIVERED'))
+    .toSorted((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))
 }
 
 /** Đổi DTO chi tiết chuyến của backend sang kiểu `DriverTripDetail` màn cần. */

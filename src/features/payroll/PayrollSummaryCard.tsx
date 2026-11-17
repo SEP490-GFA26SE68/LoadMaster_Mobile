@@ -1,3 +1,5 @@
+import { Package, Route, Truck, Wallet } from 'lucide-react-native'
+import type { ReactNode } from 'react'
 import { StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
@@ -5,7 +7,7 @@ import { Banner } from '@/components/Banner'
 import { Card } from '@/components/Card'
 import { Chip } from '@/components/Chip'
 import { useFormat, useT } from '@/lib/i18n'
-import { colors, radius, space } from '@/theme/tokens'
+import { badgeTones, colors, radius, space, type BadgeTone } from '@/theme/tokens'
 
 import type { CalculatedPayrollStatement } from './payroll-model'
 import { payrollPeriodParts } from './payroll-period'
@@ -14,53 +16,90 @@ type PayrollSummaryCardProps = {
   readonly statement: CalculatedPayrollStatement
 }
 
-/** Hero card tổng lương tháng: tổng thực nhận, trạng thái kỳ (Bản nháp / Đã chốt) và 3 chỉ số sản lượng chính. */
+/** Hero card tổng lương tháng tông màu sáng, tươi tắn: nền trắng, viền nhấn trái, khung tổng tiền cyan dịu và 3 ô chỉ số pastel. */
 export function PayrollSummaryCard({ statement }: PayrollSummaryCardProps) {
   const t = useT()
   const format = useFormat()
   const periodLabel = t('payroll.period.label', payrollPeriodParts(statement.period))
-  const statusTone = statement.status === 'LOCKED' ? 'success' : 'warning'
+  const statusTone: BadgeTone = statement.status === 'LOCKED' ? 'success' : 'warning'
+  const accent = badgeTones[statusTone]
 
   return (
-    <Card style={styles.card}>
-      <View style={styles.topRow}>
-        <View style={styles.titleBlock}>
-          <AppText variant="meta" color={colors.text3}>
-            {t('payroll.summary.totalLabel', { period: periodLabel })}
-          </AppText>
-          {statement.driverName !== '' ? (
-            <AppText variant="label" color={colors.text2} numberOfLines={1}>
-              {statement.driverName}
-            </AppText>
-          ) : null}
+    <View style={styles.wrap}>
+      <Card style={[styles.heroCard, { borderLeftColor: accent.fg }]}>
+        <View style={styles.topRow}>
+          <View style={styles.titleRow}>
+            <View style={styles.walletBadge}>
+              <Wallet color={badgeTones.cyan.fg} size={20} strokeWidth={1.75} />
+            </View>
+            <View style={styles.titleBlock}>
+              <AppText variant="meta" color={colors.text3}>
+                {t('payroll.summary.totalLabel', { period: periodLabel })}
+              </AppText>
+              {statement.driverName !== '' ? (
+                <AppText variant="label" color={colors.text} numberOfLines={1}>
+                  {statement.driverName}
+                </AppText>
+              ) : null}
+            </View>
+          </View>
+          <Chip tone={statusTone} label={t(`payroll.status.${statement.status}`)} />
         </View>
-        <Chip tone={statusTone} label={t(`payroll.status.${statement.status}`)} />
-      </View>
 
-      <AppText variant="display" color={colors.primary} style={styles.amount}>
-        {format.currency(statement.totalSalaryVnd)}
-      </AppText>
+        <View style={styles.amountBox}>
+          <AppText variant="display" color={colors.primary} style={styles.amount}>
+            {format.currency(statement.totalSalaryVnd)}
+          </AppText>
+        </View>
 
-      <View style={styles.metricsRow}>
-        <MetricCell label={t('payroll.summary.trips')} value={format.integer(statement.trips.length)} />
-        <View style={styles.metricDivider} />
-        <MetricCell label={t('payroll.summary.totalKg')} value={format.weight(statement.totalKg)} />
-        <View style={styles.metricDivider} />
-        <MetricCell label={t('payroll.summary.totalKm')} value={t('payroll.trips.kmUnit', { value: format.lengthValue(statement.totalKm) })} />
-      </View>
+        <View style={styles.metricsRow}>
+          <MetricTile
+            tone="azure"
+            icon={<Truck color={badgeTones.azure.fg} size={15} strokeWidth={1.75} />}
+            label={t('payroll.summary.trips')}
+            value={format.integer(statement.trips.length)}
+          />
+          <MetricTile
+            tone="warning"
+            icon={<Package color={badgeTones.warning.fg} size={15} strokeWidth={1.75} />}
+            label={t('payroll.summary.totalKg')}
+            value={format.weight(statement.totalKg)}
+          />
+          <MetricTile
+            tone="success"
+            icon={<Route color={badgeTones.success.fg} size={15} strokeWidth={1.75} />}
+            label={t('payroll.summary.totalKm')}
+            value={t('payroll.trips.kmUnit', { value: format.lengthValue(statement.totalKm) })}
+          />
+        </View>
+      </Card>
 
       {statement.status === 'DRAFT' ? <Banner tone="warning">{t('payroll.summary.draftNotice')}</Banner> : null}
-    </Card>
+    </View>
   )
 }
 
-function MetricCell({ label, value }: { readonly label: string; readonly value: string }) {
+function MetricTile({
+  tone,
+  icon,
+  label,
+  value,
+}: {
+  readonly tone: BadgeTone
+  readonly icon: ReactNode
+  readonly label: string
+  readonly value: string
+}) {
+  const paletteTone = badgeTones[tone]
   return (
-    <View style={styles.metricCell}>
-      <AppText variant="meta" color={colors.text3} numberOfLines={1}>
-        {label}
-      </AppText>
-      <AppText variant="label" color={colors.text} numberOfLines={1}>
+    <View style={[styles.metricTile, { backgroundColor: paletteTone.bg, borderColor: paletteTone.border }]}>
+      <View style={styles.metricHead}>
+        {icon}
+        <AppText variant="meta" color={colors.text2} numberOfLines={1} style={styles.metricLabel}>
+          {label}
+        </AppText>
+      </View>
+      <AppText variant="label" color={paletteTone.fg} numberOfLines={1} style={styles.metricValue}>
         {value}
       </AppText>
     </View>
@@ -68,8 +107,13 @@ function MetricCell({ label, value }: { readonly label: string; readonly value: 
 }
 
 const styles = StyleSheet.create({
-  card: {
+  wrap: {
+    gap: space[3],
+  },
+  heroCard: {
+    gap: space[3],
     borderRadius: radius.xl,
+    borderLeftWidth: 4,
   },
   topRow: {
     flexDirection: 'row',
@@ -77,32 +121,60 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: space[2],
   },
+  titleRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space[3],
+  },
+  walletBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    backgroundColor: badgeTones.cyan.bg,
+    borderWidth: 1,
+    borderColor: badgeTones.cyan.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   titleBlock: {
     flex: 1,
     gap: 2,
   },
+  amountBox: {
+    paddingVertical: space[3],
+    paddingHorizontal: space[4],
+    borderRadius: radius.md,
+    backgroundColor: badgeTones.cyan.bg,
+    borderWidth: 1,
+    borderColor: badgeTones.cyan.border,
+  },
   amount: {
-    letterSpacing: -0.4,
+    letterSpacing: -0.5,
+    fontVariant: ['tabular-nums'],
   },
   metricsRow: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    paddingVertical: space[3],
+    gap: space[2],
+  },
+  metricTile: {
+    flex: 1,
+    gap: space[1],
+    paddingVertical: space[2],
     paddingHorizontal: space[2],
     borderRadius: radius.md,
-    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.lineSoft,
   },
-  metricCell: {
-    flex: 1,
+  metricHead: {
+    flexDirection: 'row',
     alignItems: 'center',
     gap: space[1],
-    paddingHorizontal: space[1],
   },
-  metricDivider: {
-    width: 1,
-    backgroundColor: colors.border,
-    marginVertical: space[1],
+  metricLabel: {
+    flexShrink: 1,
+  },
+  metricValue: {
+    fontVariant: ['tabular-nums'],
   },
 })

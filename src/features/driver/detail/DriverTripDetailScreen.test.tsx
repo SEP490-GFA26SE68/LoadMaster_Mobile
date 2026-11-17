@@ -36,9 +36,11 @@ describe('màn hình Chi tiết chuyến đi của tài xế', () => {
     // Kho xuất phát
     expect(await screen.findByText('Kho Long Bình')).toBeOnTheScreen()
 
-    // Phương tiện vận chuyển đầy đủ thông tin
+    // Phương tiện vận chuyển mặc định đóng dạng dropdown, bấm để mở xem đầy đủ thông tin
     expect(screen.getByText('Phương tiện vận chuyển')).toBeOnTheScreen()
-    expect(screen.getByText('Biển số xe:')).toBeOnTheScreen()
+    expect(screen.queryByText('Thể tích thùng:')).toBeNull()
+    await fireEvent.press(screen.getByRole('button', { name: /Phương tiện vận chuyển/ }))
+    expect(await screen.findByText('Biển số xe:')).toBeOnTheScreen()
     expect(screen.getByText('Loại xe:')).toBeOnTheScreen()
     expect(screen.getByText('Thể tích thùng:')).toBeOnTheScreen()
     expect(screen.getByText('8.43 m³')).toBeOnTheScreen()
@@ -46,12 +48,25 @@ describe('màn hình Chi tiết chuyến đi của tài xế', () => {
     // Không còn phần Tổng quan chuyến thừa
     expect(screen.queryByText('Tổng quan chuyến')).toBeNull()
 
-    // Trạng thái điểm dừng đã Việt hóa và có nhãn Thông tin khách nhận
+    // Điểm dừng mặc định đóng dạng dropdown (chỉ hiện địa chỉ trước khi mở)
+    expect(screen.queryByText('Thông tin khách nhận')).toBeNull()
+    const stopButtons = screen.getAllByRole('button', { name: /^\d+\s/ })
+    expect(stopButtons.length).toBeGreaterThan(0)
+    for (const btn of stopButtons) {
+      await fireEvent.press(btn)
+    }
+
+    // Trạng thái điểm dừng đã Việt hóa và có nhãn Thông tin khách nhận sau khi mở dropdown
     expect(screen.getAllByText('Chờ giao').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Giao hàng').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Thông tin khách nhận').length).toBeGreaterThan(0)
 
-    // Điểm dừng và kiện hàng (kèm loại hàng, kích thước, trạng thái kiện)
+    // Kiện hàng tại điểm mặc định đóng dạng dropdown, bấm để mở xem danh sách kiện
+    expect(screen.queryByText(/PKG-004/)).toBeNull()
+    const packageToggles = screen.getAllByRole('button', { name: /Kiện hàng tại điểm/ })
+    for (const toggle of packageToggles) {
+      await fireEvent.press(toggle)
+    }
     expect(await screen.findByText(/PKG-004/)).toBeOnTheScreen()
     expect(screen.getAllByText(/Kích thước: .* cm/).length).toBeGreaterThan(0)
     expect(screen.getAllByText('Đã xếp lên xe').length).toBeGreaterThan(0)
@@ -61,12 +76,18 @@ describe('màn hình Chi tiết chuyến đi của tài xế', () => {
   test('bấm nút gọi điện mở liên kết điện thoại tel:', async () => {
     await renderApp(<DriverTripDetailScreen tripId={LOADED_TRIP} />)
 
+    await screen.findByRole('header', { name: LOADED_TRIP })
+    const stopButtons = screen.getAllByRole('button', { name: /^\d+\s/ })
+    for (const btn of stopButtons) {
+      await fireEvent.press(btn)
+    }
+
     const callButtons = await screen.findAllByRole('button', { name: 'Gọi điện' })
     expect(callButtons.length).toBeGreaterThan(0)
 
     const firstButton = callButtons[0]
     if (firstButton === undefined) throw new Error('Không tìm thấy nút gọi điện')
-    fireEvent.press(firstButton)
+    await fireEvent.press(firstButton)
     expect(Linking.openURL).toHaveBeenCalledWith('tel:0938 552 109')
   })
 
@@ -88,9 +109,11 @@ describe('màn hình Chi tiết chuyến đi của tài xế', () => {
   test('tài xế thấy thông tin điều phối viên, quãng đường và nút chỉ đường Google Maps', async () => {
     await renderApp(<DriverTripDetailScreen tripId={LOADED_TRIP} />)
 
-    // Điều phối viên
+    // Điều phối viên mặc định đóng dạng dropdown, bấm để mở nút gọi
     expect(await screen.findByText('Điều phối viên phụ trách')).toBeOnTheScreen()
-    expect(screen.getByText('Gọi điều phối')).toBeOnTheScreen()
+    expect(screen.queryByText('Gọi điều phối')).toBeNull()
+    await fireEvent.press(screen.getByRole('button', { name: /Điều phối viên phụ trách/ }))
+    expect(await screen.findByText('Gọi điều phối')).toBeOnTheScreen()
 
     // Quãng đường và thời gian
     expect(screen.getByText(/Tổng quãng đường: 45.2 km/)).toBeOnTheScreen()
@@ -100,12 +123,16 @@ describe('màn hình Chi tiết chuyến đi của tài xế', () => {
     fireEvent.press(navDepot)
     expect(Linking.openURL).toHaveBeenCalledWith(expect.stringContaining('google.com/maps/dir/'))
 
-    // Nút chỉ đường tới điểm dừng
+    // Nút chỉ đường tới điểm dừng (sau khi mở dropdown điểm dừng)
+    const stopButtons = screen.getAllByRole('button', { name: /^\d+\s/ })
+    for (const btn of stopButtons) {
+      await fireEvent.press(btn)
+    }
     const navButtons = screen.getAllByRole('button', { name: 'Chỉ đường' })
     expect(navButtons.length).toBeGreaterThan(0)
     const firstNav = navButtons[0]
     if (firstNav === undefined) throw new Error('Không tìm thấy nút chỉ đường')
-    fireEvent.press(firstNav)
+    await fireEvent.press(firstNav)
     expect(Linking.openURL).toHaveBeenCalledWith(expect.stringContaining('google.com/maps/dir/'))
   })
 })

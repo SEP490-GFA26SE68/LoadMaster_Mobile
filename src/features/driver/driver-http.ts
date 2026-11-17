@@ -4,7 +4,7 @@ import { driverNotificationsOf, fetchServerNotifications, markServerNotification
 
 import type { DriverApi } from './driver-api'
 import type { CompleteStopDto, CurrentStopDto, DriverTripDetailDto, DriverTripDto, DriverTripExceptionDto, LocationPointDto, RoutePlanDetailDto } from './driver-http-dto'
-import { myTripsOf, shownStatusOf, tripDetailOf, tripRowOf } from './driver-http-mapping'
+import { deliveredHistoryOf, myTripsOf, shownStatusOf, tripDetailOf, tripRowOf } from './driver-http-mapping'
 import { deliveryPackageOf, isUnloaded, packageOfCode, stopScreenOf, withUnloaded } from './driver-http-stop'
 import { serverEtaSources, serverTripStops, tripStopsOf, type DriverTripStopsDto, type ServerTripStops } from './driver-http-stop-times'
 import { coded, HTTP_DRIVER_CAPABILITIES, refused, SERVER_REFRESH_MS, unsupported } from './driver-http-support'
@@ -162,12 +162,14 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     capabilities: HTTP_DRIVER_CAPABILITIES,
 
     async fetchMyTrips() {
-      const all = myTripsOf(await listTrips())
+      const dtos = await listTrips()
+      const all = myTripsOf(dtos)
       // Chuyến đang chạy và chuyến xếp xong chờ xuất phát có danh sách điểm (như web); nhóm khác chưa có việc ở từng điểm
       const [inTransit, loaded] = await Promise.all([Promise.all(all.inTransit.map(withStops)), Promise.all(all.loaded.map(withStops))])
       const groups = { ...all, inTransit, loaded }
+      const history = deliveredHistoryOf(dtos)
       const active = groups.inTransit.length + groups.loaded.length + groups.preparing.length > 0
-      return { groups, refreshMs: active ? SERVER_REFRESH_MS : null }
+      return { groups, history, refreshMs: active ? SERVER_REFRESH_MS : null }
     },
 
     // GET /api/driver/trips/{id}/detail
