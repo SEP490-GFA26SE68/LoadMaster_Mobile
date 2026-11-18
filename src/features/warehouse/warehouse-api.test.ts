@@ -24,8 +24,8 @@ import * as api from './warehouse-api'
 
 const signIn = (email: string) => getMockDb().authenticate(email, SEED_PASSWORD)
 
-/** Phần chung của mọi dòng seed: không xác nhận tay, kiện hỏng, báo thiếu hay lần quay về; `seal` là trường của dòng chép từ web, app không dùng. */
-const REST = { manualSub: null, damaged: 0, shortages: 0, replan: undefined, recheck: 0, seal: undefined }
+/** Phần chung của mọi dòng seed: không xác nhận tay, kiện hỏng, báo thiếu hay lần quay về. */
+const REST = { manualSub: null, damaged: 0, shortages: 0, replan: undefined, recheck: 0 }
 
 beforeEach(resetMockDb)
 
