@@ -3,7 +3,7 @@
  * `warehouse` là máy chủ, màn đọc thẳng phiên của máy chủ qua `warehouse-server-api.ts` (bảng endpoint ở đó) và mọi hàm dưới đây từ chối
  * `NOT_SUPPORTED` — không có hàm nào lấy dữ liệu kho mẫu khi đăng nhập bằng máy chủ. `warehouseCapabilities` đọc được ở cả hai nguồn.
  *   chỉ có ở kho mẫu: fetchWarehouseTrips, fetchWarehouseTrip, startLoading, confirmStagingByQr, confirmStagingManually,
- *   reportStagingShortage, confirmLoadingByQr, confirmLoadingManually, reportDamagedPackage, completeLoading, recordSeal, fetchTripLabels
+ *   reportStagingShortage, confirmLoadingByQr, confirmLoadingManually, reportDamagedPackage, completeLoading, fetchTripLabels
  *   cả hai nguồn: fetchNotifications (máy chủ: GET /api/notifications), markNotificationsRead (chỉ máy chủ: POST /api/notifications/read)
  */
 import { createAdapter } from '@/data/adapter'
@@ -49,8 +49,6 @@ export type WarehouseApi = {
   reportDamagedPackage(tripId: string, packageInstanceId: string): Promise<Trip>
   /** Hoàn tất xếp khi mọi kiện đã có kết quả và không còn xác nhận tay chờ duyệt. */
   completeLoading(tripId: string): Promise<Trip>
-  /** Ghi số seal khi đã xếp xong, trước khi xe chạy: số trống hoặc quá dài là `SEAL_INVALID`, chuyến chưa xếp xong `TRIP_PHASE_INVALID`. */
-  recordSeal(tripId: string, sealNumber: string): Promise<Trip>
   /** Nhãn QR mọi kiện của chuyến: tên kiện cho câu báo sai kiện, mã của bên gửi cho ô gõ mã. */
   fetchTripLabels(tripId: string): Promise<TripLabel[]>
   fetchNotifications(): Promise<WarehouseNotification[]>
@@ -59,11 +57,11 @@ export type WarehouseApi = {
 }
 
 /**
- * Nguồn máy chủ của hợp đồng kho mẫu: nói việc kho làm được — soạn (kèm xác nhận tay, báo thiếu), xếp, seal, chuông — và đọc chuông của
+ * Nguồn máy chủ của hợp đồng kho mẫu: nói việc kho làm được — soạn (kèm xác nhận tay, báo thiếu), xếp, chuông — và đọc chuông của
  * máy chủ; mọi hàm còn lại từ chối `NOT_SUPPORTED` vì màn đọc phiên của máy chủ qua `warehouse-server-api.ts`.
  */
 const SERVER_SOURCE: WarehouseApi = {
-  capabilities: { backend: true, manualConfirm: true, shortages: true, seal: true, notifications: true },
+  capabilities: { backend: true, manualConfirm: true, shortages: true, notifications: true },
   fetchWarehouseTrips: notSupported,
   fetchWarehouseTrip: notSupported,
   startLoading: notSupported,
@@ -74,7 +72,6 @@ const SERVER_SOURCE: WarehouseApi = {
   confirmLoadingManually: notSupported,
   reportDamagedPackage: notSupported,
   completeLoading: notSupported,
-  recordSeal: notSupported,
   fetchTripLabels: notSupported,
   // GET /api/notifications
   fetchNotifications: async () => warehouseNotificationsOf(await fetchServerNotifications(api())),
@@ -137,11 +134,6 @@ export function reportDamagedPackage(tripId: string, packageInstanceId: string):
 // chỉ kho mẫu
 export function completeLoading(tripId: string): Promise<Trip> {
   return adapter().completeLoading(tripId)
-}
-
-// chỉ kho mẫu
-export function recordSeal(tripId: string, sealNumber: string): Promise<Trip> {
-  return adapter().recordSeal(tripId, sealNumber)
 }
 
 // chỉ kho mẫu

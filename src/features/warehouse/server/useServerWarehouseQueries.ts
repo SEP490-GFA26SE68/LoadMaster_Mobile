@@ -9,7 +9,6 @@ import {
   fetchServerSession,
   fetchServerTasks,
   recordServerDeviation,
-  recordServerSeal,
   reportServerDamaged,
   reportServerShortage,
   stageServerPackage,
@@ -120,8 +119,4 @@ export function useReportServerDamaged(tripId: string) {
 
 export function useCompleteServerLoading(tripId: string) {
   return useWrite(tripId, () => completeServerLoading(tripId), itself)
-}
-
-export function useRecordServerSeal(tripId: string) {
-  return useWrite(tripId, (sealNumber: string) => recordServerSeal(tripId, sealNumber), itself)
 }

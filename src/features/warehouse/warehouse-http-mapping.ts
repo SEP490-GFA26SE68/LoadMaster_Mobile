@@ -8,7 +8,6 @@ import type {
   ServerLoadingSession,
   ServerManualState,
   ServerPlacement,
-  ServerSeal,
   ServerStagingState,
   ServerWarehouseStage,
   ServerWarehouseTrip,
@@ -101,12 +100,6 @@ function stagingOf(dto: PlacementStepDto): ServerStagingState {
   return { staged: dto.staged === true, shortage, manual: manualOf(dto) }
 }
 
-function sealOf(dto: StartLoadingDto): ServerSeal | null {
-  const number = text(dto.sealNumber)
-  if (number === null) return null
-  return { number, at: dto.sealedAt ? isoFromBackend(dto.sealedAt) : null, byName: text(dto.sealedByName) }
-}
-
 export function sessionOf(dto: StartLoadingDto): ServerLoadingSession {
   const id = String(dto.tripId)
   const steps = (dto.placements ?? []).map((step) => ({ status: step.status, placement: placementOf(step), staging: stagingOf(step) }))
@@ -128,7 +121,6 @@ export function sessionOf(dto: StartLoadingDto): ServerLoadingSession {
     stagingComplete: !stagingRequired || dto.stagingComplete === true,
     pendingManual:
       typeof dto.pendingManualCount === 'number' ? dto.pendingManualCount : steps.filter((item) => item.staging.manual?.status === 'PENDING').length,
-    seal: sealOf(dto),
     completed: dto.status === 'COMPLETED',
   }
 }

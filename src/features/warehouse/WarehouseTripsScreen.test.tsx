@@ -124,11 +124,10 @@ describe('tab Kho', () => {
     expect(approved.getByText('0/132')).toBeOnTheScreen()
     expect(approved.queryByRole('progressbar')).toBeNull()
 
-    // Xếp xong chờ tài xế xuất phát: kho còn mở lại được để ghi số seal
+    // Xếp xong chờ tài xế xuất phát: kho còn mở lại được để xem
     const loaded = cardOf(LOADED_TRIP)
     expect(loaded.getByText('Xếp xong — chờ xuất phát')).toBeOnTheScreen()
     expect(loaded.getByText('210/210')).toBeOnTheScreen()
-    expect(loaded.getByText('Chưa ghi số seal.')).toBeOnTheScreen()
     expect(loaded.getByRole('button', { name: 'Xem chuyến đã xếp TRIP-010' })).toBeOnTheScreen()
 
     // Bản duyệt lỗi thời: không có nút, một cảnh báo nói vì sao

@@ -192,23 +192,15 @@ describe('Phiên soạn → xếp trên máy chủ', () => {
     expect(await screen.findByRole('header', { name: 'Đã xếp xong chuyến TRIP-0051' })).toBeOnTheScreen()
   })
 
-  test('xếp xong: ghi số seal lên máy chủ, rồi "Về danh sách chuyến" là nút chính', async () => {
-    let seal: string | null = null
-    serve(() => loadingDto(['CONFIRMED', 'DAMAGED'], { status: 'COMPLETED', sealNumber: seal }), {
-      'POST /api/warehouse/tasks/51/seal': (call) => {
-        seal = (call.body as { sealNumber: string }).sealNumber
-        return ok(null)
-      },
-    })
+  test('xếp xong: nói số kiện hỏng bỏ lại kho, "Về danh sách chuyến" ở chân màn đưa về danh sách, không ghi gì lên máy chủ', async () => {
+    serve(() => loadingDto(['CONFIRMED', 'DAMAGED'], { status: 'COMPLETED' }))
     await renderSession()
     expect(await screen.findByText(/Đã bỏ lại 1 kiện hỏng ở kho\.$/)).toBeOnTheScreen()
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Ghi số seal' }))
-    await fireEvent.changeText(await screen.findByLabelText('Số seal'), ' SL-77 ')
-    await fireEvent.press(screen.getByRole('button', { name: 'Ghi số seal' }))
-    expect(await screen.findByText('Số seal SL-77')).toBeOnTheScreen()
-    expect(posts()).toEqual([expect.objectContaining({ body: { sealNumber: 'SL-77' } })])
-    expect(screen.queryByRole('button', { name: 'Ghi số seal' })).toBeNull()
+    const back = screen.getAllByRole('button', { name: 'Về danh sách chuyến' })
+    await fireEvent.press(back[back.length - 1]!)
+    expect(router.dismissTo).toHaveBeenCalledWith('/warehouse')
+    expect(posts()).toEqual([])
   })
 
   test('chuyến không còn ở Đang xếp hàng: nói không mở được phiên, không có nút thử lại', async () => {

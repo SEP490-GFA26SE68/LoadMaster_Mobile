@@ -21,8 +21,6 @@ export type WarehouseCapabilities = {
   readonly manualConfirm: boolean
   /** Báo thiếu một kiện chưa soạn (điều phối viên quyết tìm tiếp hay bỏ kiện). */
   readonly shortages: boolean
-  /** Ghi số seal niêm phong khi đã xếp xong. */
-  readonly seal: boolean
   /** Chuông thông báo. */
   readonly notifications: boolean
 }

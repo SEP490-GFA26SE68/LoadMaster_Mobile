@@ -1,4 +1,4 @@
-/** Màn Xếp xong của phiên kho: số kiện đã xếp, kiện bỏ lại, số seal niêm phong (`LoadingFinishedView`). */
+/** Màn Xếp xong của phiên kho: số kiện đã xếp, kiện bỏ lại (`LoadingFinishedView`). */
 import type { Dictionary } from '../types'
 import type { warehouseFinished as source } from '../vi/warehouseFinished'
 

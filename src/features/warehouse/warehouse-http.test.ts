@@ -129,22 +129,6 @@ describe('httpWarehouseApi: xếp', () => {
     const { warehouse } = warehouseBackend({ 'POST /api/warehouse/tasks/51/complete': () => fail(status, code) })
     expect(await failure(() => warehouse.complete('51'))).toMatchObject({ code: expected, status })
   })
-
-  test('số seal cắt khoảng trắng; máy chủ từ chối số sai độ dài thì câu kèm độ dài tối đa', async () => {
-    const path = '/api/warehouse/tasks/51/seal'
-    let reject = false
-    const { warehouse, calls } = warehouseBackend(
-      onSession(loadingDto(['CONFIRMED', 'CONFIRMED'], { status: 'COMPLETED', sealNumber: 'SL-77', sealedAt: '2026-11-12T08:05:00' }), {
-        [`POST ${path}`]: () => (reject ? fail(400, 'SEAL_INVALID') : ok(null)),
-      }),
-    )
-    const session = await warehouse.seal('51', '  SL-77 ')
-    expect(calls.find((call) => call.path === path)?.body).toEqual({ sealNumber: 'SL-77' })
-    expect(session).toMatchObject({ completed: true, seal: { number: 'SL-77', at: '2026-11-12T01:05:00.000Z' } })
-
-    reject = true
-    expect(await failure(() => warehouse.seal('51', 'X'))).toMatchObject({ code: 'SEAL_INVALID', params: { max: 32 } })
-  })
 })
 
 describe('httpWarehouseApi: phiên của máy chủ', () => {

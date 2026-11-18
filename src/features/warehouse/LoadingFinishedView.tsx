@@ -10,9 +10,6 @@ import type { Revision, Trip } from '@/lib/mock-db'
 import { colors } from '@/theme/tokens'
 
 import { DamagedList, FinishedTiles, StopTallyList } from './finished/FinishedFigures'
-import { SealCard } from './finished/SealCard'
-import { SealSheet } from './finished/SealSheet'
-import { useSealEntry } from './finished/useSealEntry'
 import { loadingProgress, stopTallies } from './loading-session'
 import { SessionExitButton } from './SessionExitButton'
 import { useLeaveSession } from './useLeaveSession'
@@ -28,12 +25,11 @@ export type LoadingFinishedViewProps = {
 
 /**
  * Màn "Xếp xong — chờ xuất phát" của phiên kho (như `LoadingFinished` của web, cỡ điện thoại, một cột): tiêu đề, hai ô số (đã xếp trên
- * tổng, bỏ lại kho), kiện hỏng bỏ lại kho, niêm phong thùng, "Theo điểm giao", số kiện đối chiếu bằng nhãn, rồi tuyến · xe · ngày chạy (xe
+ * tổng, bỏ lại kho), kiện hỏng bỏ lại kho, "Theo điểm giao", số kiện đối chiếu bằng nhãn, rồi tuyến · xe · ngày chạy (xe
  * chỉ khi chuyến còn trong danh sách của kho). Không có tên hay số điện thoại tài xế: màn không có nguồn đó. Mở lại chuyến đã xếp xong — kể
  * cả khi xe đã đi giao — cũng ra màn này, chỉ đọc.
  *
- * Chân màn: còn ở kho mà chưa ghi số seal thì "Ghi số seal" là nút chính (mở tờ nhập), "Về danh sách chuyến" là nút phụ; còn lại "Về danh
- * sách chuyến" là nút chính. Tờ nhập đang mở thì chân màn ẩn — tờ che chỗ đó, và màn chỉ có một nút chính.
+ * Chân màn: "Về danh sách chuyến" là nút chính duy nhất.
  */
 export function LoadingFinishedView({ trip, plan }: LoadingFinishedViewProps) {
   const t = useT()
@@ -44,18 +40,7 @@ export function LoadingFinishedView({ trip, plan }: LoadingFinishedViewProps) {
   const loadedByQr = trip.loading?.steps.filter((step) => step.outcome === 'loaded' && step.via === 'qr').length ?? 0
   // Tên xe từ danh sách chuyến của kho (cùng khoá truy vấn); xe đã đi giao thì chuyến không còn trong danh sách nên không có dòng xe
   const vehicleName = useWarehouseTrips().data?.find((row) => row.id === trip.id)?.vehicleName
-  const entry = useSealEntry(trip)
-  const seal = trip.loading?.seal
-  const needsSeal = entry.editable && seal === undefined
-
-  const footer = entry.open ? undefined : (
-    <>
-      {needsSeal ? <Button write onPress={entry.start}>{t('warehouse.seal.submit')}</Button> : null}
-      <Button variant={needsSeal ? 'secondary' : 'primary'} onPress={leave}>
-        {t('warehouse.backToList')}
-      </Button>
-    </>
-  )
+  const footer = <Button onPress={leave}>{t('warehouse.backToList')}</Button>
 
   return (
     <Screen title={trip.id} leading={<SessionExitButton />} scroll footer={footer}>
@@ -67,21 +52,9 @@ export function LoadingFinishedView({ trip, plan }: LoadingFinishedViewProps) {
       </Card>
       <FinishedTiles loaded={progress.loaded} total={progress.total} left={progress.damaged.length} />
       <DamagedList damaged={progress.damaged} />
-      {entry.available ? <SealCard seal={seal} editable={entry.editable} failure={entry.open ? null : entry.failure} onChange={entry.start} /> : null}
       <StopTallyList tallies={tallies} />
       {loadedByQr > 0 ? <AppText color={colors.text2}>{t('warehouse.scan.recordedByQr', { count: loadedByQr })}</AppText> : null}
       <TripInfo trip={trip} vehicleName={vehicleName} />
-      {entry.available ? (
-        <SealSheet
-          key={entry.session}
-          open={entry.open}
-          initial={seal?.number ?? ''}
-          pending={entry.pending}
-          failure={entry.open ? entry.failure : null}
-          onCancel={entry.cancel}
-          onSubmit={entry.submit}
-        />
-      ) : null}
     </Screen>
   )
 }
