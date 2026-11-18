@@ -24,7 +24,7 @@ import * as api from './warehouse-api'
 
 const signIn = (email: string) => getMockDb().authenticate(email, SEED_PASSWORD)
 
-/** Phần chung của mọi dòng seed: không xác nhận tay, kiện hỏng, báo thiếu, lần quay về hay seal. */
+/** Phần chung của mọi dòng seed: không xác nhận tay, kiện hỏng, báo thiếu hay lần quay về; `seal` là trường của dòng chép từ web, app không dùng. */
 const REST = { manualSub: null, damaged: 0, shortages: 0, replan: undefined, recheck: 0, seal: undefined }
 
 beforeEach(resetMockDb)
@@ -43,7 +43,6 @@ describe('lệnh của kho đòi phiên', () => {
     ['confirmLoadingManually', () => api.confirmLoadingManually(LOADING_TRIP, manual)],
     ['reportDamagedPackage', () => api.reportDamagedPackage(LOADING_TRIP, 'PKG-001-01')],
     ['completeLoading', () => api.completeLoading(LOADING_TRIP)],
-    ['recordSeal', () => api.recordSeal(LOADED_TRIP, 'SL-001')],
     ['fetchTripLabels', () => api.fetchTripLabels(READY_TRIP)],
     ['fetchNotifications', () => api.fetchNotifications()],
   ])('%s chưa đăng nhập: NOT_SIGNED_IN, kho không ghi gì', async (_name, call) => {
@@ -163,17 +162,6 @@ describe('kiện hỏng lúc xếp, chuyến hai thùng (không kiện nào tự
     expect(done.phase).toBe('loaded')
     expect(done.loading?.steps.map((step) => [step.packageInstanceId, step.outcome])).toStrictEqual([['PKG-001-01', 'loaded'], ['PKG-002-01', 'damaged']])
   })
-})
-
-test('số seal: chỉ ghi khi đã xếp xong; số trống hoặc quá 32 ký tự bị từ chối; ghi xong hiện ở dòng của chuyến', async () => {
-  await signIn(WAREHOUSE_EMAIL)
-  await expect(api.recordSeal(LOADING_TRIP, 'SL-2026-0914')).rejects.toMatchObject({ code: 'TRIP_PHASE_INVALID', params: { tripId: LOADING_TRIP, phase: 'loading' } })
-  await expect(api.recordSeal(LOADED_TRIP, '   ')).rejects.toMatchObject({ code: 'SEAL_INVALID', params: { max: 32 } })
-  await expect(api.recordSeal(LOADED_TRIP, 'S'.repeat(33))).rejects.toMatchObject({ code: 'SEAL_INVALID', params: { max: 32 } })
-
-  const sealed = await api.recordSeal(LOADED_TRIP, ' SL-2026-0914 ')
-  expect(sealed.loading?.seal?.number).toBe('SL-2026-0914')
-  expect((await api.fetchWarehouseTrips()).find((row) => row.id === LOADED_TRIP)?.seal).toBe('SL-2026-0914')
 })
 
 test('chuông: điều phối viên quyết kiện mình báo thiếu, huỷ chuyến đang xếp; huỷ chuyến kho chưa bắt đầu thì không báo', async () => {

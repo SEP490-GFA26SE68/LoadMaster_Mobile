@@ -16,8 +16,8 @@ import type { WarehouseTripRow } from '../warehouse-trips'
 
 /**
  * Một chuyến ở tab Kho (như `WarehouseTripCard` của web), cỡ điện thoại: mã chuyến cùng chip trạng thái và dòng phụ (xuống hàng khi hết
- * chỗ), tuyến là tiêu đề, ngày chạy · số kiện · tiến độ, xe ở dòng riêng để biển số không bị ngắt, thanh tiến độ khi đang soạn / xếp, số
- * seal khi đã xếp xong, và một nút 56 rộng hết thẻ theo nhóm: "Tiếp tục soạn / xếp (x/y)", "Bắt đầu soạn hàng", "Xem chuyến đã xếp". Bản
+ * chỗ), tuyến là tiêu đề, ngày chạy · số kiện · tiến độ, xe ở dòng riêng để biển số không bị ngắt, thanh tiến độ khi đang soạn / xếp,
+ * và một nút 56 rộng hết thẻ theo nhóm: "Tiếp tục soạn / xếp (x/y)", "Bắt đầu soạn hàng", "Xem chuyến đã xếp". Bản
  * duyệt lỗi thời thì không có nút — một cảnh báo nói vì sao kho chưa xếp được, và chuyến vừa quay về thì nói lý do, có phải dỡ ra không.
  * Điều phối viên từ chối xác nhận tay mà kiện chưa được kiểm lại thì thẻ nhắc mở chuyến để kiểm lại.
  */
@@ -63,9 +63,6 @@ export function WarehouseTripCard({ row, primary }: { row: WarehouseTripRow; pri
       </View>
 
       {row.stage === 'loading' ? <ProgressMeter row={row} /> : null}
-      {row.stage === 'loaded' ? (
-        <AppText color={colors.text2}>{row.seal === undefined ? t('warehouse.list.noSeal') : t('warehouse.list.seal', { number: row.seal })}</AppText>
-      ) : null}
       {row.recheck > 0 ? <Warning tone="danger">{t('warehouse.list.recheck', { count: row.recheck })}</Warning> : null}
       {row.stage === 'stale' ? (
         <Warning tone="warning">

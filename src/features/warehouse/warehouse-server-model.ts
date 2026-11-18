@@ -76,9 +76,6 @@ export type ServerStagingState = {
   readonly manual: ServerManualState | null
 }
 
-/** Số seal đã ghi sau khi xếp xong. */
-export type ServerSeal = { readonly number: string; readonly at: string | null; readonly byName: string | null }
-
 /** Lòng thùng của phiên, cm; `null` khi xe chưa gắn loại hoặc loại chưa khai lòng thùng — khi đó không có sơ đồ thùng. */
 export type ServerCargoBox = { readonly innerLengthCm: number; readonly innerWidthCm: number; readonly innerHeightCm: number }
 
@@ -98,7 +95,6 @@ export type ServerLoadingSession = {
   readonly stagingComplete: boolean
   /** Xác nhận tay của kho còn chờ điều phối viên duyệt: còn thì chưa hoàn tất xếp được. */
   readonly pendingManual: number
-  readonly seal: ServerSeal | null
   readonly completed: boolean
 }
 

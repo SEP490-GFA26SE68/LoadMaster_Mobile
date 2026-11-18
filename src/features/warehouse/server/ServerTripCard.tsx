@@ -19,7 +19,7 @@ import { useStartServerLoading } from './useServerWarehouseQueries'
  * Một chuyến ở tab Kho khi nguồn là máy chủ (như `ServerWarehouseTripCard` của web), cỡ điện thoại: mã chuyến cùng chip trạng thái, giờ
  * xuất phát · số kiện, xe ở dòng riêng, và một nút 56 rộng hết thẻ theo nhóm — "Bắt đầu soạn hàng" (máy chủ mở phiên kèm bước soạn rồi màn
  * mở phiên đó), "Tiếp tục soạn / xếp" (mở lại phiên của máy chủ, ở máy nào cũng được), "Xem chuyến đã xếp". Chuyến chờ điều phối tối ưu lại
- * chỉ có một khung lý do, không nút. Máy chủ không trả tên tuyến, tiến độ, số seal của danh sách: thẻ không vẽ các phần đó.
+ * chỉ có một khung lý do, không nút. Máy chủ không trả tên tuyến, tiến độ của danh sách: thẻ không vẽ các phần đó.
  */
 export function ServerTripCard({ row, primary }: { row: ServerWarehouseTrip; primary: boolean }) {
   const t = useT()
