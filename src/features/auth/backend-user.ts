@@ -65,12 +65,19 @@ export function userFromBackend(profile: BackendUserProfile, role: Role, standIn
     email: profile.email,
     phone: profile.phoneNumber ?? '',
     status,
-    companyName: profile.companyName ?? sample.companyName,
-    companyCode: profile.companyCode ?? sample.companyCode,
-    companyTaxCode: profile.companyTaxCode ?? sample.companyTaxCode,
-    companyBillingEmail: profile.companyBillingEmail ?? sample.companyBillingEmail,
-    companyStatus: profile.companyStatus ?? sample.companyStatus,
+    // Thông tin công ty (thẻ tài khoản của app mobile): chỉ đặt trường có giá trị, không để khoá `undefined` trong người dùng
+    ...definedOnly({
+      companyName: profile.companyName ?? sample.companyName,
+      companyCode: profile.companyCode ?? sample.companyCode,
+      companyTaxCode: profile.companyTaxCode ?? sample.companyTaxCode,
+      companyBillingEmail: profile.companyBillingEmail ?? sample.companyBillingEmail,
+      companyStatus: profile.companyStatus ?? sample.companyStatus,
+    }),
     userType: profile.userType === 'TRIAL' ? 'TRIAL' : 'OFFICIAL',
     subscriptionExpired: Boolean(profile.subscriptionExpired),
   }
+}
+
+function definedOnly<T extends Record<string, unknown>>(fields: T): Partial<T> {
+  return Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined)) as Partial<T>
 }
