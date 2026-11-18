@@ -1,5 +1,6 @@
-import { RefreshControl, SectionList, StyleSheet, View } from 'react-native'
 import { useRouter } from 'expo-router'
+import { History } from 'lucide-react-native'
+import { Pressable, RefreshControl, SectionList, StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
 import { Button } from '@/components/Button'
@@ -45,13 +46,6 @@ export function MyTripsScreen() {
       title={t('driver.myTrips.title')}
       actions={<NotificationBell />}
       below={
-        <View style={styles.headerBelow}>
-          <AppText color={colors.skyText2}>{format.date(new Date())}</AppText>
-          {capabilities.payroll ? (
-            <Button variant="secondary" onPress={() => router.push('/driver-payroll')}>
-              {t('driver.payroll.open')}
-            </Button>
-          ) : null}
         <View style={styles.belowRow}>
           <AppText color={colors.skyText2}>{format.date(new Date())}</AppText>
           <Pressable
@@ -65,6 +59,11 @@ export function MyTripsScreen() {
               {historyCount > 0 ? ` (${historyCount})` : ''}
             </AppText>
           </Pressable>
+          {capabilities.payroll ? (
+            <Button variant="secondary" onPress={() => router.push('/driver-payroll')}>
+              {t('driver.payroll.open')}
+            </Button>
+          ) : null}
         </View>
       }>
       {query.isPending ? (

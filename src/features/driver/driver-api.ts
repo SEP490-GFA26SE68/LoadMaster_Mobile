@@ -24,6 +24,8 @@ import type {
   DriverCapabilities,
   DriverNotification,
   DriverPayrollStatement,
+  DriverTripDetail,
+  DriverTripException,
   DriverTrips,
   DriverTripScreen,
   LocationRequest,
@@ -77,6 +79,8 @@ export function fetchMyTrips(): Promise<DriverTrips> {
 // GET /api/driver/payroll?period=YYYY-MM
 export function fetchPayroll(period: string): Promise<DriverPayrollStatement> {
   return adapter().fetchPayroll(period)
+}
+
 // GET /api/driver/trips/{id}/detail
 export function fetchTripDetail(tripId: string): Promise<DriverTripDetail> {
   return adapter().fetchTripDetail(tripId)
