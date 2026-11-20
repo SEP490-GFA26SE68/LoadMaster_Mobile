@@ -5,12 +5,15 @@ import { pollInterval } from '@/lib/polling'
 
 import {
   arriveAtStop,
+  cancelClaim,
+  claimTrip,
   completeStop,
   confirmUnload,
   confirmUnloadManually,
   createPickupRequest,
   driverCapabilities,
   fetchMyTrips,
+  fetchOpenTrips,
   fetchPayroll,
   fetchNotifications,
   fetchTripDetail,
@@ -36,6 +39,7 @@ const NO_CAPABILITIES: DriverCapabilities = {
   gps: false,
   notifications: false,
   gpsLocalOnly: false,
+  tripClaims: false,
 }
 
 /**
@@ -59,6 +63,7 @@ export const driverKeys = {
   detail: (tripId: string) => ['driver', 'trip-detail', tripId] as const,
   exceptions: (tripId: string) => ['driver', 'trip-exceptions', tripId] as const,
   notifications: ['driver', 'notifications'] as const,
+  openTrips: ['driver', 'open-trips'] as const,
 }
 
 /**
@@ -167,4 +172,35 @@ export function useReportTripExceptionMutation(tripId: string) {
 /** Tài xế gửi yêu cầu nhận hàng dọc đường; kho trả yêu cầu đã kiểm mười luật kèm các điểm của chuyến (câu của luật 2 gọi tên điểm). */
 export function useCreatePickupRequestMutation(tripId: string) {
   return useDriverMutation((input: PickupRequestInput) => createPickupRequest(tripId, input))
+}
+
+/** Danh sách chuyến đang mở (chưa có tài xế) của công ty. */
+export function useOpenTripsQuery() {
+  return useQuery({
+    queryKey: driverKeys.openTrips,
+    queryFn: fetchOpenTrips,
+    staleTime: 0,
+  })
+}
+
+/** Xin nhận một chuyến đang mở. */
+export function useClaimTripMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ tripId, note }: { tripId: string; note?: string }) => claimTrip(tripId, note),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: driverKeys.openTrips })
+    },
+  })
+}
+
+/** Rút phiếu xin chuyến đang chờ duyệt. */
+export function useCancelClaimMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (tripId: string) => cancelClaim(tripId),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: driverKeys.openTrips })
+    },
+  })
 }

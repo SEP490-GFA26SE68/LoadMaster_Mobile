@@ -11,10 +11,18 @@ const EXPECTED: Readonly<Record<Role, readonly WorkTab[]>> = {
   companyManager: ['overview', 'trip-list', 'monitoring'],
   dispatcher: ['trip-list', 'monitoring'],
   warehouse: ['warehouse', 'lookup'],
-  driver: ['trips', 'payroll'],
+  driver: ['trips', 'open-trips', 'payroll'],
 }
 
 describe('tab làm việc theo vai trò', () => {
+  test('tài xế có tab open-trips, các vai trò khác không có', () => {
+    expect(hasTab('driver', 'open-trips' as any)).toBe(true)
+    for (const role of ROLES) {
+      if (role !== 'driver') {
+        expect(hasTab(role, 'open-trips' as any)).toBe(false)
+      }
+    }
+  })
   test.each(ROLES)('%s: đúng các tab của phạm vi app, màn chính là tab đầu tiên', (role) => {
     const tabs = WORK_TABS.filter((tab) => hasTab(role, tab))
     expect(tabs).toEqual(EXPECTED[role])

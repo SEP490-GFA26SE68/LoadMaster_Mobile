@@ -5,7 +5,7 @@ import type { Role, User } from '@/types/user'
 import { can, type Permission } from './permissions'
 
 /** Tab làm việc của thanh tab đáy (route `src/app/(app)/(tabs)/<tên>.tsx`), theo thứ tự trên thanh; Tài khoản luôn có nên không nằm ở đây. */
-export const WORK_TABS = ['overview', 'trip-list', 'monitoring', 'trips', 'payroll', 'warehouse', 'lookup'] as const
+export const WORK_TABS = ['overview', 'trip-list', 'monitoring', 'trips', 'open-trips', 'payroll', 'warehouse', 'lookup'] as const
 
 export type WorkTab = (typeof WORK_TABS)[number]
 
@@ -19,6 +19,7 @@ const TAB_PERMISSION: Readonly<Record<WorkTab, Permission>> = {
   'trip-list': 'trips.view',
   monitoring: 'monitoring.view',
   trips: 'driver.operate',
+  'open-trips': 'driver.operate',
   payroll: 'driver.operate',
   warehouse: 'warehouse.operate',
   lookup: 'packages.lookup',
@@ -37,7 +38,7 @@ const ROLE_TABS: Readonly<Record<Role, readonly WorkTab[]>> = {
   companyManager: ['overview', 'trip-list', 'monitoring'],
   dispatcher: ['trip-list', 'monitoring'],
   warehouse: ['warehouse', 'lookup'],
-  driver: ['trips', 'payroll'],
+  driver: ['trips', 'open-trips', 'payroll'],
 }
 
 /** Vai trò có tab này: tab nằm trong phạm vi app của vai trò và vai trò có quyền mở màn đó. */

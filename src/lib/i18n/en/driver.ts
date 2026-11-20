@@ -11,6 +11,7 @@ export const driver = {
       upcoming: 'Upcoming trips',
       recent: 'Recently delivered',
     },
+    draftStatus: 'Being planned',
     empty: {
       title: 'No trips yet',
       description: 'Trips assigned to you appear here once the warehouse starts staging.',
@@ -340,7 +341,6 @@ export const driver = {
   },
   payroll: {
     title: 'Pay statement',
-    open: 'View pay statement',
     period: 'Pay period {period}',
     previousMonth: 'Previous month',
     nextMonth: 'Next month',

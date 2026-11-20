@@ -1,14 +1,15 @@
 import { Tabs } from 'expo-router'
-import { LayoutDashboard, MapPinned, PackageSearch, Truck, UserRound, Wallet, Warehouse, type LucideIcon } from 'lucide-react-native'
+import { ClipboardList, LayoutDashboard, MapPinned, PackageSearch, Truck, UserRound, Wallet, Warehouse, type LucideIcon } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useAuth } from '@/features/auth/AuthProvider'
 import { hasTab, type WorkTab } from '@/features/auth/landing'
+import { useDriverCapabilities } from '@/features/driver/useDriverQueries'
 import { useLookupCapabilities } from '@/features/lookup/useLookupQueries'
 import { useT } from '@/lib/i18n'
 import { colors, space, TOUCH, type as scale } from '@/theme/tokens'
 
-type TabLabel = `nav.${'overview' | 'tripList' | 'monitoring' | 'trips' | 'payroll' | 'warehouse' | 'lookup'}`
+type TabLabel = `nav.${'overview' | 'tripList' | 'monitoring' | 'trips' | 'openTrips' | 'payroll' | 'warehouse' | 'lookup'}`
 
 /** Nhãn và hình của từng tab làm việc; icon như mục điều hướng của bản web. */
 const TAB_LOOK: Readonly<Record<WorkTab, { readonly label: TabLabel; readonly icon: LucideIcon }>> = {
@@ -16,6 +17,7 @@ const TAB_LOOK: Readonly<Record<WorkTab, { readonly label: TabLabel; readonly ic
   'trip-list': { label: 'nav.tripList', icon: Truck },
   monitoring: { label: 'nav.monitoring', icon: MapPinned },
   trips: { label: 'nav.trips', icon: Truck },
+  'open-trips': { label: 'nav.openTrips', icon: ClipboardList },
   payroll: { label: 'nav.payroll', icon: Wallet },
   warehouse: { label: 'nav.warehouse', icon: Warehouse },
   lookup: { label: 'nav.lookup', icon: PackageSearch },
@@ -33,8 +35,13 @@ export default function AppLayout() {
   const { user } = useAuth()
   const insets = useSafeAreaInsets()
   const lookup = useLookupCapabilities()
+  const driver = useDriverCapabilities()
   // Tab mà nguồn dữ liệu đang dùng làm được; tab khác luôn có nguồn
-  const sourced = (name: WorkTab) => name !== 'lookup' || lookup.available
+  const sourced = (name: WorkTab) => {
+    if (name === 'lookup') return lookup.available
+    if (name === 'open-trips') return driver.tripClaims
+    return true
+  }
   const tab = (name: WorkTab) => {
     const { label, icon: Icon } = TAB_LOOK[name]
     return (
@@ -58,6 +65,7 @@ export default function AppLayout() {
       {tab('trip-list')}
       {tab('monitoring')}
       {tab('trips')}
+      {tab('open-trips')}
       {tab('payroll')}
       {tab('warehouse')}
       {tab('lookup')}

@@ -1,6 +1,8 @@
 /** Nhãn của thanh tab đáy. */
 export const nav = {
   trips: 'Chuyến của tôi',
+  /** Tab chuyến chưa có tài xế để xin nhận. */
+  openTrips: 'Chuyến đang mở',
   /** Tab phiếu lương của tài xế (và các vai trò khác khi mở rộng). */
   payroll: 'Lương',
   /** Tab của nhân viên kho: danh sách chuyến cần xếp (như mục "Kho" của bản web). */
