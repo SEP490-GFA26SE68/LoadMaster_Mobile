@@ -1,6 +1,6 @@
+import { useRouter } from 'expo-router'
 import { History } from 'lucide-react-native'
 import { Pressable, RefreshControl, SectionList, StyleSheet, View } from 'react-native'
-import { useRouter } from 'expo-router'
 
 import { AppText } from '@/components/AppText'
 import { Button } from '@/components/Button'

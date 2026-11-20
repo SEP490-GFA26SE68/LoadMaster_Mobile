@@ -27,7 +27,7 @@ export const DISPATCHER_ID = 'US-0001'
  * Chuyến seed của Long Bình theo từng nhóm của danh sách kho:
  * - `READY_TRIP` chờ soạn: bản duyệt `REV-002` còn hiệu lực, 132 kiện, bốn điểm giao;
  * - `LOADING_TRIP` đang xếp: đồng nghiệp đã soạn đủ và xếp 110 / 280 kiện;
- * - `LOADED_TRIP` xếp xong — chờ xuất phát (210 kiện), còn ghi được số seal;
+ * - `LOADED_TRIP` xếp xong — chờ xuất phát (210 kiện);
  * - `STALE_TRIP` chờ điều phối tối ưu lại: bản duyệt lỗi thời, kho không vào phiên được.
  */
 export const READY_TRIP = 'TRIP-2026-0914'

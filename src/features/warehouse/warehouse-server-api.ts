@@ -12,7 +12,6 @@
  *   recordServerDeviation         POST /api/warehouse/placements/{id}/deviation
  *   reportServerDamaged           POST /api/warehouse/placements/{id}/damaged
  *   completeServerLoading         POST /api/warehouse/tasks/{tripId}/complete
- *   recordServerSeal              POST /api/warehouse/tasks/{tripId}/seal
  */
 import { createAdapter } from '@/data/adapter'
 import { notSupported } from '@/lib/office-backend'
@@ -63,8 +62,6 @@ export type ServerWarehouseApi = {
   damaged(tripId: string, placementId: string): Promise<DamageResult>
   /** Hoàn tất xếp khi mọi kiện đã có kết quả và không còn xác nhận tay chờ duyệt. */
   complete(tripId: string): Promise<ServerLoadingSession>
-  /** Ghi / đổi số seal khi đã xếp xong, tới lúc xe rời kho. */
-  seal(tripId: string, sealNumber: string): Promise<ServerLoadingSession>
 }
 
 const SAMPLE_SOURCE: ServerWarehouseApi = {
@@ -79,7 +76,6 @@ const SAMPLE_SOURCE: ServerWarehouseApi = {
   deviation: notSupported,
   damaged: notSupported,
   complete: notSupported,
-  seal: notSupported,
 }
 
 const adapter = createAdapter<ServerWarehouseApi>('warehouse', { mock: () => SAMPLE_SOURCE, http: () => httpWarehouseApi() })
@@ -137,9 +133,4 @@ export function reportServerDamaged(tripId: string, placementId: string): Promis
 // POST /api/warehouse/tasks/{tripId}/complete
 export function completeServerLoading(tripId: string): Promise<ServerLoadingSession> {
   return adapter().complete(tripId)
-}
-
-// POST /api/warehouse/tasks/{tripId}/seal
-export function recordServerSeal(tripId: string, sealNumber: string): Promise<ServerLoadingSession> {
-  return adapter().seal(tripId, sealNumber)
 }

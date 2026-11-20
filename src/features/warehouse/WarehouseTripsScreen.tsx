@@ -16,7 +16,7 @@ type TripSection = { readonly stage: WarehouseStage; readonly title: string; rea
 
 /**
  * Tab Kho của nhân viên kho (như `WarehouseTripsPage` của web): chuyến cần xếp chia nhóm theo trạng thái và dòng phụ (`warehouseGroups`) —
- * Đang xếp hàng (tiến độ) · Chờ soạn · Xếp xong — chờ xuất phát (còn ghi được số seal) · Chờ điều phối tối ưu lại (không bắt đầu được);
+ * Đang xếp hàng (tiến độ) · Chờ soạn · Xếp xong — chờ xuất phát · Chờ điều phối tối ưu lại (không bắt đầu được);
  * tiêu đề nhóm kèm số chuyến. Một nút chính: chuyến nên làm trước — đang xếp dở, không thì chuyến chờ soạn sớm nhất; mọi nút khác là nút
  * phụ. Dưới tiêu đề là số chuyến và ngày hôm nay; chuông ở mép phải dải trời. Kéo xuống để đọc lại; đã có danh sách mà lần đọc lại lỗi
  * thì giữ danh sách, nói lỗi ở đầu danh sách.

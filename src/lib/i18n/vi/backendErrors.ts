@@ -24,12 +24,9 @@ export const backendErrors = {
   PICKUP_STOP_INCOMPLETE: 'Còn kiện nhận chưa đối chiếu lên xe — chưa hoàn tất điểm nhận được.',
   // Màn điều phối viên và quản lý công ty nối backend
   TRIP_NOT_FOUND: 'Không tìm thấy chuyến này, hoặc chuyến không thuộc công ty của bạn.',
-  PAYROLL_RATE_NOT_CONFIGURED: 'Công ty chưa cấu hình mức lương áp dụng cho tháng này.',
   PAYROLL_RATE_ALREADY_EXISTS: 'Đã có phiên bản mức lương bắt đầu từ tháng này.',
-  PAYROLL_PERIOD_NOT_FOUND: 'Chưa có bảng lương cho tháng này.',
   PAYROLL_PERIOD_LOCKED: 'Bảng lương đã chốt nên không thể thay đổi hoặc tính lại.',
   PAYROLL_DATA_INCOMPLETE: 'Chuyến có dữ liệu phương án khối lượng hoặc quãng đường còn thiếu.',
-  PAYROLL_INVALID_PERIOD: 'Kỳ lương không hợp lệ. Chọn tháng theo định dạng năm-tháng.',
   PAYROLL_INVALID_DRIVER_ASSIGNMENT: 'Phân công tài xế nhận lương năng suất không hợp lệ.',
   PAYROLL_INVALID_AMOUNT: 'Khối lượng, quãng đường và đơn giá phải là số không âm.',
   TRIP_EXCEPTION_NOT_FOUND: 'Sự cố này không còn trên chuyến. Kéo xuống để đọc lại.',
@@ -78,7 +75,6 @@ export const backendErrors = {
   LOADING_MANUAL_CONFIRM_PENDING: 'Còn xác nhận tay chờ điều phối viên duyệt — chưa hoàn tất xếp được.',
   /** Mã `STAGING_INCOMPLETE` của máy chủ — không kèm số kiện như mã cùng tên của kho mẫu, nên adapter đổi sang mã này. */
   STAGING_NOT_READY: 'Chưa soạn đủ hàng vào khu chờ, hoặc còn kiện báo thiếu chờ điều phối viên quyết — chưa xếp được.',
-  SEAL_NOT_ALLOWED: 'Chỉ ghi được số seal khi đã xếp xong và xe chưa xuất phát.',
   // Màn phiếu lương nối backend (`payroll-http.ts`)
   PAYROLL_INVALID_PERIOD: 'Kỳ lương không hợp lệ. Chọn lại tháng cần xem.',
   PAYROLL_PERIOD_NOT_FOUND: 'Không tìm thấy kỳ lương này.',

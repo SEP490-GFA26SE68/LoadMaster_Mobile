@@ -12,12 +12,9 @@ import type { ServerLoadingSession, ServerManualInput, ServerWarehouseTrip } fro
  * điều máy chủ đã ghi — không giữ tiến độ ở máy.
  *
  * Lỗi mang tên `ErrorCode` của backend đi thẳng (câu ở `backendErrors`); vài mã đổi sang mã của app: `STAGING_INCOMPLETE` (máy chủ không
- * kèm số kiện còn thiếu) → `STAGING_NOT_READY`, `SEAL_INVALID` kèm độ dài tối đa. Máy chủ cũ trả lỗi không kèm mã: lệnh hoàn tất xếp đọc
+ * kèm số kiện còn thiếu) → `STAGING_NOT_READY`. Máy chủ cũ trả lỗi không kèm mã: lệnh hoàn tất xếp đọc
  * 400 là còn kiện chưa xử lý.
  */
-
-/** Số seal của máy chủ: 1 → 32 ký tự (`SEAL_INVALID`). */
-const SERVER_SEAL_MAX = 32
 
 const hasCode = (error: unknown, code: string) => isApiError(error) && error.code === code
 
@@ -37,7 +34,6 @@ async function translated<T>(request: Promise<T>): Promise<T> {
   } catch (error) {
     if (!isApiError(error)) throw error
     if (error.code === 'STAGING_INCOMPLETE') throw new ApiError('STAGING_NOT_READY', { status: error.status })
-    if (error.code === 'SEAL_INVALID') throw new ApiError('SEAL_INVALID', { status: error.status, params: { max: SERVER_SEAL_MAX } })
     throw error
   }
 }
@@ -117,8 +113,5 @@ export function httpWarehouseApi({ client = api }: { readonly client?: () => Api
     // Máy chủ cũ báo còn kiện chưa xử lý bằng 400 không kèm mã
     complete: (tripId) =>
       writeThenRead(tripId, () => withStatusCode(client().post(`${tripPath(tripId)}/complete`), { 400: 'INCOMPLETE_LOADING' })),
-
-    seal: (tripId, sealNumber) =>
-      writeThenRead(tripId, () => client().post(`${tripPath(tripId)}/seal`, { body: { sealNumber: sealNumber.trim() } })),
   }
 }

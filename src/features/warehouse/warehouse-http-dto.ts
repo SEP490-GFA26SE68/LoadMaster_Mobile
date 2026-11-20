@@ -67,9 +67,6 @@ export type StartLoadingDto = {
   readonly stagingRequired?: boolean | null
   readonly stagingComplete?: boolean | null
   readonly pendingManualCount?: number | null
-  readonly sealNumber?: string | null
-  readonly sealedAt?: string | null
-  readonly sealedByName?: string | null
 }
 
 /** `POST …/staging/packages/{packageId}/confirm`. */

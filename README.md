@@ -18,7 +18,7 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
   xác nhận tay), báo sự cố theo kiện, sự cố trên đường, hoàn tất điểm, tổng kết; gửi vị trí GPS; thông báo.
 - Nhân viên kho, đủ luồng trên kho mẫu: tab **Kho** — chuyến theo nhóm (đang xếp, chờ soạn, xếp xong — chờ xuất phát, chờ điều phối
   tối ưu lại); phiên một chuyến — soạn hàng (đối chiếu từng kiện, báo thiếu), xếp theo thứ tự của phương án (thẻ chỉ dẫn, sơ đồ thùng
-  2D nhìn từ trên, hướng đặt, báo kiện hỏng), xếp xong và số seal; tab **Tra cứu kiện** (quét hoặc gõ mã, báo đã tìm thấy kiện);
+  2D nhìn từ trên, hướng đặt, báo kiện hỏng), xếp xong; tab **Tra cứu kiện** (quét hoặc gõ mã, báo đã tìm thấy kiện);
   chuông và màn thông báo. Chưa có: khung 3D (bước xếp dùng sơ đồ 2D).
 - Điều phối viên và quản lý công ty, trên kho mẫu: tab **Chuyến hàng** (danh sách theo ngày, tab trạng thái, tìm bỏ dấu; chi tiết
   chuyến chỉ đọc, điều phối viên duyệt xác nhận tay và quyết kiện báo thiếu); tab **Giám sát** (chuyến đang chạy, vị trí và giờ đến
@@ -33,7 +33,7 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
 - Nối backend cho nhân viên kho: tab **Kho** đọc `GET /api/warehouse/tasks` (đang xếp, chờ xếp, xếp xong — chờ xuất phát, chờ điều
   phối tối ưu lại kèm lý do); phiên đọc lại từ máy chủ ở máy nào cũng được — soạn hàng (đối chiếu không cần thứ tự, xác nhận tay chờ
   duyệt, báo thiếu), xếp theo thứ tự (đối chiếu, xác nhận tay, ghi sai lệch vị trí, kiện hỏng: bỏ lại kho hoặc chuyến về lập kế hoạch),
-  hoàn tất xếp (mờ khi còn xác nhận tay chờ), số seal. Tab **Tra cứu kiện** đọc máy chủ khi nguồn `packages` là `http` (quét QR, gõ mã QR / mã của kho / mã của bên gửi / mã vạch, báo đã tìm thấy kiện mang cờ "Không tìm thấy"). Chưa có trên máy chủ ở app: chuông của kho, khung vị
+  hoàn tất xếp (mờ khi còn xác nhận tay chờ). Tab **Tra cứu kiện** đọc máy chủ khi nguồn `packages` là `http` (quét QR, gõ mã QR / mã của kho / mã của bên gửi / mã vạch, báo đã tìm thấy kiện mang cờ "Không tìm thấy"). Chưa có trên máy chủ ở app: chuông của kho, khung vị
   trí kiện (vị trí ghi bằng số).
 - Nối backend cho điều phối viên và quản lý công ty: danh sách và chi tiết chuyến (duyệt xác nhận tay, quyết kiện báo thiếu), Giám sát
   (sự cố cấp chuyến, tìm tuyến khác, chuyển quản lý, gia hạn), Tổng quan theo kỳ. Ẩn khi dùng máy chủ: yêu cầu giao và dòng phụ phương

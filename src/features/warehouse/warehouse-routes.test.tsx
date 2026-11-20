@@ -173,7 +173,7 @@ describe('nhân viên kho trên app', () => {
 })
 
 describe('tài xế trên app', () => {
-  test('không có tab Kho, Tra cứu kiện', async () => {
+  test('không có tab Kho, Tra cứu kiện; có tab Bảng lương', async () => {
     await signInAs(DRIVER_EMAIL)
     const { tabScreens } = await openApp('/')
 
@@ -181,7 +181,7 @@ describe('tài xế trên app', () => {
     expect(screen.getByRole('button', { name: tabNamed('Chuyến của tôi') })).toBeOnTheScreen()
     expect(screen.queryByRole('button', { name: tabNamed('Kho') })).toBeNull()
     expect(screen.queryByRole('button', { name: tabNamed('Tra cứu kiện') })).toBeNull()
-    expect(tabScreens()).toEqual(['index', 'trips', 'account'])
+    expect(tabScreens()).toEqual(['index', 'trips', 'payroll', 'account'])
   })
 
   test('liên kết tới phiên soạn → xếp của kho: tài xế không có màn đó, app mở Chuyến của tôi, chuyến không bị bắt đầu xếp', async () => {

@@ -1,4 +1,4 @@
-/** Màn Xếp xong của phiên kho: số kiện đã xếp, kiện bỏ lại, số seal niêm phong (`LoadingFinishedView`). */
+/** Màn Xếp xong của phiên kho: số kiện đã xếp, kiện bỏ lại (`LoadingFinishedView`). */
 export const warehouseFinished = {
   /** Tên đọc của ô "Bỏ lại kho": số kiện hỏng bị bỏ lại kho. */
   leftOut: { one: 'Bỏ lại kho {count} kiện', other: 'Bỏ lại kho {count} kiện' },

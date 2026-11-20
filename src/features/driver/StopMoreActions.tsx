@@ -1,5 +1,5 @@
 import { ClipboardList, Ellipsis, PackagePlus, TrafficCone } from 'lucide-react-native'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 
 import { Button } from '@/components/Button'
@@ -49,12 +49,15 @@ export function StopMoreActions({
   const [panel, setPanel] = useState<Panel>('menu')
   const close = () => setOpen(false)
 
-  useEffect(() => {
+  // Mỗi lần `openHistorySignal` tăng: mở tờ ở lịch sử sự cố. Đổi state ngay lúc vẽ khi tín hiệu đổi (không qua effect)
+  const [seenHistorySignal, setSeenHistorySignal] = useState(0)
+  if (openHistorySignal !== seenHistorySignal) {
+    setSeenHistorySignal(openHistorySignal)
     if (openHistorySignal > 0) {
       setPanel('exceptionHistory')
       setOpen(true)
     }
-  }, [openHistorySignal])
+  }
 
   const report = useReportTripExceptionMutation(trip.id)
   const create = useCreatePickupRequestMutation(trip.id)

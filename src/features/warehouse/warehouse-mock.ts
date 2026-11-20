@@ -111,7 +111,7 @@ async function fetchNotifications(): Promise<WarehouseNotification[]> {
 /** Kho mẫu làm được mọi việc của kho. */
 export function mockWarehouseApi(): WarehouseApi {
   return {
-    capabilities: { backend: false, manualConfirm: true, shortages: true, seal: true, notifications: true },
+    capabilities: { backend: false, manualConfirm: true, shortages: true, notifications: true },
     fetchWarehouseTrips,
     async fetchWarehouseTrip(tripId) {
       const db = sessionDb()
@@ -145,9 +145,6 @@ export function mockWarehouseApi(): WarehouseApi {
     },
     async completeLoading(tripId) {
       return sessionDb().completeLoading(tripId)
-    },
-    async recordSeal(tripId, sealNumber) {
-      return sessionDb().recordSeal(tripId, sealNumber)
     },
     async fetchTripLabels(tripId) {
       return sessionDb().listTripLabels(tripId)

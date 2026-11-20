@@ -8,7 +8,7 @@ import { deliveredHistoryOf, myTripsOf, shownStatusOf, tripDetailOf, tripRowOf }
 import { deliveryPackageOf, isUnloaded, packageOfCode, stopScreenOf, withUnloaded } from './driver-http-stop'
 import { serverEtaSources, serverTripStops, tripStopsOf, type DriverTripStopsDto, type ServerTripStops } from './driver-http-stop-times'
 import { coded, HTTP_DRIVER_CAPABILITIES, refused, SERVER_REFRESH_MS, unsupported } from './driver-http-support'
-import type { DriverPayrollStatement, DriverTripRow, DriverTripScreen, StopKey, TripHead } from './driver-model'
+import type { DriverPayrollStatement, DriverTripDetail, DriverTripException, DriverTripRow, DriverTripScreen, StopKey, TripHead } from './driver-model'
 
 type DriverPayrollStatementDto = {
   calculated: boolean

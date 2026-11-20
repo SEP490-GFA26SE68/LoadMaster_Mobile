@@ -14,6 +14,12 @@ import { goongMapTilesKey } from './map-style'
 import { RouteSketch } from './RouteSketch'
 import { routeMapHtml, routeMapPayload, type RouteMapView } from './route-map-html'
 
+/** Phần của khung iframe (bản web) mà bản đồ dùng: đặt `src` là Blob URL và gọi hàm đặt vị trí xe trong khung. */
+type WebMapFrame = {
+  setAttribute(name: 'src', value: string): void
+  readonly contentWindow?: { __lmVehicle?: (lng: number | null, lat?: number, heading?: number) => void } | null
+}
+
 const HEIGHT = 220
 
 type SurfaceProps = {
@@ -29,43 +35,42 @@ type SurfaceProps = {
  * thu nhỏ — và overlay nút không nằm trong `overflow: hidden` của khung (Android WebView hay đè sibling bên trong cùng khung).
  */
 function RouteMapSurface({ label, html, fill = false, onUnavailable, vehicle }: SurfaceProps) {
-  const [webBlobUrl, setWebBlobUrl] = useState<string | null>(null)
   const webRef = useRef<WebView>(null)
-  const iframeRef = useRef<{ contentWindow?: { __lmVehicle?: (lng: number | null, lat?: number, heading?: number) => void } } | null>(null)
+  // Khung iframe của bản web, nhận qua ref callback (giữ trong state để hiệu ứng chạy lại khi khung gắn vào)
+  const [frame, setFrame] = useState<WebMapFrame | null>(null)
   const vehicleJs = vehicle
     ? `window.__lmVehicle && window.__lmVehicle(${vehicle.lng},${vehicle.lat},${vehicle.heading ?? 'null'}); true;`
     : 'window.__lmVehicle && window.__lmVehicle(null); true;'
   const frameStyle = fill ? styles.fillFrame : styles.frame
 
   useEffect(() => {
-    if (Platform.OS !== 'web' || typeof URL === 'undefined' || typeof Blob === 'undefined') return
+    if (frame === null || typeof URL === 'undefined' || typeof Blob === 'undefined') return
+    // Blob URL inherits the app's origin (unlike iframe srcDoc whose origin is "null"),
+    // so MapLibre's Actor origin check accepts messages between main thread and Web Worker.
     const url = URL.createObjectURL(new Blob([html], { type: 'text/html; charset=utf-8' }))
-    setWebBlobUrl(url)
+    frame.setAttribute('src', url)
     return () => {
       URL.revokeObjectURL(url)
     }
-  }, [html])
+  }, [frame, html])
 
   useEffect(() => {
     if (Platform.OS === 'web') {
-      if (vehicle) iframeRef.current?.contentWindow?.__lmVehicle?.(vehicle.lng, vehicle.lat, vehicle.heading)
-      else iframeRef.current?.contentWindow?.__lmVehicle?.(null)
+      if (vehicle) frame?.contentWindow?.__lmVehicle?.(vehicle.lng, vehicle.lat, vehicle.heading)
+      else frame?.contentWindow?.__lmVehicle?.(null)
       return
     }
     webRef.current?.injectJavaScript?.(vehicleJs)
-  }, [vehicle, vehicleJs])
+  }, [frame, vehicle, vehicleJs])
 
   if (Platform.OS === 'web') {
     return (
       <View accessible accessibilityLabel={label} accessibilityRole="image" style={frameStyle}>
-        {webBlobUrl
-          ? createElement('iframe', {
-              ref: iframeRef,
-              src: webBlobUrl,
-              style: { width: '100%', height: '100%', border: 'none', backgroundColor: 'transparent' },
-              title: label,
-            })
-          : null}
+        {createElement('iframe', {
+          ref: setFrame,
+          style: { width: '100%', height: '100%', border: 'none', backgroundColor: 'transparent' },
+          title: label,
+        })}
       </View>
     )
   }

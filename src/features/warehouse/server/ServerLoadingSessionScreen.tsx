@@ -21,7 +21,7 @@ const unavailable = (error: unknown) => isApiError(error) && UNAVAILABLE_CODES.h
 
 /**
  * Phiên soạn → xếp một chuyến khi nguồn `warehouse` là máy chủ (như `ServerLoadingSession` của web): phiên đọc lại từ máy chủ ở thiết bị nào
- * cũng được (`GET /api/warehouse/tasks/{tripId}`, `tripId` là mã số chuyến của máy chủ). Phiên đã xếp xong là màn Xếp xong (số seal); còn
+ * cũng được (`GET /api/warehouse/tasks/{tripId}`, `tripId` là mã số chuyến của máy chủ). Phiên đã xếp xong là màn Xếp xong; còn
  * bước soạn là bước Soạn hàng; soạn đủ là bước Xếp. Phiên không còn (xe đã rời kho, kiện hỏng đưa chuyến về lập kế hoạch) thì nói vì sao —
  * kiện hỏng vừa ghi trên máy này thì nói đúng lý do đó. Đã có phiên mà một lần đọc lại lỗi vì lý do khác thì giữ phiên đang hiện.
  */
@@ -53,7 +53,7 @@ export function ServerLoadingSessionScreen({ tripId }: { tripId: string }) {
     )
   }
   const session = query.data
-  if (session.completed) return <ServerFinishedView tripId={tripId} session={session} />
+  if (session.completed) return <ServerFinishedView session={session} />
   if (!session.stagingComplete) return <ServerStagingView tripId={tripId} session={session} />
   return <ServerLoadingView tripId={tripId} session={session} onStopped={setStopped} />
 }

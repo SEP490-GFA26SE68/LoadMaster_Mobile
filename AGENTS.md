@@ -29,7 +29,7 @@ backend: bản web và máy khác không thấy gì trong đó. Mỗi feature n�
 đăng nhập (`auth`, Keycloak của backend — mục 6); màn tài xế (`driver`, trọn luồng như web: xuất phát ở thẻ chuyến, đã đến, dỡ,
 xác nhận tay, sự cố, nhận kiện ở điểm nhận, hoàn tất điểm, GPS); màn kho (`warehouse`, như `ServerWarehouseTripsPage` /
 `ServerLoadingSession` của web: danh sách `GET /api/warehouse/tasks`, bắt đầu kèm bước soạn, soạn — đối chiếu, xác nhận tay, báo
-thiếu —, xếp — đối chiếu, xác nhận tay, sai lệch vị trí, kiện hỏng —, hoàn tất, số seal; máy chủ giữ phiên nên mọi lệnh ghi đọc lại phiên);
+thiếu —, xếp — đối chiếu, xác nhận tay, sai lệch vị trí, kiện hỏng —, hoàn tất; máy chủ giữ phiên nên mọi lệnh ghi đọc lại phiên);
 chuyến, giám sát và Tổng quan của điều phối viên, quản lý (`trips`, `monitoring`, `dashboard`). Việc backend chưa có thì màn ẩn theo bảng
 `capabilities` của từng feature (mục 5, luật 11), không lấy kho mẫu điền vào: chuông của kho và của hai vai trò văn phòng, khung vị trí kiện của phiên kho (vị trí ghi bằng số), yêu cầu giao và
 dòng phụ phương án của chuyến, nhận hàng dọc đường ở Giám sát; của tài xế: tạo yêu cầu nhận hàng, xác nhận tay ở điểm nhận
@@ -152,7 +152,7 @@ src/
                        bản đồ — chờ đợt bản đồ native
     pickups/           nhận hàng dọc đường: form tạo (tài xế, điều phối viên), mười luật, thẻ yêu cầu, duyệt / từ chối
     warehouse/         màn của nhân viên kho: danh sách chuyến (`WarehouseTripsScreen`, `trips/`) và phiên soạn → xếp một chuyến
-                       (`LoadingSessionScreen` chọn bước: `staging/` soạn hàng, `loading/` xếp, `finished/` xếp xong + số seal);
+                       (`LoadingSessionScreen` chọn bước: `staging/` soạn hàng, `loading/` xếp, `finished/` xếp xong);
                        adapter warehouse-mock.ts; nguồn máy chủ ở `server/` (`ServerWarehouseTripsScreen`,
                        `ServerLoadingSessionScreen`) với hợp đồng riêng `warehouse-server-api.ts` → warehouse-http.ts — route chọn màn
                        theo `useWarehouseCapabilities().backend`; ← chép từ web: `warehouse-trips.ts`, `loading-session.ts`,
@@ -415,7 +415,7 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
 - Bước xếp chưa có 3D: thẻ chỉ dẫn kèm **sơ đồ thùng 2D nhìn từ trên** (`HoldSketch`) và hình hướng đặt. Sơ đồ ẩn với trình đọc màn
   hình — chỗ đặt nằm ở chữ của thẻ; hình hướng đặt là `image` có tên. Xếp đúng một kiện thì bảng "Đã xếp" hiện ít nhất 1,2 giây
   (`CONFIRMED_OVERLAY_MS`) rồi mới sang kiện kế tiếp.
-- Không in nhãn trên app: in nhãn là việc của bản web. Số seal ghi ở tờ của Xếp xong, sửa được tới khi tài xế xuất phát.
+- Không in nhãn trên app: in nhãn là việc của bản web. App không ghi số seal niêm phong thùng: màn Xếp xong chỉ báo kết quả và đưa về danh sách.
 
 ### Khả năng truy cập
 
