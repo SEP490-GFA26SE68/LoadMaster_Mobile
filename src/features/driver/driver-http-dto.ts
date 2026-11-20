@@ -7,6 +7,8 @@
 export type DriverTripDto = {
   readonly tripId: number
   readonly tripCode: string | null
+  /** Tên chuyến điều phối viên đặt; chuyến chưa đặt tên là null (máy chủ cũ không có trường này). */
+  readonly tripName?: string | null
   readonly vehicleLicensePlate: string | null
   readonly stopCount: number | null
   readonly totalPackages?: number | null

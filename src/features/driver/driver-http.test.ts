@@ -12,8 +12,10 @@ describe('httpDriverApi: chuyến và điểm hiện tại', () => {
           trip(44, 'LOADING', { loadingCompleted: false }),
           trip(45, 'DELIVERED', { completedAt: '2026-10-15T17:00:00' }),
           trip(46, 'DELIVERED', { completedAt: '2026-10-16T11:00:00' }),
-          trip(47, 'PLANNED'),
+          trip(47, 'PLANNED', { tripCode: 'TRIP-0200', departureTime: '2026-10-18T08:00:00' }),
           trip(48, 'CANCELLED'),
+          trip(49, 'DRAFT', { tripCode: 'TRIP-0090', departureTime: '2026-10-19T08:00:00' }),
+          trip(50, 'DRAFT', { tripCode: 'TRIP-0040', departureTime: '2026-10-19T08:00:00' }),
         ]),
     })
     const trips = await driver.fetchMyTrips()
@@ -31,11 +33,30 @@ describe('httpDriverApi: chuyến và điểm hiện tại', () => {
     })
     expect(trips.groups.loaded.map(({ id, sub }) => [id, sub])).toEqual([['43', { kind: 'loaded' }]])
     expect(trips.groups.preparing.map(({ id, sub }) => [id, sub])).toEqual([['44', null]])
-    expect(trips.groups.upcoming.map(({ id }) => id)).toEqual(['47'])
+    expect(trips.groups.upcoming.map(({ id, code, status }) => [id, code, status])).toEqual([
+      ['47', 'TRIP-0200', 'PLANNED'],
+      ['50', 'TRIP-0040', 'DRAFT'],
+      ['49', 'TRIP-0090', 'DRAFT'],
+    ])
+    expect(Object.values(trips.groups).flat().map(({ id }) => id)).not.toContain('48')
     // Giao xong gần nhất trước; chuyến chưa tới kho và chuyến đã huỷ không hiện
     expect(trips.groups.recent.map(({ id, completedAt }) => [id, completedAt])).toEqual([
       ['46', '2026-10-16T11:00:00+07:00'],
       ['45', '2026-10-15T17:00:00+07:00'],
+    ])
+  })
+
+  test('tên chuyến của backend hiện trên thẻ; chuyến chưa đặt tên hoặc tên toàn khoảng trắng thì để trống', async () => {
+    const trip = (tripId: number, tripName: string | null) => ({ ...TRIP, tripId, tripCode: `TRIP-00${tripId}`, tripName })
+    const { driver } = backend({
+      'GET /api/driver/trips': () => ok([trip(41, 'Tuyến Biên Hoà - Vũng Tàu'), trip(42, '   '), trip(43, null), { ...TRIP, tripId: 44, tripCode: 'TRIP-0044' }]),
+    })
+    const trips = await driver.fetchMyTrips()
+    expect(trips.groups.inTransit.map(({ id, name }) => [id, name])).toEqual([
+      ['41', 'Tuyến Biên Hoà - Vũng Tàu'],
+      ['42', undefined],
+      ['43', undefined],
+      ['44', undefined],
     ])
   })
 

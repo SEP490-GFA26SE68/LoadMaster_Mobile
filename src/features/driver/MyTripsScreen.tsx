@@ -13,7 +13,7 @@ import { colors, CONTENT_MAX_WIDTH, radius, space } from '@/theme/tokens'
 import type { DriverTripRow } from './driver-model'
 import type { MyTripGroup } from './my-trips'
 import { TripCard } from './TripCard'
-import { useDriverCapabilities, useMyTripsQuery } from './useDriverQueries'
+import { useMyTripsQuery } from './useDriverQueries'
 
 /** Chỉ hiển thị các nhóm chuyến đang hoạt động / sắp chạy; lịch sử đã giao chuyển sang màn Lịch sử giao hàng riêng. */
 const ACTIVE_TRIP_GROUPS: readonly MyTripGroup[] = ['inTransit', 'loaded', 'preparing', 'upcoming']
@@ -26,7 +26,6 @@ export function MyTripsScreen() {
   const t = useT()
   const format = useFormat()
   const router = useRouter()
-  const capabilities = useDriverCapabilities()
   const query = useMyTripsQuery()
 
   const groups = query.data?.groups
@@ -59,11 +58,6 @@ export function MyTripsScreen() {
               {historyCount > 0 ? ` (${historyCount})` : ''}
             </AppText>
           </Pressable>
-          {capabilities.payroll ? (
-            <Button variant="secondary" onPress={() => router.push('/driver-payroll')}>
-              {t('driver.payroll.open')}
-            </Button>
-          ) : null}
         </View>
       }>
       {query.isPending ? (

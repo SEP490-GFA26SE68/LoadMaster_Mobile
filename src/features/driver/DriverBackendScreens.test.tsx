@@ -1,7 +1,8 @@
-import { configure, fireEvent, screen } from '@testing-library/react-native'
+import { configure, fireEvent, screen, waitFor } from '@testing-library/react-native'
 
 import type { ApiClient } from '@/data/http'
 import { createMockAuth } from '@/features/auth/auth-mock'
+import { driver as driverVi } from '@/lib/i18n/vi/driver'
 import { openTrips } from '@/lib/i18n/vi/openTrips'
 import { fail, fakeDriverBackend, ok, STOP, TRIP, type Routes } from '@/test/driver-backend'
 import { resetNativeMocks, router } from '@/test/native-mocks'
@@ -10,6 +11,7 @@ import { clearStored, renderApp } from '@/test/render'
 import { MyTripsScreen } from './MyTripsScreen'
 import { OpenTripsScreen } from './OpenTripsScreen'
 import { TripScreen } from './TripScreen'
+import { driverTripDetailPath } from './TripCard'
 
 /*
  * Màn tài xế khi nguồn `driver` là máy chủ: adapter backend thật (`httpDriverApi`) trên máy chủ giả. Bảng `mockRoutes` dùng chung cho cả
@@ -60,6 +62,56 @@ beforeEach(() => {
 describe('Chuyến của tôi trên máy chủ: Xuất phát ở thẻ chuyến', () => {
   const loaded = { ...TRIP, tripId: 43, tripCode: 'TRIP-0043', status: 'LOADING', loadingCompleted: true }
   const preparing = { ...TRIP, tripId: 44, tripCode: 'TRIP-0044', status: 'LOADING', loadingCompleted: false }
+  const draft = {
+    ...TRIP,
+    tripId: 50,
+    tripCode: 'TRIP-0050',
+    vehicleLicensePlate: '51A-000.50',
+    departureTime: '2026-10-20T08:00:00',
+    status: 'DRAFT',
+    stopCount: 0,
+  }
+  const cancelled = { ...draft, tripId: 51, tripCode: 'TRIP-0051', status: 'CANCELLED' }
+
+  test('chuyến Nháp ở nhóm sắp tới, chỉ có đường xem chi tiết; chuyến đã huỷ vẫn bị ẩn', async () => {
+    serve({ 'GET /api/driver/trips': () => ok([draft, cancelled]) })
+    await renderApp(<MyTripsScreen />, { auth: createMockAuth() })
+
+    expect(await screen.findByRole('header', { name: driverVi.myTrips.groups.upcoming })).toBeOnTheScreen()
+    expect(screen.getByText(draft.tripCode)).toBeOnTheScreen()
+    expect(screen.getByText(driverVi.myTrips.draftStatus)).toBeOnTheScreen()
+    expect(screen.getByText('20/10/2026')).toBeOnTheScreen()
+    expect(screen.getByText(draft.vehicleLicensePlate)).toBeOnTheScreen()
+    expect(screen.queryByText(cancelled.tripCode)).toBeNull()
+    expect(screen.queryByText(driverVi.myTrips.empty.title)).toBeNull()
+
+    const options = await screen.findAllByRole('button', { name: driverVi.myTrips.actionsMenu })
+    expect(options).toHaveLength(1)
+    await fireEvent.press(options[0]!)
+
+    const detail = await screen.findByRole('button', { name: driverVi.myTrips.viewDetail })
+    expect(screen.queryByRole('button', { name: driverVi.myTrips.preview })).toBeNull()
+    expect(screen.queryByRole('button', { name: driverVi.myTrips.resume })).toBeNull()
+    expect(screen.queryByRole('button', { name: driverVi.start })).toBeNull()
+    expect(screen.queryByRole('button', { name: `${driverVi.start} ${draft.tripCode}` })).toBeNull()
+    await fireEvent.press(detail)
+    expect(router.push).toHaveBeenCalledWith(driverTripDetailPath('50'))
+  })
+
+  test('đầu màn không có nút "Xem bảng lương" (lương đã có tab riêng ở thanh dưới)', async () => {
+    serve({ 'GET /api/driver/trips': () => ok([TRIP]) })
+    await renderApp(<MyTripsScreen />, { auth: createMockAuth() })
+
+    expect(await screen.findByText(TRIP.tripCode)).toBeOnTheScreen()
+    expect(screen.queryByRole('button', { name: 'Xem bảng lương' })).toBeNull()
+  })
+
+  test('thẻ chuyến hiện tên chuyến của backend', async () => {
+    serve({ 'GET /api/driver/trips': () => ok([{ ...TRIP, tripName: 'Tuyến Biên Hoà - Vũng Tàu' }]) })
+    await renderApp(<MyTripsScreen />, { auth: createMockAuth() })
+
+    expect(await screen.findByText('Tuyến Biên Hoà - Vũng Tàu')).toBeOnTheScreen()
+  })
 
   test('kho đã xếp xong: nút bật, bấm thì xuất phát rồi mở điểm giao; kho chưa xong: nút mờ kèm lý do', async () => {
     serve({ 'GET /api/driver/trips': () => ok([loaded, preparing]), 'POST /api/driver/trips/43/start': () => ok({ tripId: 43 }) })
@@ -225,24 +277,47 @@ describe('Chuyến đang mở trên máy chủ (OpenTripsScreen)', () => {
     expect(await screen.findByText('Chuyến giao Biên Hoà')).toBeOnTheScreen()
     expect(screen.getByText('TRIP-0101')).toBeOnTheScreen()
 
-    // Bấm "Xin nhận chuyến"
-    const claimBtn = await screen.findByRole('button', { name: openTrips.actions.claim })
-    await fireEvent.press(claimBtn)
+    // "Xin nhận chuyến" nằm trong menu "..." của thẻ, không còn là nút ngoài thẻ
+    expect(screen.queryByRole('button', { name: openTrips.actions.claim })).toBeNull()
+    await fireEvent.press(await screen.findByRole('button', { name: driverVi.myTrips.actionsMenu }))
+    await fireEvent.press(await screen.findByRole('button', { name: openTrips.actions.claim }))
 
-    // Màn chuyển sang "Đang chờ duyệt" và có nút phụ "Rút phiếu"
+    // Thẻ chuyển sang "Đang chờ duyệt"; menu có "Rút phiếu" thay cho "Xin nhận chuyến"
     expect(await screen.findByText(openTrips.status.pending)).toBeOnTheScreen()
-    const cancelBtn = await screen.findByRole('button', { name: openTrips.actions.cancel })
-    expect(cancelBtn).toBeOnTheScreen()
-
-    // Bấm "Rút phiếu"
-    await fireEvent.press(cancelBtn)
+    await fireEvent.press(await screen.findByRole('button', { name: driverVi.myTrips.actionsMenu }))
+    expect(screen.queryByRole('button', { name: openTrips.actions.claim })).toBeNull()
+    await fireEvent.press(await screen.findByRole('button', { name: openTrips.actions.cancel }))
 
     // Backend giữ trạng thái CANCELLED, nhưng tài xế có thể gửi phiếu mới.
-    const retryClaimBtn = await screen.findByRole('button', { name: openTrips.actions.claim })
-    await fireEvent.press(retryClaimBtn)
+    await waitFor(() => expect(screen.queryByText(openTrips.status.pending)).toBeNull())
+    await fireEvent.press(await screen.findByRole('button', { name: driverVi.myTrips.actionsMenu }))
+    await fireEvent.press(await screen.findByRole('button', { name: openTrips.actions.claim }))
 
     expect(await screen.findByText(openTrips.status.pending)).toBeOnTheScreen()
+    await fireEvent.press(await screen.findByRole('button', { name: driverVi.myTrips.actionsMenu }))
     expect(await screen.findByRole('button', { name: openTrips.actions.cancel })).toBeOnTheScreen()
+  })
+
+  test('menu "..." của thẻ có "Xem chi tiết": mở màn chi tiết chuyến', async () => {
+    serve({ 'GET /api/driver/open-trips': () => ok([openTrip]) })
+    await renderApp(<OpenTripsScreen />, { auth: createMockAuth() })
+
+    await fireEvent.press(await screen.findByRole('button', { name: driverVi.myTrips.actionsMenu }))
+    await fireEvent.press(await screen.findByRole('button', { name: driverVi.myTrips.viewDetail }))
+
+    expect(router.push).toHaveBeenCalledWith(driverTripDetailPath('101'))
+  })
+
+  test('phiếu bị từ chối: thẻ hiện chip và lý do, menu chỉ còn "Xem chi tiết" (không xin lại)', async () => {
+    serve({ 'GET /api/driver/open-trips': () => ok([{ ...openTrip, myClaimStatus: 'REJECTED', myRejectReason: 'Xe không phù hợp' }]) })
+    await renderApp(<OpenTripsScreen />, { auth: createMockAuth() })
+
+    expect(await screen.findByText(openTrips.status.rejected)).toBeOnTheScreen()
+    expect(screen.getByText('Lý do: Xe không phù hợp')).toBeOnTheScreen()
+    await fireEvent.press(await screen.findByRole('button', { name: driverVi.myTrips.actionsMenu }))
+    expect(await screen.findByRole('button', { name: driverVi.myTrips.viewDetail })).toBeOnTheScreen()
+    expect(screen.queryByRole('button', { name: openTrips.actions.claim })).toBeNull()
+    expect(screen.queryByRole('button', { name: openTrips.actions.cancel })).toBeNull()
   })
 
   test('ca lỗi TRIP_CLAIM_TRIP_TAKEN: hiện câu lỗi đúng và đọc lại danh sách', async () => {
@@ -257,8 +332,8 @@ describe('Chuyến đang mở trên máy chủ (OpenTripsScreen)', () => {
 
     await renderApp(<OpenTripsScreen />, { auth: createMockAuth() })
 
-    const claimBtn = await screen.findByRole('button', { name: 'Xin nhận chuyến' })
-    await fireEvent.press(claimBtn)
+    await fireEvent.press(await screen.findByRole('button', { name: driverVi.myTrips.actionsMenu }))
+    await fireEvent.press(await screen.findByRole('button', { name: 'Xin nhận chuyến' }))
 
     // Hiện câu lỗi đúng của TRIP_CLAIM_TRIP_TAKEN
     expect(await screen.findByText('Chuyến này đã có tài xế nhận.')).toBeOnTheScreen()

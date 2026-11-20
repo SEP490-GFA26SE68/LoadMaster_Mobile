@@ -1,23 +1,31 @@
-import { Calendar, MapPin, Warehouse } from 'lucide-react-native'
+import { useRouter } from 'expo-router'
+import { Calendar, Info, MapPin, Send, Warehouse, X } from 'lucide-react-native'
 import { useState } from 'react'
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
 import { Banner } from '@/components/Banner'
-import { Button } from '@/components/Button'
 import { Card } from '@/components/Card'
 import { Chip } from '@/components/Chip'
 import { Screen } from '@/components/Screen'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateView'
 import { dataErrorMessage, useFormat, useT } from '@/lib/i18n'
-import { colors, space, TOUCH } from '@/theme/tokens'
+import { colors, space } from '@/theme/tokens'
 
+import { CardActionMenu, type CardMenuItem } from './CardActionMenu'
 import type { OpenTrip } from './driver-model'
+import { driverTripDetailPath } from './TripCard'
 import { useCancelClaimMutation, useClaimTripMutation, useOpenTripsQuery } from './useDriverQueries'
 
+/**
+ * Tab "Chuyến đang mở": chuyến của công ty chưa có tài xế. Thẻ giống thẻ ở "Chuyến của tôi": nút "..." ở góc có "Xem chi tiết" và việc
+ * xin nhận chuyến ("Xin nhận chuyến", hoặc "Rút phiếu" khi phiếu đang chờ). Phiếu đang chờ / bị từ chối hiện thành chip ngay trên thẻ.
+ * Phiếu bị từ chối thì chỉ xem lý do, không xin lại.
+ */
 export function OpenTripsScreen() {
   const t = useT()
   const format = useFormat()
+  const router = useRouter()
   const query = useOpenTripsQuery()
   const claimMutation = useClaimTripMutation()
   const cancelMutation = useCancelClaimMutation()
@@ -51,6 +59,39 @@ export function OpenTripsScreen() {
     }
   }
 
+  const menuItemsOf = (item: OpenTrip, isBusy: boolean): CardMenuItem[] => {
+    const items: CardMenuItem[] = [
+      {
+        key: 'detail',
+        label: t('driver.myTrips.viewDetail'),
+        icon: Info,
+        onPress: () => router.push(driverTripDetailPath(item.id)),
+      },
+    ]
+    if (item.myClaimStatus === 'PENDING') {
+      items.push({
+        key: 'cancel',
+        label: t('openTrips.actions.cancel'),
+        icon: X,
+        iconColor: colors.text2,
+        write: true,
+        disabled: isBusy,
+        onPress: () => void handleCancel(item.id),
+      })
+    } else if (item.myClaimStatus !== 'REJECTED') {
+      // Chưa xin, hoặc đã rút phiếu (CANCELLED): xin được. Phiếu bị từ chối thì không xin lại.
+      items.push({
+        key: 'claim',
+        label: t('openTrips.actions.claim'),
+        icon: Send,
+        write: true,
+        disabled: isBusy,
+        onPress: () => void handleClaim(item.id),
+      })
+    }
+    return items
+  }
+
   const renderItem = ({ item }: { item: OpenTrip }) => {
     const isBusy = busyTripId === item.id
     const departure = item.departureTime
@@ -60,15 +101,21 @@ export function OpenTripsScreen() {
     return (
       <Card style={styles.card}>
         <View style={styles.headerRow}>
-          <View style={styles.titleCol}>
-            <AppText variant="heading" accessibilityRole="header">
-              {item.tripName}
-            </AppText>
-            <AppText variant="label" color={colors.primary}>
+          <View style={styles.headLeft}>
+            <AppText variant="label" style={styles.code}>
               {item.tripCode}
             </AppText>
+            {item.myClaimStatus === 'PENDING' ? <Chip tone="warning" label={t('openTrips.status.pending')} /> : null}
+            {item.myClaimStatus === 'REJECTED' ? <Chip tone="danger" label={t('openTrips.status.rejected')} /> : null}
           </View>
+          <CardActionMenu items={menuItemsOf(item, isBusy)} />
         </View>
+
+        {item.tripName.trim() === '' ? null : (
+          <AppText variant="heading" accessibilityRole="header">
+            {item.tripName}
+          </AppText>
+        )}
 
         <View style={styles.metaRow}>
           <Calendar color={colors.text2} size={16} strokeWidth={1.5} />
@@ -85,40 +132,9 @@ export function OpenTripsScreen() {
           <AppText color={colors.text2}>{t('openTrips.stopCount', { count: item.stopCount })}</AppText>
         </View>
 
-        <View style={styles.footerRow}>
-          {item.myClaimStatus !== 'PENDING' && item.myClaimStatus !== 'REJECTED' ? (
-            <Button
-              write
-              variant="primary"
-              loading={isBusy}
-              disabled={isBusy}
-              onPress={() => void handleClaim(item.id)}>
-              {t('openTrips.actions.claim')}
-            </Button>
-          ) : item.myClaimStatus === 'PENDING' ? (
-            <View style={styles.pendingRow}>
-              <Chip tone="warning" label={t('openTrips.status.pending')} />
-              <Button
-                write
-                variant="secondary"
-                loading={isBusy}
-                disabled={isBusy}
-                onPress={() => void handleCancel(item.id)}
-                style={styles.cancelBtn}>
-                {t('openTrips.actions.cancel')}
-              </Button>
-            </View>
-          ) : item.myClaimStatus === 'REJECTED' ? (
-            <View style={styles.rejectedCol}>
-              <Chip tone="danger" label={t('openTrips.status.rejected')} />
-              {item.myRejectReason ? (
-                <AppText color={colors.text2} style={styles.rejectReasonText}>
-                  {t('openTrips.rejectReason', { reason: item.myRejectReason })}
-                </AppText>
-              ) : null}
-            </View>
-          ) : null}
-        </View>
+        {item.myClaimStatus === 'REJECTED' && item.myRejectReason ? (
+          <AppText color={colors.text2}>{t('openTrips.rejectReason', { reason: item.myRejectReason })}</AppText>
+        ) : null}
       </Card>
     )
   }
@@ -171,14 +187,10 @@ function Separator() {
 const styles = StyleSheet.create({
   list: { padding: space[4], gap: space[3] },
   card: { gap: space[3], padding: space[4] },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  titleCol: { flex: 1, gap: space[1] },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', columnGap: space[3] },
+  headLeft: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space[2] },
+  code: { fontVariant: ['tabular-nums'], color: colors.primary },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: space[2] },
-  footerRow: { marginTop: space[2] },
-  pendingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space[3] },
-  cancelBtn: { minHeight: TOUCH },
-  rejectedCol: { gap: space[2], alignItems: 'flex-start' },
-  rejectReasonText: { marginTop: space[1] },
   bannerWrap: { marginBottom: space[3] },
   separator: { height: space[2] },
 })
