@@ -79,4 +79,11 @@ export const backendErrors = {
   PAYROLL_INVALID_PERIOD: 'Kỳ lương không hợp lệ. Chọn lại tháng cần xem.',
   PAYROLL_PERIOD_NOT_FOUND: 'Không tìm thấy kỳ lương này.',
   PAYROLL_RATE_NOT_CONFIGURED: 'Công ty chưa cấu hình đơn giá lương cho kỳ này.',
+  // Phiếu xin chuyến của tài xế
+  TRIP_CLAIM_NOT_FOUND: 'Không tìm thấy phiếu xin chuyến.',
+  TRIP_CLAIM_DUPLICATE: 'Bạn đã gửi phiếu xin chuyến này rồi.',
+  TRIP_CLAIM_TRIP_TAKEN: 'Chuyến này đã có tài xế nhận.',
+  TRIP_CLAIM_TRIP_NOT_OPEN: 'Chuyến không còn ở trạng thái cho phép nhận.',
+  TRIP_CLAIM_ALREADY_DECIDED: 'Phiếu xin chuyến này đã có quyết định.',
+  TRIP_CLAIM_NOT_OWN: 'Bạn không thể thao tác trên phiếu của người khác.',
 } as const

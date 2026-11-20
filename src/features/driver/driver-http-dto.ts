@@ -180,3 +180,30 @@ export type DriverTripDetailDto = {
   readonly totalDurationSeconds?: number | null
   readonly stops: readonly DriverTripDetailStopDto[] | null
 }
+
+export type OpenTripDto = {
+  readonly id: number | null
+  readonly tripId: number | null
+  readonly tripCode: string | null
+  readonly tripName: string | null
+  readonly departureTime: string | null
+  readonly originWarehouse: string | null
+  readonly stopCount: number | null
+  readonly myClaimStatus: string | null
+  readonly myRejectReason: string | null
+}
+
+export type TripClaimDto = {
+  readonly id: number
+  readonly tripId: number
+  readonly driverUserId: number
+  readonly driverName: string | null
+  readonly driverPhone: string | null
+  readonly status: string
+  readonly note: string | null
+  readonly createdAt: string
+  readonly decidedById: number | null
+  readonly decidedByName: string | null
+  readonly decidedAt: string | null
+  readonly rejectReason: string | null
+}
