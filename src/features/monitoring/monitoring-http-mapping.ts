@@ -8,6 +8,7 @@ import {
   type EtaRiskAlert,
   type LocationPoint,
   type RerouteChoice,
+  type RouteLegGeometry,
   type RerouteProposal,
   type TripException,
   type TripLiveStop,
@@ -25,6 +26,7 @@ import type {
   MonitoringBoardDto,
   RequirementStopDto,
   RerouteOptionDto,
+  RouteLegGeometryDto,
   RerouteProposalDto,
   TripExceptionDto,
   TripMonitoringDto,
@@ -173,9 +175,26 @@ export function proposalOf(dto: RerouteProposalDto): RerouteProposal {
   }
 }
 
+function routeLegsOf(dto: TripMonitoringDto): RouteLegGeometry[] | undefined {
+  const legs = (dto.routeLegs ?? []).flatMap((leg: RouteLegGeometryDto): RouteLegGeometry[] => {
+    if (typeof leg.legId !== 'number' || typeof leg.legSequence !== 'number') return []
+    return [{
+      legId: leg.legId,
+      legSequence: leg.legSequence,
+      startStopId: leg.startStopId ?? null,
+      endStopId: leg.endStopId ?? null,
+      ...(typeof leg.distanceMeters === 'number' ? { distanceMeters: leg.distanceMeters } : {}),
+      ...(typeof leg.durationSeconds === 'number' ? { durationSeconds: leg.durationSeconds } : {}),
+      polyline: leg.polyline ?? null,
+    }]
+  })
+  return legs.length > 0 ? legs : undefined
+}
+
 /** Nhịp đọc lại: backend trả 30 giây khi chuyến đang chạy, `null` khi không; màn đọc lại nhiều nhất mỗi giây. */
 export function liveOf(dto: TripMonitoringDto): LiveMonitoring {
   const reroute = dto.reroute ? rerouteOf(dto.reroute) : undefined
+  const routeLegs = routeLegsOf(dto)
   return {
     tripId: dto.tripId,
     location: dto.location ? locationOf(dto.location) : null,
@@ -183,6 +202,8 @@ export function liveOf(dto: TripMonitoringDto): LiveMonitoring {
     alerts: (dto.alerts ?? []).flatMap(alertsOf),
     exceptions: (dto.exceptions ?? []).map(exceptionOf),
     ...(reroute ? { reroute } : {}),
+    ...(typeof dto.activeRoutePlanId === 'number' ? { activeRoutePlanId: dto.activeRoutePlanId } : {}),
+    ...(routeLegs ? { routeLegs } : {}),
     refreshMs: typeof dto.refreshMs === 'number' && dto.refreshMs > 0 ? Math.max(1000, dto.refreshMs) : null,
     isMockResult: dto.isMockResult === true,
   }

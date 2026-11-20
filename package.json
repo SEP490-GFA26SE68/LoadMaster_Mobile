@@ -62,7 +62,7 @@
     "check": "node scripts/vendor-maplibre.mjs && pnpm sync:web:verify && pnpm lint && pnpm typecheck && pnpm test",
     "sync:web:verify": "node scripts/sync-from-web.mjs --verify",
     "vendor:maplibre": "node scripts/vendor-maplibre.mjs",
-    "postinstall": "node scripts/vendor-maplibre.mjs"
+    "postinstall": "node scripts/vendor-maplibre.mjs && node scripts/patch-expo-router-linking.mjs"
   },
   "private": true,
   "jest": {

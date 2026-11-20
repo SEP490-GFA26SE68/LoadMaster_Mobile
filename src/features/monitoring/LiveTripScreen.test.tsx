@@ -96,6 +96,11 @@ describe('điều phối viên xử lý sự cố của chuyến', () => {
     await fireEvent.press(await screen.findByRole('button', { name: 'Chi tiết chuyến' }))
     expect(router.push).toHaveBeenCalledWith(tripDetailPath(TRIP))
   })
+
+  test('bản đồ tuyến dùng vị trí giám sát đã có, không endpoint mới', async () => {
+    await renderLive()
+    expect(await screen.findByLabelText(/^Bản đồ tuyến tới TRIP-009/)).toBeOnTheScreen()
+  })
 })
 
 describe('quản lý công ty chỉ xem', () => {

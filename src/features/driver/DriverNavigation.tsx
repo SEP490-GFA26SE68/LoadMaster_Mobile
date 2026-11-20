@@ -1,5 +1,4 @@
-import * as Location from 'expo-location'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
@@ -10,6 +9,7 @@ import { colors, radius, space } from '@/theme/tokens'
 
 import type { StopScreen } from './driver-model'
 import { RouteMap } from './RouteMap'
+import type { DeviceGpsPoint } from './useDeviceLocation'
 
 const MANEUVER_KEYS = {
   'turn-right': 'driver.guidance.maneuvers.turn-right',
@@ -38,26 +38,34 @@ function instructionOf(next: NextGuidance | undefined, stopName: string, t: Retu
   return key ? t(key) : t('driver.guidance.fallback', { name: stopName })
 }
 
+function mapLabel(stopName: string, vehicle: GeoPoint | undefined, t: ReturnType<typeof useT>): string {
+  if (!vehicle) return t('driver.guidance.map', { name: stopName })
+  return t('driver.guidance.mapLive', { name: stopName, lat: vehicle.lat.toFixed(4), lng: vehicle.lng.toFixed(4) })
+}
+
 /**
  * Chỉ đường trong app: banner bước kế tiếp + bản đồ Goong (MapLibre). Không mở Google Maps. Banner chỉ có khi xe đã xuất phát
  * (`mode === 'delivering'`): trước đó vị trí là vị trí của kho, "Còn 0 m · Đi thẳng" là câu sai.
+ * Pin xe chỉ từ GPS đang bật (`vehicle`); tắt GPS thì không vẽ pin giả từ last-known một shot.
  */
-export function DriverNavigation({ screen }: { tripId: string; screen: StopScreen }) {
+export function DriverNavigation({
+  screen,
+  vehicle,
+}: {
+  screen: StopScreen
+  vehicle?: DeviceGpsPoint
+}) {
   const t = useT()
-  const [here, setHere] = useState<GeoPoint | undefined>(undefined)
+  const here = vehicle
+  const planVersion = screen.routeMap?.planVersion
+  const seenVersion = useRef<number | undefined>(undefined)
+  const [routeChanged, setRouteChanged] = useState(false)
 
   useEffect(() => {
-    let cancelled = false
-    if (typeof Location.getLastKnownPositionAsync !== 'function') return undefined
-    void Location.getLastKnownPositionAsync()
-      .then((last) => {
-        if (!cancelled && last) setHere({ lat: last.coords.latitude, lng: last.coords.longitude })
-      })
-      .catch(() => undefined)
-    return () => {
-      cancelled = true
-    }
-  }, [])
+    if (planVersion === undefined) return
+    if (seenVersion.current !== undefined && planVersion > seenVersion.current) setRouteChanged(true)
+    seenVersion.current = planVersion
+  }, [planVersion])
 
   const steps = useMemo(() => parseGuidanceSteps(screen.routeMap?.guidanceSteps), [screen.routeMap?.guidanceSteps])
   const destination =
@@ -92,12 +100,17 @@ export function DriverNavigation({ screen }: { tripId: string; screen: StopScree
           <AppText variant="title">{banner}</AppText>
         </View>
       ) : null}
+      {routeChanged ? (
+        <View style={styles.reroute} accessibilityLiveRegion="polite">
+          <AppText variant="label">{t('driver.guidance.rerouted')}</AppText>
+        </View>
+      ) : null}
       {screen.routeMap?.planVersion !== undefined ? (
         <AppText color={colors.text3}>{t('driver.guidance.version', { version: screen.routeMap.planVersion })}</AppText>
       ) : null}
       {mapStops.length > 0 ? (
         <RouteMap
-          label={t('driver.guidance.map', { name: screen.stop.name })}
+          label={mapLabel(screen.stop.name, here, t)}
           depot={screen.routeMap?.depot}
           stops={mapStops}
           path={screen.routeMap?.path}
@@ -111,6 +124,14 @@ export function DriverNavigation({ screen }: { tripId: string; screen: StopScree
 const styles = StyleSheet.create({
   wrap: { gap: space[2] },
   banner: {
+    paddingHorizontal: space[4],
+    paddingVertical: space[3],
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.primaryFillBorder,
+    backgroundColor: colors.primaryBg,
+  },
+  reroute: {
     paddingHorizontal: space[4],
     paddingVertical: space[3],
     borderRadius: radius.lg,

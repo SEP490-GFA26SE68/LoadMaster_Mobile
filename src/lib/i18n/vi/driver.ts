@@ -181,7 +181,12 @@ export const driver = {
   guidance: {
     title: 'Chỉ đường',
     map: 'Bản đồ tuyến tới {name}',
+    mapLive: 'Bản đồ tuyến tới {name}. Xe tại {lat}, {lng}',
+    expand: 'Phóng lớn bản đồ',
+    expandTitle: 'Bản đồ tuyến',
+    expandMap: 'Bản đồ phóng lớn: {label}',
     version: 'Tuyến phiên bản {version}',
+    rerouted: 'Điều phối viên đã đổi tuyến. Bản đồ đang theo tuyến mới.',
     next: 'Còn {distance} · {instruction}',
     arrived: 'Đã đến điểm',
     fallback: 'Đi tới {name}',

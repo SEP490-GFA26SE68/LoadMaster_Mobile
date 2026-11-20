@@ -173,7 +173,12 @@ export const driver = {
   guidance: {
     title: 'Directions',
     map: 'Route map to {name}',
+    mapLive: 'Route map to {name}. Vehicle at {lat}, {lng}',
+    expand: 'Expand map',
+    expandTitle: 'Route map',
+    expandMap: 'Expanded map: {label}',
     version: 'Route version {version}',
+    rerouted: 'The dispatcher changed the route. The map follows the new plan.',
     next: '{distance} · {instruction}',
     arrived: 'Arrived at the stop',
     fallback: 'Go to {name}',

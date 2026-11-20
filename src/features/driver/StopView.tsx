@@ -27,6 +27,7 @@ import { StopNotices } from './StopNotices'
 import { StopProgress } from './StopProgress'
 import { driverTripDetailPath } from './TripCard'
 import { TripExceptionsBanner } from './TripExceptionHistorySheet'
+import { useDeviceLocation } from './useDeviceLocation'
 import { useDriverCapabilities, useTripExceptionsQuery } from './useDriverQueries'
 import { useStopActions } from './useStopActions'
 import { useUnloadVerify } from './useUnloadVerify'
@@ -44,6 +45,7 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
   const t = useT()
   const router = useRouter()
   const capabilities = useDriverCapabilities()
+  const gps = useDeviceLocation(trip.id)
   const actions = useStopActions(trip.id, screen)
   const verify = useUnloadVerify(trip.id, screen)
   const [issue, setIssue] = useState(CLOSED)
@@ -84,9 +86,11 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
       {delivering && exceptions.length > 0 ? (
         <TripExceptionsBanner exceptions={exceptions} onOpen={() => setHistorySignal((n) => n + 1)} />
       ) : null}
-      {delivering && capabilities.gps ? <GpsToggle tripId={trip.id} localOnly={capabilities.gpsLocalOnly} /> : null}
+      {delivering && capabilities.gps ? (
+        <GpsToggle localOnly={capabilities.gpsLocalOnly} enabled={gps.enabled} state={gps.state} toggle={gps.toggle} />
+      ) : null}
       {screen.hasPickupStops ? <StopList screen={screen} /> : null}
-      <DriverNavigation tripId={trip.id} screen={screen} />
+      <DriverNavigation screen={screen} vehicle={gps.enabled ? gps.latest ?? undefined : undefined} />
       <StopContactCard screen={screen} />
       <StopProgress screen={screen} />
 

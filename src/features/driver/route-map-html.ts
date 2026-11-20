@@ -7,11 +7,13 @@ import { goongStyleUrl } from './map-style'
 
 export type RouteMapPoint = GeoPoint & { readonly id: string; readonly number: number; readonly name: string }
 
+export type RouteMapVehicle = GeoPoint & { readonly heading?: number }
+
 export type RouteMapView = {
   readonly depot?: GeoPoint
   readonly stops: readonly RouteMapPoint[]
   readonly path?: readonly GeoPoint[]
-  readonly vehicle?: GeoPoint
+  readonly vehicle?: RouteMapVehicle
 }
 
 /** Đường tuyến: polyline backend, hoặc nối thẳng kho → các điểm theo thứ tự. */
@@ -28,6 +30,7 @@ export type RouteMapPayload = {
   readonly depot?: [number, number]
   readonly stops: readonly { readonly number: number; readonly lngLat: [number, number]; readonly color: string; readonly fg: string }[]
   readonly vehicle?: [number, number]
+  readonly heading?: number
 }
 
 const lngLat = (point: GeoPoint): [number, number] => [point.lng, point.lat]
@@ -47,6 +50,7 @@ export function routeMapPayload(view: RouteMapView, key?: string): RouteMapPaylo
       fg: stopForeground(stop.number),
     })),
     vehicle: view.vehicle ? lngLat(view.vehicle) : undefined,
+    heading: view.vehicle?.heading,
   }
 }
 
@@ -67,7 +71,7 @@ export function routeMapHtml(payload: RouteMapPayload): string {
   .stop{border-radius:50%}
   .depot{border-radius:6px;background:${payload.primary};color:#fff}
   .vehicle{width:32px;height:32px;border-radius:50%;background:#fff;border:2px solid ${payload.primary}}
-  .vehicle i{width:8px;height:8px;border-radius:50%;background:${payload.primary}}
+  .vehicle i{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:12px solid ${payload.primary};transform-origin:50% 70%}
   .maplibregl-ctrl-attrib{font-size:10px}
 </style>
 </head><body>
@@ -115,13 +119,17 @@ export function routeMapHtml(payload: RouteMapPayload): string {
     el.textContent=String(s.number);
     return el;
   }
-  function placeVehicle(lngLat){
+  function placeVehicle(lngLat,heading){
     if(!lngLat){ if(vehicleMarker){ vehicleMarker.remove(); vehicleMarker=null; } return; }
-    if(vehicleMarker){ vehicleMarker.setLngLat(lngLat); return; }
-    var el=document.createElement('div');
-    el.className='pin vehicle';
-    el.innerHTML='<i></i>';
-    vehicleMarker=marker(el,lngLat);
+    if(vehicleMarker){ vehicleMarker.setLngLat(lngLat); }
+    else {
+      var el=document.createElement('div');
+      el.className='pin vehicle';
+      el.innerHTML='<i></i>';
+      vehicleMarker=marker(el,lngLat);
+    }
+    var needle=vehicleMarker.getElement().querySelector('i');
+    if(needle && heading!=null && isFinite(heading)) needle.style.transform='rotate('+heading+'deg)';
   }
   var styleLoaded = false;
   var markersAdded = false;
@@ -135,7 +143,7 @@ export function routeMapHtml(payload: RouteMapPayload): string {
         marker(d,data.depot);
       }
       data.stops.forEach(function(s){ marker(stopEl(s), s.lngLat); });
-      placeVehicle(data.vehicle);
+      placeVehicle(data.vehicle, data.heading);
       markersAdded = true;
     }
     map.resize();
@@ -158,7 +166,7 @@ export function routeMapHtml(payload: RouteMapPayload): string {
   window.addEventListener('resize', function(){ map.resize(); });
   setTimeout(function(){ map.resize(); fit(); }, 200);
   setTimeout(function(){ map.resize(); fit(); }, 600);
-  window.__lmVehicle=function(lng,lat){ placeVehicle(lng==null?null:[lng,lat]); };
+  window.__lmVehicle=function(lng,lat,heading){ placeVehicle(lng==null?null:[lng,lat], heading); };
 })();
 </script>
 </body></html>`

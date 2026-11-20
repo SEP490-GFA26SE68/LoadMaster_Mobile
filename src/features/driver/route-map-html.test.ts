@@ -36,3 +36,12 @@ test('MapLibre nằm ngay trong trang: không tải script hay CSS từ mạng',
   expect(html).not.toMatch(/<link[^>]+href=/)
   expect(html).not.toContain('cdn.jsdelivr.net')
 })
+
+test('mốc xe xoay theo heading; injectJavaScript gọi __lmVehicle(lng, lat, heading)', () => {
+  const payload = routeMapPayload({ depot, stops, vehicle: { lat: 10.86, lng: 106.75, heading: 90 } }, undefined)
+  expect(payload.vehicle).toEqual([106.75, 10.86])
+  expect(payload.heading).toBe(90)
+  const html = routeMapHtml(payload)
+  expect(html).toContain('window.__lmVehicle=function(lng,lat,heading)')
+  expect(html).toContain("needle.style.transform='rotate('+heading+'deg)'")
+})

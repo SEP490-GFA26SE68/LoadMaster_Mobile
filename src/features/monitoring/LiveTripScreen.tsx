@@ -9,8 +9,10 @@ import { Button } from '@/components/Button'
 import { IconButton } from '@/components/IconButton'
 import { Screen } from '@/components/Screen'
 import { ErrorState, LoadingState } from '@/components/StateView'
+import { pathFromEncodedPolylines } from '@/domain/routing/polyline'
 import { useCan } from '@/features/auth/AuthProvider'
 import { NotificationBell } from '@/features/bell/NotificationBell'
+import { RouteMap } from '@/features/driver/RouteMap'
 import { TripExceptionSheet } from '@/features/driver/TripExceptionSheet'
 import { PickupRequestsCard } from '@/features/pickups/PickupRequestsCard'
 import { tripDetailPath } from '@/features/trips/trip-routes'
@@ -21,15 +23,53 @@ import { MONITORING_LIST } from './live-routes'
 import { LiveExceptionsCard, type LiveNotice } from './LiveExceptionsCard'
 import { LiveLocationCard } from './LiveLocationCard'
 import { LiveStopList } from './LiveStopList'
+import type { LiveMonitoring, MonitoringTrip } from './monitoring-model'
 import { useLiveTripQuery, useMonitoringCapabilities, useReportExceptionMutation } from './useMonitoringQueries'
 import { useBellSync } from './useMonitoringSync'
 import { useSheetTurn } from './useSheetTurn'
 
+function liveRoutePath(live: LiveMonitoring) {
+  const legs = live.routeLegs
+  if (!legs?.length) return undefined
+  const path = pathFromEncodedPolylines(
+    [...legs].sort((a, b) => a.legSequence - b.legSequence).map((leg) => leg.polyline),
+  )
+  return path.length > 1 ? path : undefined
+}
+
+function LiveTripMap({ tripId, trip, live }: { tripId: string; trip: MonitoringTrip; live: LiveMonitoring }) {
+  const t = useT()
+  const stops = trip.stops.flatMap((stop) =>
+    stop.lat === undefined || stop.lng === undefined
+      ? []
+      : [{ id: stop.id, number: stop.number, name: stop.name, lat: stop.lat, lng: stop.lng }],
+  )
+  const location = live.location
+  const vehicle = location
+    ? { lat: location.lat, lng: location.lng, heading: location.heading }
+    : undefined
+  if (stops.length === 0 && trip.depot === undefined) return null
+  return (
+    <RouteMap
+      label={
+        vehicle
+          ? t('driver.guidance.mapLive', { name: tripId, lat: vehicle.lat.toFixed(4), lng: vehicle.lng.toFixed(4) })
+          : t('liveTrip.map', { id: tripId })
+      }
+      depot={trip.depot}
+      stops={stops}
+      path={liveRoutePath(live)}
+      vehicle={vehicle}
+    />
+  )
+}
+
 /**
- * Giám sát một chuyến của điều phối viên và quản lý công ty (như `MonitoringTripPanel` của web, chưa có bản đồ): vị trí xe bằng chữ, giờ
- * đến từng điểm so với hạn, sự cố của chuyến, yêu cầu nhận hàng dọc đường, và lối sang Chi tiết chuyến. Đọc lại theo nhịp điểm vị trí của
- * kho (`refetchInterval`), kéo xuống để đọc lại ngay; chuyến thôi chạy thì màn nói vậy và thôi đọc theo nhịp. Nút chính duy nhất là "Báo
- * sự cố" ở chân màn, của người có `exceptions.report` (điều phối viên); quản lý công ty chỉ xem, trừ việc nhập hạn mới.
+ * Giám sát một chuyến của điều phối viên và quản lý công ty (như `MonitoringTripPanel` của web): vị trí xe bằng chữ và bản đồ tuyến
+ * (`RouteMap` tái dùng của tài xế, GPS từ `GET /api/trips/{id}/monitoring`), giờ đến từng điểm so với hạn, sự cố của chuyến, yêu cầu nhận
+ * hàng dọc đường, và lối sang Chi tiết chuyến. Đọc lại theo nhịp điểm vị trí của kho (`refetchInterval`), kéo xuống để đọc lại ngay; chuyến
+ * thôi chạy thì màn nói vậy và thôi đọc theo nhịp. Nút chính duy nhất là "Báo sự cố" ở chân màn, của người có `exceptions.report` (điều phối
+ * viên); quản lý công ty chỉ xem, trừ việc nhập hạn mới.
  */
 export function LiveTripScreen({ tripId }: { readonly tripId: string }) {
   const t = useT()
@@ -97,6 +137,7 @@ export function LiveTripScreen({ tripId }: { readonly tripId: string }) {
       {query.isError ? <Banner tone="danger">{t('liveTrip.refreshFailed', { message: dataErrorMessage(query.error, t) })}</Banner> : null}
       {running ? null : <Banner tone="info">{t('liveTrip.notRunning', { id: tripId })}</Banner>}
       <LiveLocationCard tripId={tripId} live={live} running={running} />
+      <LiveTripMap tripId={tripId} trip={trip} live={live} />
       <Button variant="secondary" trailingIcon={ChevronRight} onPress={() => router.push(tripDetailPath(tripId))}>
         {t('liveTrip.openDetail')}
       </Button>

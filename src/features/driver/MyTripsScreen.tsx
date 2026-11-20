@@ -1,4 +1,5 @@
-import { RefreshControl, SectionList, StyleSheet, View } from 'react-native'
+import { History } from 'lucide-react-native'
+import { Pressable, RefreshControl, SectionList, StyleSheet, View } from 'react-native'
 import { useRouter } from 'expo-router'
 
 import { AppText } from '@/components/AppText'
@@ -46,25 +47,25 @@ export function MyTripsScreen() {
       actions={<NotificationBell />}
       below={
         <View style={styles.headerBelow}>
-          <AppText color={colors.skyText2}>{format.date(new Date())}</AppText>
+          <View style={styles.belowRow}>
+            <AppText color={colors.skyText2}>{format.date(new Date())}</AppText>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('driver.myTrips.history.button')}
+              onPress={openHistory}
+              style={({ pressed }) => [styles.historyPill, pressed && styles.historyPillPressed]}>
+              <History color={colors.skyText} size={16} strokeWidth={1.75} />
+              <AppText variant="meta" color={colors.skyText}>
+                {t('driver.myTrips.history.button')}
+                {historyCount > 0 ? ` (${historyCount})` : ''}
+              </AppText>
+            </Pressable>
+          </View>
           {capabilities.payroll ? (
             <Button variant="secondary" onPress={() => router.push('/driver-payroll')}>
               {t('driver.payroll.open')}
             </Button>
           ) : null}
-        <View style={styles.belowRow}>
-          <AppText color={colors.skyText2}>{format.date(new Date())}</AppText>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('driver.myTrips.history.button')}
-            onPress={openHistory}
-            style={({ pressed }) => [styles.historyPill, pressed && styles.historyPillPressed]}>
-            <History color={colors.skyText} size={16} strokeWidth={1.75} />
-            <AppText variant="meta" color={colors.skyText}>
-              {t('driver.myTrips.history.button')}
-              {historyCount > 0 ? ` (${historyCount})` : ''}
-            </AppText>
-          </Pressable>
         </View>
       }>
       {query.isPending ? (

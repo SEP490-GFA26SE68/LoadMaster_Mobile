@@ -33,20 +33,32 @@ export type DeviceLocationState =
   /** Vẫn bật nhưng lần gửi gần nhất lỗi tạm thời; `sentAt` là lần gửi được gần nhất (nếu có). */
   | { readonly status: 'retrying'; readonly sentAt?: string; readonly error: unknown }
 
+/** Điểm GPS mới nhất trên máy — bản đồ và chỉ đường dùng chung, không gọi hook lần hai. */
+export type DeviceGpsPoint = { readonly lat: number; readonly lng: number; readonly heading: number }
+
+export type DeviceLocationControls = {
+  readonly enabled: boolean
+  readonly state: DeviceLocationState
+  readonly toggle: (next: boolean) => void
+  readonly latest: DeviceGpsPoint | null
+}
+
 /**
  * "Dùng GPS thật" của tài xế (như `useDeviceLocation` của web, dùng `expo-location`). Bật: kiểm định vị của máy, xin quyền vị trí khi dùng
  * app, báo nguồn dữ liệu (kho mẫu cho đồng hồ mô phỏng chạy theo giờ thật), theo dõi vị trí, gửi điểm đầu tiên ngay rồi vị trí mới nhất mỗi
  * 30 giây; mất mạng hay máy chủ lỗi tạm thời thì giữ bật và thử lại giãn dần (`gpsRetryDelayMs`). Tài xế tắt, chưa được cấp quyền, định vị tắt, mất tín hiệu hoặc nguồn từ chối điểm vị trí: thôi theo dõi, báo nguồn, kèm lý do
  * để màn nói ra. Rời màn chuyến cũng dừng như vậy. App chỉ gửi vị trí khi đang mở — không theo dõi nền.
+ * `latest` là điểm vừa watch (bản đồ / chỉ đường); gửi lên máy chủ vẫn chỉ mỗi 30 giây.
  */
-export function useDeviceLocation(tripId: string) {
+export function useDeviceLocation(tripId: string): DeviceLocationControls {
   const client = useQueryClient()
   const [enabled, setEnabled] = useState(false)
   const [state, setState] = useState<DeviceLocationState>({ status: 'off' })
+  const [latest, setLatest] = useState<DeviceGpsPoint | null>(null)
 
   useEffect(() => {
     if (!enabled) return
-    let latest: LocationRequest | null = null
+    let pending: LocationRequest | null = null
     let stopped = false
     let announced = false
     let subscription: Location.LocationSubscription | null = null
@@ -59,10 +71,11 @@ export function useDeviceLocation(tripId: string) {
       if (stopped) return
       stopped = true
       setEnabled(false)
+      setLatest(null)
       setState({ status: 'off', reason, error })
     }
     const send = () => {
-      const point = latest
+      const point = pending
       if (point === null || stopped || Date.now() < retryAt) return
       postLocation(tripId, point).then(
         ({ recordedAt }) => {
@@ -95,8 +108,9 @@ export function useDeviceLocation(tripId: string) {
       const watch = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.High, timeInterval: 10_000, distanceInterval: 0 },
         ({ coords }) => {
-          const first = latest === null
-          latest = locationInput(coords)
+          const first = pending === null
+          pending = locationInput(coords)
+          setLatest({ lat: pending.lat, lng: pending.lng, heading: pending.heading ?? 0 })
           if (first) send()
         },
         () => stop('lost'),
@@ -114,6 +128,7 @@ export function useDeviceLocation(tripId: string) {
 
     return () => {
       stopped = true
+      setLatest(null)
       subscription?.remove()
       if (timer !== null) clearInterval(timer)
       // Nguồn thôi chờ GPS: kho mẫu cho xe mô phỏng ghi tiếp, đồng hồ về tốc độ đã đặt
@@ -123,8 +138,9 @@ export function useDeviceLocation(tripId: string) {
 
   function toggle(next: boolean) {
     setEnabled(next)
+    if (!next) setLatest(null)
     setState(next ? { status: 'requesting' } : { status: 'off', reason: 'user' })
   }
 
-  return { enabled, state, toggle }
+  return { enabled, state, toggle, latest }
 }
