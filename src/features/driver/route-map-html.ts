@@ -22,6 +22,15 @@ export function routeLine({ depot, stops, path }: RouteMapView): readonly GeoPoi
   return depot ? [depot, ...stops] : stops
 }
 
+export type RouteMapOptions = {
+  /** Camera bám xe + heading-up. Mặc định false: nhìn cả tuyến. */
+  readonly follow?: boolean
+  /** Góc nghiêng camera khi đang bám xe (bản phóng lớn). */
+  readonly pitch?: number
+  /** Nút +/− MapLibre. Chỉ bản phóng lớn: bản thu nhỏ đã có nút Maximize2 cùng góc. */
+  readonly navigation?: boolean
+}
+
 export type RouteMapPayload = {
   readonly styleUrl: string | undefined
   readonly background: string
@@ -31,12 +40,15 @@ export type RouteMapPayload = {
   readonly stops: readonly { readonly number: number; readonly lngLat: [number, number]; readonly color: string; readonly fg: string }[]
   readonly vehicle?: [number, number]
   readonly heading?: number
+  readonly follow?: boolean
+  readonly pitch?: number
+  readonly navigation?: boolean
 }
 
 const lngLat = (point: GeoPoint): [number, number] => [point.lng, point.lat]
 
 /** Dữ liệu MapLibre trong WebView: cùng nền Goong với web, hoặc nền trống khi chưa có khoá. */
-export function routeMapPayload(view: RouteMapView, key?: string): RouteMapPayload {
+export function routeMapPayload(view: RouteMapView, key?: string, options?: RouteMapOptions): RouteMapPayload {
   return {
     styleUrl: goongStyleUrl(key),
     background: colors.lineSoft,
@@ -51,6 +63,9 @@ export function routeMapPayload(view: RouteMapView, key?: string): RouteMapPaylo
     })),
     vehicle: view.vehicle ? lngLat(view.vehicle) : undefined,
     heading: view.vehicle?.heading,
+    ...(options?.follow ? { follow: true } : {}),
+    ...(options?.pitch ? { pitch: options.pitch } : {}),
+    ...(options?.navigation ? { navigation: true } : {}),
   }
 }
 
@@ -91,14 +106,37 @@ export function routeMapHtml(payload: RouteMapPayload): string {
     attributionControl:{compact:true}
   });
   map.touchZoomRotate.disableRotation();
-  map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'top-right');
+  if(data.navigation) map.addControl(new maplibregl.NavigationControl({showCompass:false}), 'top-right');
   var vehicleMarker=null;
+  var following=!!data.follow;
+  var lastHeading=data.heading;
+  function post(msg){
+    if(window.ReactNativeWebView) window.ReactNativeWebView.postMessage(msg);
+    else if(window.parent && window.parent!==window) window.parent.postMessage(msg,'*');
+  }
   function fit(){
     var pts=data.line.concat(data.depot?[data.depot]:[]).concat(data.stops.map(function(s){return s.lngLat}));
     if(!pts.length) return;
-    if(pts.length===1){ map.jumpTo({center:pts[0],zoom:14}); return; }
+    if(pts.length===1){ map.jumpTo({center:pts[0],zoom:14,pitch:0,bearing:0}); return; }
     var b=pts.reduce(function(acc,p){return acc.extend(p)}, new maplibregl.LngLatBounds(pts[0],pts[0]));
-    map.fitBounds(b,{padding:44,maxZoom:14,animate:false});
+    map.fitBounds(b,{padding:44,maxZoom:14,animate:false,pitch:0,bearing:0});
+  }
+  function releaseFollow(){
+    if(!following) return;
+    following=false;
+    try{ map.stop(); }catch(e){}
+    post('unfollowed');
+  }
+  function onUserCamera(e){
+    if(!e || !e.originalEvent) return;
+    releaseFollow();
+  }
+  function easeToVehicle(lngLat,heading,snap){
+    if(!following || !lngLat) return;
+    var cam={center:lngLat,pitch:data.pitch||0,duration:snap?0:400,padding:{top:56,bottom:88,left:24,right:24}};
+    if(heading!=null && isFinite(heading)) cam.bearing=heading;
+    if(snap) cam.zoom=16;
+    map.easeTo(cam);
   }
   function draw(){
     var geo={type:'Feature',properties:{},geometry:{type:'LineString',coordinates:data.line}};
@@ -130,6 +168,8 @@ export function routeMapHtml(payload: RouteMapPayload): string {
     }
     var needle=vehicleMarker.getElement().querySelector('i');
     if(needle && heading!=null && isFinite(heading)) needle.style.transform='rotate('+heading+'deg)';
+    lastHeading=heading;
+    easeToVehicle(lngLat,heading,false);
   }
   var styleLoaded = false;
   var markersAdded = false;
@@ -147,8 +187,12 @@ export function routeMapHtml(payload: RouteMapPayload): string {
       markersAdded = true;
     }
     map.resize();
-    fit();
-    if(window.ReactNativeWebView) window.ReactNativeWebView.postMessage('ready');
+    if(following && (data.vehicle || vehicleMarker)){
+      if(data.vehicle) easeToVehicle(data.vehicle, data.heading, true);
+    } else {
+      fit();
+    }
+    post('ready');
   }
   map.on('style.load', function(){
     styleLoaded = true;
@@ -163,10 +207,20 @@ export function routeMapHtml(payload: RouteMapPayload): string {
       map.setStyle(empty);
     }
   });
-  window.addEventListener('resize', function(){ map.resize(); });
-  setTimeout(function(){ map.resize(); fit(); }, 200);
-  setTimeout(function(){ map.resize(); fit(); }, 600);
+  function afterResize(){ map.resize(); }
+  window.addEventListener('resize', afterResize);
+  setTimeout(afterResize, 200);
+  setTimeout(afterResize, 600);
+  // Chỉ cử chỉ tay / nút −+ (có originalEvent). easeTo của Về giữa không có — không tự unfollow rồi fit cả tuyến.
+  map.on('dragstart', onUserCamera);
+  map.on('zoomstart', onUserCamera);
+  map.on('rotatestart', onUserCamera);
+  map.on('pitchstart', onUserCamera);
   window.__lmVehicle=function(lng,lat,heading){ placeVehicle(lng==null?null:[lng,lat], heading); };
+  window.__lmFollow=function(){
+    following=true;
+    if(vehicleMarker) easeToVehicle(vehicleMarker.getLngLat(), lastHeading, true);
+  };
 })();
 </script>
 </body></html>`

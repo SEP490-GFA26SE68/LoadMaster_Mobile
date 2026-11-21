@@ -24,7 +24,7 @@ export const monitoring = {
     label: 'Map of the vehicles in transit',
     tag: '{trip} · {source}',
     vehicle: 'trip {trip}, {name} ({source})',
-    note: 'The route and stops are those of the selected trip; vehicles of other trips show their position only.',
+    note: 'The map shows only the route, stops and vehicle of the selected trip.',
     noPosition: 'Trip {id} still has a stop without coordinates, so there is no vehicle position.',
     pathFailed: 'Could not read the route of trip {id} from the server — the map joins the stops with straight lines.',
   },

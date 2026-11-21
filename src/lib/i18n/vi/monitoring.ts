@@ -32,7 +32,7 @@ export const monitoring = {
     tag: '{trip} · {source}',
     /** Tên mốc xe của một chuyến cho trình đọc màn hình. */
     vehicle: 'chuyến {trip}, {name} ({source})',
-    note: 'Tuyến và điểm giao là của chuyến đang chọn; xe của chuyến khác chỉ hiện vị trí.',
+    note: 'Bản đồ chỉ hiện tuyến, điểm giao và vị trí xe của chuyến đang chọn.',
     noPosition: 'Chuyến {id} còn điểm giao chưa có toạ độ nên chưa có vị trí xe.',
     pathFailed: 'Không đọc được tuyến của chuyến {id} từ máy chủ — bản đồ nối thẳng các điểm.',
   },

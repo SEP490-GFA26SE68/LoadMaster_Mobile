@@ -45,3 +45,25 @@ test('mốc xe xoay theo heading; injectJavaScript gọi __lmVehicle(lng, lat, h
   expect(html).toContain('window.__lmVehicle=function(lng,lat,heading)')
   expect(html).toContain("needle.style.transform='rotate('+heading+'deg)'")
 })
+
+test('bản thu nhỏ không bật nút +/−; bản phóng lớn mới navigation:true', () => {
+  const preview = routeMapHtml(routeMapPayload({ depot, stops }, undefined))
+  expect(preview).not.toContain('"navigation":true')
+  const expanded = routeMapHtml(routeMapPayload({ depot, stops }, undefined, { navigation: true }))
+  expect(expanded).toContain('"navigation":true')
+  expect(expanded).toContain('if(data.navigation) map.addControl(new maplibregl.NavigationControl')
+})
+
+test('follow: camera bám xe, kéo / pinch / nút zoom gửi unfollowed, __lmFollow bật lại — resize không fit cả tuyến', () => {
+  const html = routeMapHtml(routeMapPayload({ depot, stops }, undefined, { follow: true, pitch: 50 }))
+  expect(html).toContain('"follow":true')
+  expect(html).toContain('"pitch":50')
+  expect(html).toContain('window.__lmFollow=function()')
+  expect(html).toContain("post('unfollowed')")
+  expect(html).toContain("map.on('zoomstart', onUserCamera)")
+  expect(html).toContain("map.on('dragstart', onUserCamera)")
+  expect(html).toContain('if(!e || !e.originalEvent) return')
+  expect(html).toContain('easeTo')
+  expect(html).toContain('function afterResize(){ map.resize(); }')
+  expect(html).not.toContain('function afterResize(){ map.resize(); if(!following) fit(); }')
+})

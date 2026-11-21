@@ -72,3 +72,28 @@ test('pin GPS hiện trên nhãn bản đồ; tăng planVersion thì có banner 
   expect(await view.findByText('Tuyến phiên bản 2')).toBeOnTheScreen()
   expect(view.getByText('Điều phối viên đã đổi tuyến. Bản đồ đang theo tuyến mới.')).toBeOnTheScreen()
 })
+
+test('HUD có bước Sau đó, ETA và tốc độ khi đang giao', async () => {
+  const view = await renderApp(
+    <DriverNavigation
+      screen={{
+        ...screenOf(1),
+        routeMap: {
+          depot: { name: 'Kho Long Bình', lat: 10.78, lng: 106.7 },
+          stops: [{ id: '1', number: 1, name: 'Biên Hoà', lat: 10.95, lng: 106.82 }],
+          planVersion: 1,
+          guidanceSteps: [
+            { instruction: 'Rẽ phải vào Nguyễn Huệ', maneuver: 'turn-right', distanceMeters: 300, durationSeconds: 40, lat: 10.95, lng: 106.82 },
+            { instruction: 'Đi thẳng QL13', maneuver: 'straight', distanceMeters: 8000, durationSeconds: 600, lat: 10.96, lng: 106.83 },
+          ],
+        },
+      }}
+      vehicle={{ lat: 10.86, lng: 106.75, heading: 90, speedKmh: 42 }}
+    />,
+  )
+
+  expect(await view.findByText(/Rẽ phải vào Nguyễn Huệ/)).toBeOnTheScreen()
+  expect(view.getByText('Sau đó Đi thẳng QL13')).toBeOnTheScreen()
+  expect(view.getByText('42 km/h')).toBeOnTheScreen()
+  expect(view.getByRole('button', { name: 'Tắt giọng nói' })).toBeOnTheScreen()
+})

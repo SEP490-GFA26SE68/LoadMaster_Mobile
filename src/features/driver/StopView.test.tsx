@@ -166,13 +166,12 @@ describe('việc phụ ở điểm giao', () => {
     expect(screen.queryByRole('header', { name: `Yêu cầu ${id}` })).toBeNull()
   })
 
-  test('bật GPS thật: gửi vị trí của điện thoại; tắt thì vị trí xe về mô phỏng', async () => {
+  test('xuất phát xong GPS tự bật: gửi vị trí của điện thoại; tắt thì vị trí xe về mô phỏng', async () => {
     const lastKnown = jest.spyOn(Location, 'getLastKnownPositionAsync')
     await departLoadedTrip({ arrive: false })
     await renderTrip()
     expect(lastKnown).not.toHaveBeenCalled()
-    await fireEvent.press(await screen.findByRole('switch', { name: GPS_SWITCH }))
-    expect(screen.getByRole('switch', { name: GPS_SWITCH })).toBeChecked()
+    expect(await screen.findByRole('switch', { name: GPS_SWITCH })).toBeChecked()
     expect(screen.getByText('Đang chờ quyền vị trí và tín hiệu GPS…')).toBeOnTheScreen()
 
     await waitFor(() => expect(locationWatchers()).toBe(1))
@@ -192,7 +191,6 @@ describe('việc phụ ở điểm giao', () => {
   test('pin bản đồ theo GPS mới; vị trí gửi lên máy chủ không POST lần hai trong cùng nhịp', async () => {
     await departLoadedTrip({ arrive: false })
     await renderTrip()
-    await fireEvent.press(await screen.findByRole('switch', { name: GPS_SWITCH }))
     await waitFor(() => expect(locationWatchers()).toBe(1))
 
     await act(async () => emitPosition({ latitude: 10.8512, longitude: 106.7718, speed: 10, heading: 90 }))
@@ -209,7 +207,6 @@ describe('việc phụ ở điểm giao', () => {
   test('mất tín hiệu GPS: thôi theo dõi và nói lý do', async () => {
     await departLoadedTrip({ arrive: false })
     await renderTrip()
-    await fireEvent.press(await screen.findByRole('switch', { name: GPS_SWITCH }))
     await waitFor(() => expect(locationWatchers()).toBe(1))
 
     await act(async () => failPosition())
@@ -226,7 +223,6 @@ describe('việc phụ ở điểm giao', () => {
     const openSettings = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined)
     await departLoadedTrip({ arrive: false })
     await renderTrip()
-    await fireEvent.press(await screen.findByRole('switch', { name: GPS_SWITCH }))
 
     expect(await screen.findByText(`${reason} Vị trí xe về mô phỏng.`)).toBeOnTheScreen()
     expect(screen.getByRole('switch', { name: GPS_SWITCH })).not.toBeChecked()

@@ -27,7 +27,7 @@ import { StopNotices } from './StopNotices'
 import { StopProgress } from './StopProgress'
 import { driverTripDetailPath } from './TripCard'
 import { TripExceptionsBanner } from './TripExceptionHistorySheet'
-import { useDeviceLocation } from './useDeviceLocation'
+import { useDeviceLocation, useStartGpsWhenDelivering } from './useDeviceLocation'
 import { useDriverCapabilities, useTripExceptionsQuery } from './useDriverQueries'
 import { useStopActions } from './useStopActions'
 import { useUnloadVerify } from './useUnloadVerify'
@@ -53,6 +53,7 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
   const { stop, mode, arrived, items, pickupItems } = screen
   const pickupStop = stop.kind === 'PICKUP'
   const delivering = mode === 'delivering'
+  useStartGpsWhenDelivering(delivering, capabilities.gps, gps)
   const exceptionsQuery = useTripExceptionsQuery(trip.id, delivering && capabilities.tripExceptions)
   const exceptions = exceptionsQuery.data ?? []
   const nextItemId = items.find((entry) => !entry.unloaded && entry.issueKind === undefined)?.id
