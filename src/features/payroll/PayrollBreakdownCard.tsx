@@ -60,6 +60,25 @@ export function PayrollBreakdownCard({ statement }: PayrollBreakdownCardProps) {
           amount={format.currency(statement.kmAmountVnd)}
         />
 
+        {statement.kpiTargetKg === undefined ? null : (
+          <BreakdownRow
+            icon={Award}
+            tone={statement.kpiAchieved === true ? 'success' : 'neutral'}
+            label={t('payroll.breakdown.kpiMonth')}
+            hint={t('payroll.breakdown.kpiProgress', {
+              targetKg: format.weight(statement.kpiTargetKg),
+              totalKg: format.weight(statement.totalKg),
+            })}
+            amount={
+              statement.kpiAchieved === true
+                ? t('payroll.breakdown.kpiAchieved')
+                : statement.kpiAchieved === false
+                  ? t('payroll.breakdown.kpiNotAchieved')
+                  : undefined
+            }
+          />
+        )}
+
         {statement.kpiBonusVnd !== undefined && statement.kpiBonusVnd > 0 ? (
           <BreakdownRow
             icon={Award}
@@ -111,7 +130,7 @@ function BreakdownRow({
   readonly tone: BadgeTone
   readonly label: string
   readonly hint?: string
-  readonly amount: string
+  readonly amount?: string
 }) {
   const paletteTone = badgeTones[tone]
   return (
@@ -129,9 +148,11 @@ function BreakdownRow({
           </AppText>
         )}
       </View>
-      <AppText variant="label" color={paletteTone.fg} style={styles.rowAmount}>
-        {amount}
-      </AppText>
+      {amount === undefined ? null : (
+        <AppText variant="label" color={paletteTone.fg} style={styles.rowAmount}>
+          {amount}
+        </AppText>
+      )}
     </View>
   )
 }

@@ -41,6 +41,7 @@ export function mapPayrollStatement(dto: PayrollStatementDto, requestedPeriod: P
       driverName: dto.driverName ?? null,
     }
   }
+  const kpiTargetKg = toOptionalNumber(dto.kpiTargetKg)
   const kpiBonusVnd = toOptionalNumber(dto.kpiBonusVnd)
   const handlingAmountVnd = toOptionalNumber(dto.handlingAmountVnd)
   const commissionAmountVnd = toOptionalNumber(dto.commissionAmountVnd)
@@ -58,6 +59,8 @@ export function mapPayrollStatement(dto: PayrollStatementDto, requestedPeriod: P
     totalKm: toNumber(dto.totalKm),
     rateVndPerKm: toNumber(dto.rateVndPerKm),
     kmAmountVnd: toNumber(dto.kmAmountVnd),
+    ...(kpiTargetKg === undefined ? {} : { kpiTargetKg }),
+    ...(dto.kpiAchieved === null || dto.kpiAchieved === undefined ? {} : { kpiAchieved: dto.kpiAchieved }),
     ...(kpiBonusVnd === undefined ? {} : { kpiBonusVnd }),
     ...(handlingAmountVnd === undefined ? {} : { handlingAmountVnd }),
     ...(commissionAmountVnd === undefined ? {} : { commissionAmountVnd }),

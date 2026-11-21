@@ -35,6 +35,8 @@ export type PayrollStatementDto = {
   readonly totalKm?: NumericDto
   readonly rateVndPerKm?: NumericDto
   readonly kmAmountVnd?: NumericDto
+  readonly kpiTargetKg?: NumericDto
+  readonly kpiAchieved?: boolean | null
   readonly kpiBonusVnd?: NumericDto
   readonly handlingAmountVnd?: NumericDto
   readonly commissionAmountVnd?: NumericDto
