@@ -3,6 +3,7 @@ import type { nav as source } from '../vi/nav'
 
 export const nav = {
   trips: 'My trips',
+  openTrips: 'Open trips',
   payroll: 'Payroll',
   warehouse: 'Warehouse',
   lookup: 'Package lookup',

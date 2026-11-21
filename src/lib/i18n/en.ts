@@ -17,6 +17,7 @@ import { monitoring } from './en/monitoring'
 import { nav } from './en/nav'
 import { notifications } from './en/notifications'
 import { officeServer } from './en/officeServer'
+import { openTrips } from './en/openTrips'
 import { overview } from './en/overview'
 import { packageLookup } from './en/packageLookup'
 import { payroll } from './en/payroll'
@@ -58,6 +59,7 @@ export const en = {
   nav,
   notifications,
   officeServer,
+  openTrips,
   overview,
   packageLookup,
   payroll,

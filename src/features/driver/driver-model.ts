@@ -46,6 +46,39 @@ export type DriverCapabilities = {
   readonly notifications: boolean
   /** Vị trí GPS chỉ ở lại kho mẫu trong máy (không có máy chủ nào nhận). */
   readonly gpsLocalOnly: boolean
+  /** Nhận chuyến đang mở (phiếu xin chuyến). */
+  readonly tripClaims: boolean
+}
+
+export type TripClaimStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'
+
+/** Chuyến chưa có tài xế tài xế có thể xin nhận. */
+export type OpenTrip = {
+  readonly id: string
+  readonly tripId: string
+  readonly tripCode: string
+  readonly tripName: string
+  readonly departureTime: string | null
+  readonly originWarehouse: string
+  readonly stopCount: number
+  readonly myClaimStatus: TripClaimStatus | null
+  readonly myRejectReason: string | null
+}
+
+/** Phiếu xin chuyến của tài xế. */
+export type DriverTripClaim = {
+  readonly id: string
+  readonly tripId: string
+  readonly driverUserId: string
+  readonly driverName: string
+  readonly driverPhone: string
+  readonly status: TripClaimStatus
+  readonly note: string | null
+  readonly createdAt: string
+  readonly decidedById: string | null
+  readonly decidedByName: string | null
+  readonly decidedAt: string | null
+  readonly rejectReason: string | null
 }
 
 export type DriverPayrollTripLine = {

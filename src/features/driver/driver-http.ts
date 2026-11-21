@@ -3,12 +3,12 @@ import { pathFromEncodedPolylines } from '@/domain/routing/polyline'
 import { driverNotificationsOf, fetchServerNotifications, markServerNotificationsRead } from '@/features/bell/server-notifications'
 
 import type { DriverApi } from './driver-api'
-import type { CompleteStopDto, CurrentStopDto, DriverTripDetailDto, DriverTripDto, DriverTripExceptionDto, LocationPointDto, RoutePlanDetailDto } from './driver-http-dto'
-import { deliveredHistoryOf, myTripsOf, shownStatusOf, tripDetailOf, tripRowOf } from './driver-http-mapping'
+import type { CompleteStopDto, CurrentStopDto, DriverTripDetailDto, DriverTripDto, DriverTripExceptionDto, LocationPointDto, OpenTripDto, RoutePlanDetailDto, TripClaimDto } from './driver-http-dto'
+import { deliveredHistoryOf, myTripsOf, shownStatusOf, tripDetailOf, tripRowOf, vnInstant } from './driver-http-mapping'
 import { deliveryPackageOf, isUnloaded, packageOfCode, stopScreenOf, withUnloaded } from './driver-http-stop'
 import { serverEtaSources, serverTripStops, tripStopsOf, type DriverTripStopsDto, type ServerTripStops } from './driver-http-stop-times'
 import { coded, HTTP_DRIVER_CAPABILITIES, refused, SERVER_REFRESH_MS, unsupported } from './driver-http-support'
-import type { DriverPayrollStatement, DriverTripDetail, DriverTripException, DriverTripRow, DriverTripScreen, StopKey, TripHead } from './driver-model'
+import type { DriverPayrollStatement, DriverTripClaim, DriverTripDetail, DriverTripException, DriverTripRow, DriverTripScreen, OpenTrip, StopKey, TripClaimStatus, TripHead } from './driver-model'
 
 type DriverPayrollStatementDto = {
   calculated: boolean
@@ -442,5 +442,56 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
     async markNotificationsRead(ids) {
       return driverNotificationsOf(await markServerNotificationsRead(client(), ids), userId())
     },
+
+    // GET /api/driver/open-trips
+    async fetchOpenTrips(): Promise<OpenTrip[]> {
+      const dtos = (await client().get<readonly OpenTripDto[] | null>('/api/driver/open-trips')) ?? []
+      return dtos.map(openTripOf)
+    },
+
+    // POST /api/driver/trips/{id}/claim
+    async claimTrip(tripId: string, note?: string): Promise<DriverTripClaim> {
+      const body = note !== undefined && note.trim() !== '' ? { note: note.trim() } : {}
+      const dto = await client().post<TripClaimDto>(`/api/driver/trips/${encodeURIComponent(tripId)}/claim`, { body })
+      return tripClaimOf(dto)
+    },
+
+    // POST /api/driver/trips/{id}/claim/cancel
+    async cancelClaim(tripId: string): Promise<DriverTripClaim> {
+      const dto = await client().post<TripClaimDto>(`/api/driver/trips/${encodeURIComponent(tripId)}/claim/cancel`)
+      return tripClaimOf(dto)
+    },
+  }
+}
+
+function openTripOf(dto: OpenTripDto): OpenTrip {
+  const tripId = String(dto.tripId ?? dto.id)
+  return {
+    id: tripId,
+    tripId,
+    tripCode: dto.tripCode ?? tripId,
+    tripName: dto.tripName ?? '',
+    departureTime: vnInstant(dto.departureTime) ?? null,
+    originWarehouse: dto.originWarehouse ?? '',
+    stopCount: dto.stopCount ?? 0,
+    myClaimStatus: (dto.myClaimStatus as TripClaimStatus) ?? null,
+    myRejectReason: dto.myRejectReason ?? null,
+  }
+}
+
+function tripClaimOf(dto: TripClaimDto): DriverTripClaim {
+  return {
+    id: String(dto.id),
+    tripId: String(dto.tripId),
+    driverUserId: String(dto.driverUserId),
+    driverName: dto.driverName ?? '',
+    driverPhone: dto.driverPhone ?? '',
+    status: dto.status as TripClaimStatus,
+    note: dto.note ?? null,
+    createdAt: vnInstant(dto.createdAt.replace(' ', 'T')) ?? dto.createdAt,
+    decidedById: dto.decidedById !== null && dto.decidedById !== undefined ? String(dto.decidedById) : null,
+    decidedByName: dto.decidedByName ?? null,
+    decidedAt: dto.decidedAt ? vnInstant(dto.decidedAt.replace(' ', 'T')) ?? dto.decidedAt : null,
+    rejectReason: dto.rejectReason ?? null,
   }
 }

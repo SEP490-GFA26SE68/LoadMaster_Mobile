@@ -12,8 +12,10 @@ describe('httpDriverApi: chuyến và điểm hiện tại', () => {
           trip(44, 'LOADING', { loadingCompleted: false }),
           trip(45, 'DELIVERED', { completedAt: '2026-10-15T17:00:00' }),
           trip(46, 'DELIVERED', { completedAt: '2026-10-16T11:00:00' }),
-          trip(47, 'PLANNED'),
+          trip(47, 'PLANNED', { tripCode: 'TRIP-0200', departureTime: '2026-10-18T08:00:00' }),
           trip(48, 'CANCELLED'),
+          trip(49, 'DRAFT', { tripCode: 'TRIP-0090', departureTime: '2026-10-19T08:00:00' }),
+          trip(50, 'DRAFT', { tripCode: 'TRIP-0040', departureTime: '2026-10-19T08:00:00' }),
         ]),
     })
     const trips = await driver.fetchMyTrips()
@@ -31,11 +33,30 @@ describe('httpDriverApi: chuyến và điểm hiện tại', () => {
     })
     expect(trips.groups.loaded.map(({ id, sub }) => [id, sub])).toEqual([['43', { kind: 'loaded' }]])
     expect(trips.groups.preparing.map(({ id, sub }) => [id, sub])).toEqual([['44', null]])
-    expect(trips.groups.upcoming.map(({ id }) => id)).toEqual(['47'])
+    expect(trips.groups.upcoming.map(({ id, code, status }) => [id, code, status])).toEqual([
+      ['47', 'TRIP-0200', 'PLANNED'],
+      ['50', 'TRIP-0040', 'DRAFT'],
+      ['49', 'TRIP-0090', 'DRAFT'],
+    ])
+    expect(Object.values(trips.groups).flat().map(({ id }) => id)).not.toContain('48')
     // Giao xong gần nhất trước; chuyến chưa tới kho và chuyến đã huỷ không hiện
     expect(trips.groups.recent.map(({ id, completedAt }) => [id, completedAt])).toEqual([
       ['46', '2026-10-16T11:00:00+07:00'],
       ['45', '2026-10-15T17:00:00+07:00'],
+    ])
+  })
+
+  test('tên chuyến của backend hiện trên thẻ; chuyến chưa đặt tên hoặc tên toàn khoảng trắng thì để trống', async () => {
+    const trip = (tripId: number, tripName: string | null) => ({ ...TRIP, tripId, tripCode: `TRIP-00${tripId}`, tripName })
+    const { driver } = backend({
+      'GET /api/driver/trips': () => ok([trip(41, 'Tuyến Biên Hoà - Vũng Tàu'), trip(42, '   '), trip(43, null), { ...TRIP, tripId: 44, tripCode: 'TRIP-0044' }]),
+    })
+    const trips = await driver.fetchMyTrips()
+    expect(trips.groups.inTransit.map(({ id, name }) => [id, name])).toEqual([
+      ['41', 'Tuyến Biên Hoà - Vũng Tàu'],
+      ['42', undefined],
+      ['43', undefined],
+      ['44', undefined],
     ])
   })
 
@@ -251,6 +272,7 @@ describe('httpDriverApi: xuất phát, đã đến, vị trí, sự cố trên �
       notifications: true,
       payroll: true,
       gpsLocalOnly: false,
+      tripClaims: true,
     })
     for (const run of [
       () =>
@@ -352,6 +374,106 @@ describe('httpDriverApi: xuất phát, đã đến, vị trí, sự cố trên �
         },
       ],
     })
+  })
+})
+
+describe('httpDriverApi: phiếu xin chuyến (open-trips, claim, cancel)', () => {
+  const OPEN_TRIP_DTO = {
+    id: 101,
+    tripId: 101,
+    tripCode: 'TRIP-0101',
+    tripName: 'Chuyến giao Biên Hoà',
+    departureTime: '2026-10-20T08:00:00',
+    originWarehouse: 'Kho Tổng Sóng Thần',
+    stopCount: 4,
+    myClaimStatus: null,
+    myRejectReason: null,
+  }
+
+  const CLAIM_DTO = {
+    id: 201,
+    tripId: 101,
+    driverUserId: 15,
+    driverName: 'Nguyễn Văn Tài',
+    driverPhone: '0901234567',
+    status: 'PENDING' as const,
+    note: 'Tôi muốn nhận chuyến này',
+    createdAt: '2026-10-18T10:00:00',
+    decidedById: null,
+    decidedByName: null,
+    decidedAt: null,
+    rejectReason: null,
+  }
+
+  test('fetchOpenTrips: GET /api/driver/open-trips, đổi DTO sang OpenTrip của app', async () => {
+    const { driver, calls } = backend({
+      'GET /api/driver/open-trips': () => ok([OPEN_TRIP_DTO]),
+    })
+    const list = await (driver as any).fetchOpenTrips()
+    expect(calls[0]).toMatchObject({ method: 'GET', path: '/api/driver/open-trips' })
+    expect(list).toEqual([
+      {
+        id: '101',
+        tripId: '101',
+        tripCode: 'TRIP-0101',
+        tripName: 'Chuyến giao Biên Hoà',
+        departureTime: '2026-10-20T08:00:00+07:00',
+        originWarehouse: 'Kho Tổng Sóng Thần',
+        stopCount: 4,
+        myClaimStatus: null,
+        myRejectReason: null,
+      },
+    ])
+  })
+
+  test('claimTrip: POST /api/driver/trips/{tripId}/claim, gửi note, đổi DTO sang DriverTripClaim', async () => {
+    const { driver, calls } = backend({
+      'POST /api/driver/trips/101/claim': (call) => {
+        expect(call.body).toEqual({ note: 'Xin nhận' })
+        return ok(CLAIM_DTO)
+      },
+    })
+    const claim = await (driver as any).claimTrip('101', 'Xin nhận')
+    expect(calls[0]).toMatchObject({ method: 'POST', path: '/api/driver/trips/101/claim' })
+    expect(claim).toMatchObject({
+      id: '201',
+      tripId: '101',
+      driverUserId: '15',
+      status: 'PENDING',
+      note: 'Tôi muốn nhận chuyến này',
+      createdAt: '2026-10-18T10:00:00+07:00',
+      decidedAt: null,
+    })
+  })
+
+  test('claimTrip đổi ngày giờ có dấu cách sang ISO múi giờ Việt Nam', async () => {
+    const { driver } = backend({
+      'POST /api/driver/trips/101/claim': () =>
+        ok({ ...CLAIM_DTO, createdAt: '2026-11-20 21:05:33', decidedAt: '2026-11-20 21:10:00' }),
+    })
+
+    const claim = await (driver as any).claimTrip('101')
+
+    expect(claim.createdAt).toBe('2026-11-20T21:05:33+07:00')
+    expect(claim.decidedAt).toBe('2026-11-20T21:10:00+07:00')
+  })
+
+  test('cancelClaim: POST /api/driver/trips/{tripId}/claim/cancel', async () => {
+    const { driver, calls } = backend({
+      'POST /api/driver/trips/101/claim/cancel': () => ok({ ...CLAIM_DTO, status: 'CANCELLED' }),
+    })
+    const claim = await (driver as any).cancelClaim('101')
+    expect(calls[0]).toMatchObject({ method: 'POST', path: '/api/driver/trips/101/claim/cancel' })
+    expect(claim.status).toBe('CANCELLED')
+  })
+
+  test('mã lỗi TRIP_CLAIM_TRIP_TAKEN: giữ nguyên mã và status 409', async () => {
+    const { driver } = backend({
+      'POST /api/driver/trips/101/claim': () => fail(409, 'TRIP_CLAIM_TRIP_TAKEN'),
+    })
+    const err = await failure(() => (driver as any).claimTrip('101'))
+    expect(err.code).toBe('TRIP_CLAIM_TRIP_TAKEN')
+    expect(err.status).toBe(409)
   })
 })
 

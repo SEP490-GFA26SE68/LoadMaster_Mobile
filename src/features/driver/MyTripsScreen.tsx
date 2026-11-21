@@ -13,7 +13,7 @@ import { colors, CONTENT_MAX_WIDTH, radius, space } from '@/theme/tokens'
 import type { DriverTripRow } from './driver-model'
 import type { MyTripGroup } from './my-trips'
 import { TripCard } from './TripCard'
-import { useDriverCapabilities, useMyTripsQuery } from './useDriverQueries'
+import { useMyTripsQuery } from './useDriverQueries'
 
 /** Chỉ hiển thị các nhóm chuyến đang hoạt động / sắp chạy; lịch sử đã giao chuyển sang màn Lịch sử giao hàng riêng. */
 const ACTIVE_TRIP_GROUPS: readonly MyTripGroup[] = ['inTransit', 'loaded', 'preparing', 'upcoming']
@@ -26,7 +26,6 @@ export function MyTripsScreen() {
   const t = useT()
   const format = useFormat()
   const router = useRouter()
-  const capabilities = useDriverCapabilities()
   const query = useMyTripsQuery()
 
   const groups = query.data?.groups
@@ -46,26 +45,19 @@ export function MyTripsScreen() {
       title={t('driver.myTrips.title')}
       actions={<NotificationBell />}
       below={
-        <View style={styles.headerBelow}>
-          <View style={styles.belowRow}>
-            <AppText color={colors.skyText2}>{format.date(new Date())}</AppText>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('driver.myTrips.history.button')}
-              onPress={openHistory}
-              style={({ pressed }) => [styles.historyPill, pressed && styles.historyPillPressed]}>
-              <History color={colors.skyText} size={16} strokeWidth={1.75} />
-              <AppText variant="meta" color={colors.skyText}>
-                {t('driver.myTrips.history.button')}
-                {historyCount > 0 ? ` (${historyCount})` : ''}
-              </AppText>
-            </Pressable>
-          </View>
-          {capabilities.payroll ? (
-            <Button variant="secondary" onPress={() => router.push('/driver-payroll')}>
-              {t('driver.payroll.open')}
-            </Button>
-          ) : null}
+        <View style={styles.belowRow}>
+          <AppText color={colors.skyText2}>{format.date(new Date())}</AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('driver.myTrips.history.button')}
+            onPress={openHistory}
+            style={({ pressed }) => [styles.historyPill, pressed && styles.historyPillPressed]}>
+            <History color={colors.skyText} size={16} strokeWidth={1.75} />
+            <AppText variant="meta" color={colors.skyText}>
+              {t('driver.myTrips.history.button')}
+              {historyCount > 0 ? ` (${historyCount})` : ''}
+            </AppText>
+          </Pressable>
         </View>
       }>
       {query.isPending ? (
@@ -133,7 +125,6 @@ const styles = StyleSheet.create({
   },
   list: { flexGrow: 1, width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center', padding: space[4], paddingBottom: space[8] },
   sectionTitle: { marginTop: space[4], marginBottom: space[3] },
-  headerBelow: { gap: space[2] },
   separator: { height: space[3] },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[2] },
   emptyHistoryBtn: { marginBottom: space[6] },
