@@ -8,6 +8,7 @@ import { fail, fakeDriverBackend, ok, STOP, TRIP, type Routes } from '@/test/dri
 import { resetNativeMocks, router } from '@/test/native-mocks'
 import { clearStored, renderApp } from '@/test/render'
 
+import { DriverTripDetailScreen } from './detail/DriverTripDetailScreen'
 import { MyTripsScreen } from './MyTripsScreen'
 import { OpenTripsScreen } from './OpenTripsScreen'
 import { TripScreen } from './TripScreen'
@@ -209,6 +210,47 @@ describe('điểm giao trên máy chủ', () => {
 
     expect(await screen.findByRole('button', { name: 'Hoàn tất điểm nhận' })).toBeEnabled()
     expect(posted('/api/driver/pickup-packages/8101/pick')).toBe(true)
+  })
+})
+
+describe('Chi tiết chuyến trên máy chủ: Xuất phát', () => {
+  const loadedDetail = {
+    tripId: 43,
+    tripCode: 'TRIP-0043',
+    tripName: 'Chuyến giao',
+    status: 'LOADING',
+    loadingCompleted: true,
+    depotName: 'Kho Long Bình',
+    depotAddress: 'Biên Hoà',
+    totalStops: 0,
+    totalPackages: 0,
+    stops: [],
+  }
+
+  test('kho đã xếp xong: bấm thì POST start rồi mở điểm giao', async () => {
+    serve({
+      'GET /api/driver/trips/43/detail': () => ok(loadedDetail),
+      'POST /api/driver/trips/43/start': () => ok({ tripId: 43 }),
+    })
+    await renderApp(<DriverTripDetailScreen tripId="43" />, { auth: createMockAuth() })
+
+    await fireEvent.press(await screen.findByRole('button', { name: 'Xuất phát TRIP-0043' }))
+
+    expect(posted('/api/driver/trips/43/start')).toBe(true)
+    expect(router.push).toHaveBeenCalledWith({ pathname: '/trip/[tripId]', params: { tripId: '43' } })
+  })
+
+  test('máy chủ vẫn từ chối: dải lỗi, không mở điểm giao', async () => {
+    serve({
+      'GET /api/driver/trips/43/detail': () => ok(loadedDetail),
+      'POST /api/driver/trips/43/start': () => fail(409, 'LOADING_NOT_COMPLETED'),
+    })
+    await renderApp(<DriverTripDetailScreen tripId="43" />, { auth: createMockAuth() })
+
+    await fireEvent.press(await screen.findByRole('button', { name: 'Xuất phát TRIP-0043' }))
+
+    expect(await screen.findByText('Kho chưa xếp xong hàng cho chuyến này, chưa xuất phát được.')).toBeOnTheScreen()
+    expect(router.push).not.toHaveBeenCalled()
   })
 })
 

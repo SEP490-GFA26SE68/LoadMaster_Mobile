@@ -1,7 +1,7 @@
-import { configure, fireEvent, screen } from '@testing-library/react-native'
+import { configure, fireEvent, screen, waitFor } from '@testing-library/react-native'
 import { Linking } from 'react-native'
 
-import { resetMockDb } from '@/data/mock-db'
+import { getMockDb, resetMockDb } from '@/data/mock-db'
 import { DRIVER_EMAIL, LOADED_TRIP } from '@/test/driver-flow'
 import { resetNativeMocks, router } from '@/test/native-mocks'
 import { clearStored, renderApp, signInAs } from '@/test/render'
@@ -134,5 +134,16 @@ describe('màn hình Chi tiết chuyến đi của tài xế', () => {
     if (firstNav === undefined) throw new Error('Không tìm thấy nút chỉ đường')
     await fireEvent.press(firstNav)
     expect(Linking.openURL).toHaveBeenCalledWith(expect.stringContaining('google.com/maps/dir/'))
+  })
+
+  test('Xuất phát gọi start rồi mở màn điểm giao', async () => {
+    await renderApp(<DriverTripDetailScreen tripId={LOADED_TRIP} />)
+
+    await fireEvent.press(await screen.findByRole('button', { name: `Xuất phát ${LOADED_TRIP}` }))
+
+    await waitFor(() => {
+      expect(router.push).toHaveBeenCalledWith({ pathname: '/trip/[tripId]', params: { tripId: LOADED_TRIP } })
+    })
+    expect((await getMockDb().getTrip(LOADED_TRIP)).phase).toBe('delivering')
   })
 })

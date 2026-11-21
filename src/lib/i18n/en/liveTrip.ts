@@ -19,6 +19,7 @@ export const liveTrip = {
   escalatedOpen: 'View incidents to handle',
   refreshFailed: 'Could not refresh monitoring: {message}',
   openDetail: 'Trip details',
+  map: 'Map of trip {id}',
   stops: { noEta: 'No estimated arrival yet' },
   notRunning: 'Trip {id} is no longer in transit: the vehicle position and arrival times stopped updating.',
   system: 'the system',

@@ -5,6 +5,7 @@
  * - `expo-crypto`: `crypto` có sẵn của Node;
  * - `expo-camera`, `expo-location`, `expo-router`: bản giả ở `@/test/native-mocks` — test đặt quyền camera, quyền và tín hiệu vị trí, và
  *   kiểm màn đã điều hướng đi đâu;
+ * - `expo-speech`: TTS chỉ đường, bản giả `speak` / `stop`;
  * - `react-native-webview`: một `View` (Jest không có WebGL).
  */
 jest.mock('expo-secure-store', () => {
@@ -41,6 +42,7 @@ jest.mock('expo-crypto', () => ({
 
 jest.mock('expo-camera', () => jest.requireActual<typeof import('./native-mocks')>('./native-mocks').expoCamera)
 jest.mock('expo-location', () => jest.requireActual<typeof import('./native-mocks')>('./native-mocks').expoLocation)
+jest.mock('expo-speech', () => jest.requireActual<typeof import('./native-mocks')>('./native-mocks').expoSpeech)
 jest.mock('expo-router', () => jest.requireActual<typeof import('./native-mocks')>('./native-mocks').expoRouter)
 // Trạng thái mạng: bản giả của chính gói (luôn có mạng); test mất mạng đặt thẳng `onlineManager.setOnline(false)`
 jest.mock('@react-native-community/netinfo', () => jest.requireActual('@react-native-community/netinfo/jest/netinfo-mock.js'))

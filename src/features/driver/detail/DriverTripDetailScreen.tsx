@@ -29,10 +29,14 @@ import { dataErrorMessage, useFormat, useT } from '@/lib/i18n'
 import { badgeTones, colors, radius, shadow, space, type BadgeTone } from '@/theme/tokens'
 import type { TripSubStatus } from '@/types/trip'
 
+import { DepartButton } from '../DepartButton'
+import { DriverNavigation } from '../DriverNavigation'
 import type { DriverTripDetail, DriverTripDetailStop } from '../driver-model'
+import { GpsToggle } from '../GpsToggle'
 import { RouteMap } from '../RouteMap'
 import { tripPath } from '../TripCard'
-import { useDriverTripDetailQuery } from '../useDriverQueries'
+import { useDeviceLocation, useStartGpsWhenDelivering } from '../useDeviceLocation'
+import { useDriverCapabilities, useDriverTripDetailQuery, useTripScreenQuery } from '../useDriverQueries'
 
 /**
  * Màn hình Chi tiết Chuyến đi dành riêng cho Tài xế:
@@ -329,6 +333,7 @@ function formatDuration(seconds: number, t: ReturnType<typeof useT>): string {
 
 function TripRouteMapSection({ detail }: { readonly detail: DriverTripDetail }) {
   const t = useT()
+  if (detail.status === 'IN_TRANSIT') return <LiveTripRouteMap detail={detail} />
 
   const stops = detail.stops
     .filter((s) => s.lat !== undefined && s.lng !== undefined)
@@ -387,6 +392,50 @@ function TripRouteMapSection({ detail }: { readonly detail: DriverTripDetail }) 
           path={detail.path}
         />
       </View>
+    </Card>
+  )
+}
+
+function LiveTripRouteMap({ detail }: { readonly detail: DriverTripDetail }) {
+  const t = useT()
+  const capabilities = useDriverCapabilities()
+  const gps = useDeviceLocation(detail.id)
+  const live = useTripScreenQuery(detail.id)
+  const stop = live.data?.kind === 'stop' ? live.data.screen : undefined
+  useStartGpsWhenDelivering(true, capabilities.gps, gps)
+
+  const stops = detail.stops
+    .filter((s) => s.lat !== undefined && s.lng !== undefined)
+    .map((s) => ({
+      id: s.id,
+      number: s.number,
+      name: s.name,
+      lat: s.lat as number,
+      lng: s.lng as number,
+    }))
+  const depot =
+    detail.depot.lat !== undefined && detail.depot.lng !== undefined
+      ? { name: detail.depot.name, lat: detail.depot.lat, lng: detail.depot.lng }
+      : undefined
+
+  return (
+    <Card style={[styles.accentCard, { borderLeftColor: badgeTones.success.fg }]}>
+      <View style={styles.sectionHead}>
+        <View style={[styles.iconBadge, { backgroundColor: badgeTones.success.bg }]}>
+          <MapPin size={18} color={badgeTones.success.fg} />
+        </View>
+        <AppText variant="heading">{t('driver.detail.routeMap')}</AppText>
+      </View>
+      {capabilities.gps ? (
+        <GpsToggle localOnly={capabilities.gpsLocalOnly} enabled={gps.enabled} state={gps.state} toggle={gps.toggle} />
+      ) : null}
+      {stop ? (
+        <DriverNavigation screen={stop} vehicle={gps.enabled ? gps.latest ?? undefined : undefined} />
+      ) : (
+        <View style={styles.mapContainer}>
+          <RouteMap label={t('driver.detail.routeMap')} depot={depot} stops={stops} path={detail.path} />
+        </View>
+      )}
     </Card>
   )
 }
@@ -700,9 +749,13 @@ function TripDetailFooter({ detail }: { readonly detail: DriverTripDetail }) {
 
   if (detail.status === 'LOADING') {
     return detail.loadingCompleted ? (
-      <Button onPress={() => router.push(tripPath(detail.id))}>
-        {t('driver.detail.departTrip')}
-      </Button>
+      <DepartButton
+        tripId={detail.id}
+        tripCode={detail.code}
+        primary
+        blockedReason={undefined}
+        href={tripPath(detail.id)}
+      />
     ) : (
       <Banner tone="info">{t('driver.detail.loadingNotice')}</Banner>
     )

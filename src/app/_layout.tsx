@@ -27,15 +27,15 @@ function RootNavigator() {
     if (status !== 'restoring') SplashScreen.hide()
   }, [status])
 
-  // Đang mở lại phiên: giữ màn chờ của hệ điều hành, chưa vẽ gì
-  if (status === 'restoring') return null
-
+  // Luôn gắn Stack ngay từ frame đầu: trả `null` lúc mở lại phiên trì hoãn commit, Expo Router trên Android gọi
+  // `onUnhandledLinking` từ Promise `getInitialURL` trước khi NavigationContainer mount (expo/expo#49378). Splash native
+  // vẫn che cho tới khi `status` không còn `restoring`. Lúc đó `signedIn` chưa có nên hiện `sign-in` dưới splash.
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={status === 'signedIn'}>
         <Stack.Screen name="(app)" />
       </Stack.Protected>
-      <Stack.Protected guard={status === 'signedOut'}>
+      <Stack.Protected guard={status !== 'signedIn'}>
         <Stack.Screen name="sign-in" />
       </Stack.Protected>
     </Stack>

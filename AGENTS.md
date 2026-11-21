@@ -26,7 +26,7 @@ một câu nói rõ (`features/auth/landing.ts`).
 
 **Trạng thái dữ liệu:** mặc định app chạy trên **kho dữ liệu mẫu trong máy** (cùng logic và seed với bản web). Kho mẫu không thay
 backend: bản web và máy khác không thấy gì trong đó. Mỗi feature nối backend riêng, khi backend có phần đó (mục 5). Đã nối được:
-đăng nhập (`auth`, Keycloak của backend — mục 6); màn tài xế (`driver`, trọn luồng như web: xuất phát ở thẻ chuyến, đã đến, dỡ,
+đăng nhập (`auth`, Keycloak của backend — mục 6); màn tài xế (`driver`, trọn luồng như web: xuất phát ở thẻ chuyến và màn chi tiết chuyến, đã đến, dỡ,
 xác nhận tay, sự cố, nhận kiện ở điểm nhận, hoàn tất điểm, GPS); màn kho (`warehouse`, như `ServerWarehouseTripsPage` /
 `ServerLoadingSession` của web: danh sách `GET /api/warehouse/tasks`, bắt đầu kèm bước soạn, soạn — đối chiếu, xác nhận tay, báo
 thiếu —, xếp — đối chiếu, xác nhận tay, sai lệch vị trí, kiện hỏng —, hoàn tất; máy chủ giữ phiên nên mọi lệnh ghi đọc lại phiên);
@@ -58,12 +58,17 @@ expo-secure-store           — phiên đăng nhập, ngôn ngữ (không lưu d
 expo-crypto                 — polyfill crypto.getRandomValues cho logic chép từ web
 expo-camera                 — quét mã QR trên nhãn kiện
 react-native-svg            — hình 2D của màn kho (sơ đồ thùng nhìn từ trên, hình hướng đặt)
-expo-location               — vị trí xe khi tài xế bật GPS
+expo-location               — vị trí xe khi chuyến đang giao (tự bật GPS lúc xuất phát, tài xế tắt được; đọc ~1 s cho camera bám xe; gửi máy chủ vẫn 30 s). HUD chỉ đường nằm trên/dưới WebView. Phóng lớn: gỡ WebView thu nhỏ, chỉ Modal; Đóng thì gỡ Modal (Android hai WebView phần cứng kẹt overlay, che nút chân màn).
+expo-speech                 — TTS đọc bước chỉ đường trên HUD (giọng máy, không bằng Google Maps). Module native:
+                              chỉ `require` khi `requireOptionalNativeModule('ExpoSpeech')` có (tránh LogBox dù try/catch).
+                              bản dev-client cũ: HUD chạy, nút loa ẩn; `pnpm android` lại thì có giọng.
 @react-native-community/netinfo — máy có mạng hay không: `onlineManager` của Query và dải "Mất kết nối" (module native — cần dựng lại development build)
 react-native-webview        — bản đồ tuyến của tài xế: MapLibre GL JS trong WebView, nền Goong
 maplibre-gl (devDependency) — khoá đúng một version; `scripts/vendor-maplibre.mjs` (postinstall, đầu `check` / `start`…) chép JS + CSS thành chuỗi trong
                               `features/driver/maplibre-dist.generated.ts` (không commit) và trang HTML của bản đồ chèn thẳng chuỗi đó:
                               không gọi CDN — mạng yếu chỉ mất nền Goong, tuyến và mốc vẫn vẽ. Bundle tăng khoảng 0,85 MB
+
+Chỉ đường tài xế (Goong + MapLibre, không nhúng Google Maps): tuyến + mốc, HUD bước rẽ / “Sau đó”, camera bám xe + heading-up + “Về giữa”, ETA / km còn lại / tốc độ, TTS. **Chưa làm — bàn lại sau:** overlay giao thông live (“chậm hơn N phút”), trạm thu phí, tìm kiếm dọc đường, lớp bản đồ, dark navigation, lane guidance. Goong Directions không có Navigation SDK.
 jest-expo + @testing-library/react-native v14 — test
 ```
 

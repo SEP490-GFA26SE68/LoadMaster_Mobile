@@ -38,6 +38,8 @@ const LIVE = {
   alerts: [],
   exceptions: [EXCEPTION],
   reroute: null,
+  activeRoutePlanId: 9,
+  routeLegs: [{ legId: 21, legSequence: 2, polyline: 'abc', distanceMeters: 1200, durationSeconds: 180 }],
   refreshMs: 30000,
   isMockResult: false,
 }
@@ -80,6 +82,10 @@ describe('httpMonitoringApi', () => {
       { stopId: '903', number: 2, eta: '2026-10-16T03:30:00.000Z', deadline: '2026-10-16T04:00:00.000Z', deadlineStatus: 'AT_RISK' },
     ])
     expect(live.live.exceptions.map((item) => [item.id, item.status, item.delayMinutes])).toEqual([['7', 'OPEN', 20]])
+    expect(live.live.activeRoutePlanId).toBe(9)
+    expect(live.live.routeLegs).toEqual([
+      { legId: 21, legSequence: 2, startStopId: null, endStopId: null, distanceMeters: 1200, durationSeconds: 180, polyline: 'abc' },
+    ])
   })
 
   test('chuyến đã thôi chạy: đầu chuyến đọc từ chi tiết chuyến của máy chủ', async () => {

@@ -94,6 +94,16 @@ export type RerouteProposalDto = {
   readonly isMockResult?: boolean | null
 }
 
+export type RouteLegGeometryDto = {
+  readonly legId?: number | null
+  readonly legSequence?: number | null
+  readonly startStopId?: number | null
+  readonly endStopId?: number | null
+  readonly distanceMeters?: number | null
+  readonly durationSeconds?: number | null
+  readonly polyline?: string | null
+}
+
 export type TripMonitoringDto = {
   readonly tripId: string
   readonly location: LocationPointDto | null
@@ -101,6 +111,8 @@ export type TripMonitoringDto = {
   readonly alerts?: readonly EtaRiskAlertDto[] | null
   readonly exceptions?: readonly TripExceptionDto[] | null
   readonly reroute?: TripRerouteDto | null
+  readonly activeRoutePlanId?: number | null
+  readonly routeLegs?: readonly RouteLegGeometryDto[] | null
   readonly refreshMs: number | null
   readonly isMockResult?: boolean | null
 }

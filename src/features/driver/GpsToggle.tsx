@@ -7,17 +7,26 @@ import { Chip } from '@/components/Chip'
 import { dataErrorMessage, useFormat, useT } from '@/lib/i18n'
 import { badgeTones, colors, palette, radius, space, TOUCH } from '@/theme/tokens'
 
-import { useDeviceLocation, type DeviceLocationState } from './useDeviceLocation'
+import type { DeviceLocationState } from './useDeviceLocation'
 
 /**
  * Công tắc "Dùng GPS thật" trên màn điểm giao khi chuyến Đang vận chuyển (như `DriverGpsToggle` của web). Một hàng 56 px: nhãn, nhãn nguồn
  * vị trí ("GPS" khi đang gửi; "Mô phỏng" khi không — chỉ với kho mẫu, nơi có xe mô phỏng) và công tắc; cả hàng là một công tắc cho trình đọc
  * màn hình. Dưới là một dòng trạng thái — đang chờ quyền, đã gửi lúc nào, đang thử gửi lại, hoặc vì sao đã tắt — kèm nút mở Cài đặt khi thiếu quyền hay
- * định vị tắt. Với kho mẫu có thêm câu nói vị trí chỉ lưu trên máy này. Rời màn chuyến là dừng theo dõi (`useDeviceLocation`).
+ * định vị tắt. Với kho mẫu có thêm câu nói vị trí chỉ lưu trên máy này. Hook GPS nằm ở màn cha (`StopView`) để bản đồ dùng cùng điểm, không POST hai lần.
  */
-export function GpsToggle({ tripId, localOnly }: { tripId: string; localOnly: boolean }) {
+export function GpsToggle({
+  localOnly,
+  enabled,
+  state,
+  toggle,
+}: {
+  localOnly: boolean
+  enabled: boolean
+  state: DeviceLocationState
+  toggle: (next: boolean) => void
+}) {
   const t = useT()
-  const { enabled, state, toggle } = useDeviceLocation(tripId)
   const active = state.status === 'active'
   return (
     <Card accessibilityLabel={t('driver.gps.title')} style={styles.card}>
