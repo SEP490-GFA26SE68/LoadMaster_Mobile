@@ -13,6 +13,7 @@ export const driver = {
       upcoming: 'Chuyến sắp tới',
       recent: 'Đã giao gần đây',
     },
+    draftStatus: 'Đang lập kế hoạch',
     empty: {
       title: 'Chưa có chuyến nào',
       description: 'Chuyến được gán cho bạn sẽ hiện ở đây khi kho bắt đầu soạn hàng.',
@@ -369,7 +370,6 @@ export const driver = {
   /** Màn tổng kết khi giao xong điểm cuối. */
   payroll: {
     title: 'Bảng lương',
-    open: 'Xem bảng lương',
     period: 'Kỳ lương {period}',
     previousMonth: 'Tháng trước',
     nextMonth: 'Tháng sau',

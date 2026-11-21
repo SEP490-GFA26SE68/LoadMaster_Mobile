@@ -20,6 +20,7 @@ import { Dimensions, Modal, Pressable, StyleSheet, useWindowDimensions, View } f
 import { AppText } from '@/components/AppText'
 import { Banner } from '@/components/Banner'
 import { Card } from '@/components/Card'
+import { Chip } from '@/components/Chip'
 import { TripStatusChip, TripSubStatusTag } from '@/components/TripStatus'
 import { calendarDate } from '@/lib/calendar-date'
 import { dataErrorMessage, useFormat, useT } from '@/lib/i18n'
@@ -109,7 +110,11 @@ export function TripCard({ trip }: { readonly trip: DriverTripRow; readonly prim
           <AppText variant="label" style={styles.code}>
             {trip.code}
           </AppText>
-          <TripStatusChip status={trip.status} />
+          {trip.status === 'DRAFT' ? (
+            <Chip tone="neutral" label={t('driver.myTrips.draftStatus')} />
+          ) : (
+            <TripStatusChip status={trip.status} />
+          )}
           {trip.sub === null ? null : <TripSubStatusTag sub={trip.sub} />}
           {trip.manualSub === null ? null : <TripSubStatusTag sub={trip.manualSub} />}
         </View>

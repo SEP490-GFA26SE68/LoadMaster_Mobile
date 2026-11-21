@@ -13,6 +13,9 @@
  *   createPickupRequest     POST /api/trips/{id}/pickup-requests (tài xế chưa có quyền ở BE)
  *   fetchNotifications      GET  /api/notifications
  *   markNotificationsRead   POST /api/notifications/read
+ *   fetchOpenTrips          GET  /api/driver/open-trips
+ *   claimTrip               POST /api/driver/trips/{id}/claim
+ *   cancelClaim             POST /api/driver/trips/{id}/claim/cancel
  *   chưa có ở BE: setDriverGps
  */
 import { createAdapter } from '@/data/adapter'
@@ -62,6 +65,9 @@ export type DriverApi = {
   fetchNotifications(): Promise<DriverNotification[]>
   /** Đánh dấu đã đọc ở nguồn giữ "đã đọc" (máy chủ: thông báo mang `read`); trả danh sách mới. Kho mẫu không giữ: `NOT_SUPPORTED`. */
   markNotificationsRead(ids: readonly string[]): Promise<DriverNotification[]>
+  fetchOpenTrips(): Promise<import('./driver-model').OpenTrip[]>
+  claimTrip(tripId: string, note?: string): Promise<import('./driver-model').DriverTripClaim>
+  cancelClaim(tripId: string): Promise<import('./driver-model').DriverTripClaim>
 }
 
 const adapter = createAdapter<DriverApi>('driver', { mock: mockDriverApi, http: () => httpDriverApi() })
@@ -154,4 +160,19 @@ export function fetchNotifications(): Promise<DriverNotification[]> {
 // POST /api/notifications/read
 export function markNotificationsRead(ids: readonly string[]): Promise<DriverNotification[]> {
   return adapter().markNotificationsRead(ids)
+}
+
+// GET /api/driver/open-trips
+export function fetchOpenTrips(): Promise<import('./driver-model').OpenTrip[]> {
+  return adapter().fetchOpenTrips()
+}
+
+// POST /api/driver/trips/{id}/claim
+export function claimTrip(tripId: string, note?: string): Promise<import('./driver-model').DriverTripClaim> {
+  return adapter().claimTrip(tripId, note)
+}
+
+// POST /api/driver/trips/{id}/claim/cancel
+export function cancelClaim(tripId: string): Promise<import('./driver-model').DriverTripClaim> {
+  return adapter().cancelClaim(tripId)
 }

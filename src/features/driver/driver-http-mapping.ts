@@ -24,7 +24,7 @@ export function vnInstant(value: string | null | undefined): string | undefined 
 }
 
 /** Trạng thái chuyến màn tài xế dùng; trạng thái khác (chưa tới kho, đã huỷ) không hiện. */
-type ShownStatus = 'IN_TRANSIT' | 'LOADING' | 'DELIVERED' | 'PLANNED'
+type ShownStatus = 'IN_TRANSIT' | 'LOADING' | 'DELIVERED' | 'PLANNED' | 'DRAFT'
 
 function optionalNumber(value: number | string | null | undefined): number | undefined {
   if (typeof value === 'number') return Number.isFinite(value) ? value : undefined
@@ -48,7 +48,7 @@ export function tripRowOf(dto: DriverTripDto, status: ShownStatus): DriverTripRo
   return {
     id,
     code: dto.tripCode ?? id,
-    name: undefined,
+    name: dto.tripName?.trim() || undefined,
     date: vnInstant(dto.departureTime),
     vehicleName: dto.vehicleLicensePlate ?? '',
     status,
@@ -71,14 +71,23 @@ export function tripRowOf(dto: DriverTripDto, status: ShownStatus): DriverTripRo
 
 /** Trạng thái màn tài xế dùng của một chuyến backend; `undefined` khi chuyến không hiện. */
 export function shownStatusOf(dto: DriverTripDto): ShownStatus | undefined {
-  return dto.status === 'IN_TRANSIT' || dto.status === 'LOADING' || dto.status === 'DELIVERED' || dto.status === 'PLANNED' ? dto.status : undefined
+  return dto.status === 'IN_TRANSIT' || dto.status === 'LOADING' || dto.status === 'DELIVERED' || dto.status === 'PLANNED' || dto.status === 'DRAFT'
+    ? dto.status
+    : undefined
 }
 
 const byDeparture = (a: DriverTripDto, b: DriverTripDto) => (a.departureTime ?? '').localeCompare(b.departureTime ?? '') || a.tripId - b.tripId
+const byUpcomingDeparture = (a: DriverTripDto, b: DriverTripDto) =>
+  (a.departureTime ?? '').localeCompare(b.departureTime ?? '') ||
+  (a.tripCode ?? String(a.tripId)).localeCompare(b.tripCode ?? String(b.tripId))
+
+function isUpcoming(dto: DriverTripDto): dto is DriverTripDto & { readonly status: 'DRAFT' | 'PLANNED' } {
+  return dto.status === 'DRAFT' || dto.status === 'PLANNED'
+}
 
 /**
  * Chuyến của tài xế theo backend (như `myTripsOf` của web): Đang vận chuyển; Đang xếp hàng mà kho đã xếp xong ở "Xếp xong — chờ xuất
- * phát"; Đang xếp hàng mà kho chưa xong ở "Kho đang soạn / xếp"; Đã lên kế hoạch ở "Chuyến sắp tới"; Đã giao ở "Đã giao gần đây" (`RECENT_LIMIT` chuyến giao xong gần nhất).
+ * phát"; Đang xếp hàng mà kho chưa xong ở "Kho đang soạn / xếp"; Nháp và Đã lên kế hoạch ở "Chuyến sắp tới"; Đã giao ở "Đã giao gần đây" (`RECENT_LIMIT` chuyến giao xong gần nhất).
  * Chuyến chưa tới kho và chuyến đã huỷ không hiện. Ba nhóm đầu: giờ xuất phát sớm trước, rồi mã chuyến.
  */
 export function myTripsOf(dtos: readonly DriverTripDto[]): DriverTrips['groups'] {
@@ -90,7 +99,8 @@ export function myTripsOf(dtos: readonly DriverTripDto[]): DriverTrips['groups']
     .map((dto) => tripRowOf(dto, 'DELIVERED'))
     .toSorted((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))
     .slice(0, RECENT_LIMIT)
-  return { inTransit: of('IN_TRANSIT'), loaded: of('LOADING', loaded), preparing: of('LOADING', (dto) => !loaded(dto)), upcoming: of('PLANNED'), recent }
+  const upcoming = dtos.filter(isUpcoming).toSorted(byUpcomingDeparture).map((dto) => tripRowOf(dto, dto.status))
+  return { inTransit: of('IN_TRANSIT'), loaded: of('LOADING', loaded), preparing: of('LOADING', (dto) => !loaded(dto)), upcoming, recent }
 }
 
 /** Toàn bộ chuyến đã giao của tài xế, sắp xếp mới nhất trước (không cắt theo `RECENT_LIMIT`). */

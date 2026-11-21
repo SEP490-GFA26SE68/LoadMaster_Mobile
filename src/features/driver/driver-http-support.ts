@@ -23,6 +23,7 @@ export const HTTP_DRIVER_CAPABILITIES: DriverCapabilities = {
   gps: true,
   notifications: true,
   gpsLocalOnly: false,
+  tripClaims: true,
 }
 
 /**

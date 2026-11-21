@@ -17,6 +17,7 @@ import { monitoring } from './vi/monitoring'
 import { nav } from './vi/nav'
 import { notifications } from './vi/notifications'
 import { officeServer } from './vi/officeServer'
+import { openTrips } from './vi/openTrips'
 import { overview } from './vi/overview'
 import { packageLookup } from './vi/packageLookup'
 import { payroll } from './vi/payroll'
@@ -68,6 +69,7 @@ export const vi = {
   nav,
   notifications,
   officeServer,
+  openTrips,
   overview,
   packageLookup,
   payroll,

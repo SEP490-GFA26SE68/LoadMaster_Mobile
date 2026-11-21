@@ -66,4 +66,10 @@ export const backendErrors = {
   PAYROLL_INVALID_PERIOD: 'Invalid payroll period. Please choose another month.',
   PAYROLL_PERIOD_NOT_FOUND: 'This payroll period was not found.',
   PAYROLL_RATE_NOT_CONFIGURED: 'Payroll rates have not been configured for this period.',
+  TRIP_CLAIM_NOT_FOUND: 'Trip claim not found.',
+  TRIP_CLAIM_DUPLICATE: 'You have already claimed this trip.',
+  TRIP_CLAIM_TRIP_TAKEN: 'This trip has already been assigned to a driver.',
+  TRIP_CLAIM_TRIP_NOT_OPEN: 'This trip is no longer open for claims.',
+  TRIP_CLAIM_ALREADY_DECIDED: 'This trip claim has already been decided.',
+  TRIP_CLAIM_NOT_OWN: 'You cannot perform actions on another driver\'s claim.',
 } satisfies Dictionary<typeof source>

@@ -156,6 +156,7 @@ export function mockDriverApi(): DriverApi {
       notifications: true,
       payroll: false,
       gpsLocalOnly: true,
+      tripClaims: false,
     },
     fetchMyTrips,
     async fetchPayroll() {
@@ -298,6 +299,15 @@ export function mockDriverApi(): DriverApi {
     fetchNotifications,
     // "Đã đọc" của kho mẫu là trạng thái giao diện trong bộ nhớ (`notification-read.ts`), không phải dữ liệu của nguồn
     async markNotificationsRead() {
+      throw new ApiError('NOT_SUPPORTED')
+    },
+    async fetchOpenTrips() {
+      throw new ApiError('NOT_SUPPORTED')
+    },
+    async claimTrip() {
+      throw new ApiError('NOT_SUPPORTED')
+    },
+    async cancelClaim() {
       throw new ApiError('NOT_SUPPORTED')
     },
   }
