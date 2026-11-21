@@ -64,6 +64,8 @@ describe('httpPayrollApi', () => {
     expect(statement.driverId).toBe('42')
     expect(statement.baseSalaryVnd).toBe(8_000_000)
     expect(statement.totalSalaryVnd).toBe(9_283_925)
+    expect(statement.kpiTargetKg).toBeUndefined()
+    expect(statement.kpiAchieved).toBeUndefined()
     expect(statement.trips).toEqual([
       {
         tripId: '101',
@@ -123,6 +125,8 @@ describe('httpPayrollApi', () => {
         payModel: 'MIXED',
         baseSalaryVnd: 7_000_000,
         totalKg: 500,
+        kpiTargetKg: '500',
+        kpiAchieved: true,
         rateVndPerKg: 500,
         kgAmountVnd: 250_000,
         totalKm: 100,
@@ -155,6 +159,8 @@ describe('httpPayrollApi', () => {
     expect(mapped.calculated).toBe(true)
     if (!mapped.calculated) throw new Error('expected calculated')
     expect(mapped.payModel).toBe('MIXED')
+    expect(mapped.kpiTargetKg).toBe(500)
+    expect(mapped.kpiAchieved).toBe(true)
     expect(mapped.kpiBonusVnd).toBe(500_000)
     expect(mapped.handlingAmountVnd).toBe(150_000)
     expect(mapped.commissionAmountVnd).toBe(300_000)

@@ -54,6 +54,10 @@ export type CalculatedPayrollStatement = {
   readonly totalKm: number
   readonly rateVndPerKm: number
   readonly kmAmountVnd: number
+  /** Chỉ tiêu sản lượng KPI tháng, nếu backend có cấu hình. */
+  readonly kpiTargetKg?: number
+  /** Kết quả đạt chỉ tiêu do backend tính, nếu backend có cấu hình. */
+  readonly kpiAchieved?: boolean
   /** Feat 1: thưởng KPI đạt mốc ngày/tháng/năm. */
   readonly kpiBonusVnd?: number
   /** Feat 2.2: tổng phụ cấp tự bốc xếp. */
