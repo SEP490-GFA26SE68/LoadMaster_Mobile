@@ -9,9 +9,9 @@ import { space } from '@/theme/tokens'
 import { useStartDeliveryMutation } from './useDriverQueries'
 
 /**
- * "Xuất phát" ở thẻ chuyến Đang xếp hàng khi nguồn là máy chủ (`departFromList`, như `DepartButton` của web): máy chủ không mở màn điểm
- * giao trước khi xe chạy, nên xuất phát ngay ở thẻ. Kho chưa xếp xong thì nút mờ, lý do (`blockedReason`) nằm ở dòng ngay trên nút và được
- * đọc kèm nút. Máy chủ vẫn từ chối thì dải lỗi trong thẻ nói lý do, không đổi gì; xong thì mở điểm giao đầu tiên.
+ * "Xuất phát" khi chuyến còn Đang xếp hàng: thẻ chuyến (`departFromList`) và chân màn chi tiết chuyến. Máy chủ không mở màn điểm giao
+ * trước khi xe chạy, nên POST `/api/driver/trips/{id}/start` rồi mới mở điểm. Kho chưa xếp xong thì nút mờ, lý do (`blockedReason`) nằm ở
+ * dòng ngay trên nút và được đọc kèm nút. Máy chủ vẫn từ chối thì dải lỗi nói lý do, không đổi gì; xong thì mở điểm giao đầu tiên.
  */
 export function DepartButton({
   tripId,

@@ -26,8 +26,8 @@ describe('resolveDataConfig', () => {
     expect(config).toEqual({
       sources: {
         auth: 'http',
-        driver: 'mock',
-        payroll: 'mock',
+        driver: 'http',
+        payroll: 'http',
         warehouse: 'mock',
         packages: 'mock',
         trips: 'mock',
@@ -38,6 +38,14 @@ describe('resolveDataConfig', () => {
       keycloak: { issuer: 'http://localhost:8180/realms/loadmaster', clientId: 'loadmaster-mobile' },
       mode: 'mixed',
     })
+  })
+
+  test('đăng nhập backend thì màn tài xế luôn đọc API, dù không khai driver trong danh sách', () => {
+    const config = resolveDataConfig({ httpFeatures: 'auth,warehouse', apiUrl: 'http://10.0.2.2:8080/', ...KEYCLOAK })
+    expect(config.sources.driver).toBe('http')
+    expect(config.sources.payroll).toBe('http')
+    expect(config.sources.warehouse).toBe('http')
+    expect(config.sources.trips).toBe('mock')
   })
 
   test('mặc định http: mọi feature dùng backend', () => {

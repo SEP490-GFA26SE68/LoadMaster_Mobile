@@ -125,7 +125,6 @@ const styles = StyleSheet.create({
   },
   list: { flexGrow: 1, width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center', padding: space[4], paddingBottom: space[8] },
   sectionTitle: { marginTop: space[4], marginBottom: space[3] },
-  headerBelow: { gap: space[2] },
   separator: { height: space[3] },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: space[2] },
   emptyHistoryBtn: { marginBottom: space[6] },

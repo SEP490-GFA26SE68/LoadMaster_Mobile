@@ -1,4 +1,5 @@
 import { act, configure, fireEvent, screen, waitFor } from '@testing-library/react-native'
+import * as Location from 'expo-location'
 import { Linking } from 'react-native'
 
 import { getMockDb, resetMockDb } from '@/data/mock-db'
@@ -165,27 +166,47 @@ describe('việc phụ ở điểm giao', () => {
     expect(screen.queryByRole('header', { name: `Yêu cầu ${id}` })).toBeNull()
   })
 
-  test('bật GPS thật: gửi vị trí của điện thoại; tắt thì vị trí xe về mô phỏng', async () => {
+  test('xuất phát xong GPS tự bật: gửi vị trí của điện thoại; tắt thì vị trí xe về mô phỏng', async () => {
+    const lastKnown = jest.spyOn(Location, 'getLastKnownPositionAsync')
     await departLoadedTrip({ arrive: false })
     await renderTrip()
-    await fireEvent.press(await screen.findByRole('switch', { name: GPS_SWITCH }))
-    expect(screen.getByRole('switch', { name: GPS_SWITCH })).toBeChecked()
+    expect(lastKnown).not.toHaveBeenCalled()
+    expect(await screen.findByRole('switch', { name: GPS_SWITCH })).toBeChecked()
     expect(screen.getByText('Đang chờ quyền vị trí và tín hiệu GPS…')).toBeOnTheScreen()
 
     await waitFor(() => expect(locationWatchers()).toBe(1))
     await act(async () => emitPosition({ latitude: 10.8512, longitude: 106.7718, speed: 10, heading: 90 }))
     expect(await screen.findByText(/^Đã gửi vị trí lúc .+\. Gửi lại mỗi 30 giây\.$/)).toBeOnTheScreen()
     expect(await getMockDb().getLatestLocation(LOADED_TRIP)).toMatchObject({ source: 'GPS', lat: 10.8512, lng: 106.7718 })
+    expect(await screen.findByLabelText(/Xe tại 10.8512, 106.7718/)).toBeOnTheScreen()
+    expect(locationWatchers()).toBe(1)
 
     await fireEvent.press(screen.getByRole('switch', { name: GPS_SWITCH }))
     expect(await screen.findByText('Đã tắt GPS thật. Vị trí xe về mô phỏng.')).toBeOnTheScreen()
     expect(locationWatchers()).toBe(0)
+    expect(screen.queryByLabelText(/Xe tại /)).toBeNull()
+    lastKnown.mockRestore()
+  })
+
+  test('pin bản đồ theo GPS mới; vị trí gửi lên máy chủ không POST lần hai trong cùng nhịp', async () => {
+    await departLoadedTrip({ arrive: false })
+    await renderTrip()
+    await waitFor(() => expect(locationWatchers()).toBe(1))
+
+    await act(async () => emitPosition({ latitude: 10.8512, longitude: 106.7718, speed: 10, heading: 90 }))
+    expect(await screen.findByLabelText(/Xe tại 10.8512, 106.7718/)).toBeOnTheScreen()
+    const first = await getMockDb().getLatestLocation(LOADED_TRIP)
+    expect(first).toMatchObject({ lat: 10.8512, lng: 106.7718, heading: 90 })
+
+    await act(async () => emitPosition({ latitude: 10.8601, longitude: 106.7802, speed: 12, heading: 45 }))
+    expect(await screen.findByLabelText(/Xe tại 10.8601, 106.7802/)).toBeOnTheScreen()
+    expect(await getMockDb().getLatestLocation(LOADED_TRIP)).toEqual(first)
+    expect(locationWatchers()).toBe(1)
   })
 
   test('mất tín hiệu GPS: thôi theo dõi và nói lý do', async () => {
     await departLoadedTrip({ arrive: false })
     await renderTrip()
-    await fireEvent.press(await screen.findByRole('switch', { name: GPS_SWITCH }))
     await waitFor(() => expect(locationWatchers()).toBe(1))
 
     await act(async () => failPosition())
@@ -202,7 +223,6 @@ describe('việc phụ ở điểm giao', () => {
     const openSettings = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined)
     await departLoadedTrip({ arrive: false })
     await renderTrip()
-    await fireEvent.press(await screen.findByRole('switch', { name: GPS_SWITCH }))
 
     expect(await screen.findByText(`${reason} Vị trí xe về mô phỏng.`)).toBeOnTheScreen()
     expect(screen.getByRole('switch', { name: GPS_SWITCH })).not.toBeChecked()

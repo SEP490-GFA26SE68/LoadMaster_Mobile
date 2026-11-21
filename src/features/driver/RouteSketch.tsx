@@ -1,10 +1,11 @@
 import { StyleSheet, View } from 'react-native'
-import Svg, { Circle, Polyline, Rect, Text as SvgText } from 'react-native-svg'
+import Svg, { Circle, G, Polygon, Polyline, Rect, Text as SvgText } from 'react-native-svg'
 
 import { stopColor, stopForeground } from '@/lib/stops'
 import { colors } from '@/theme/tokens'
 
 type Point = { readonly lat: number; readonly lng: number }
+type Vehicle = Point & { readonly heading?: number }
 type Stop = Point & { readonly id: string; readonly number: number; readonly name: string }
 
 const WIDTH = 320
@@ -41,7 +42,7 @@ export function RouteSketch({
   depot?: Point
   stops: readonly Stop[]
   path?: readonly Point[]
-  vehicle?: Point
+  vehicle?: Vehicle
 }) {
   const linePoints = path && path.length > 1 ? path : [...(depot ? [depot] : []), ...stops]
   const all = [...linePoints, ...stops, ...(depot ? [depot] : []), ...(vehicle ? [vehicle] : [])]
@@ -91,10 +92,13 @@ export function RouteSketch({
           )
         })}
         {vehiclePoint ? (
-          <>
+          <G origin={`${vehiclePoint.x}, ${vehiclePoint.y}`} rotation={vehicle?.heading ?? 0}>
             <Circle cx={vehiclePoint.x} cy={vehiclePoint.y} r={RADIUS + 1} fill={colors.bg} stroke={colors.primary} strokeWidth={2} />
-            <Circle cx={vehiclePoint.x} cy={vehiclePoint.y} r={4} fill={colors.primary} />
-          </>
+            <Polygon
+              points={`${vehiclePoint.x},${vehiclePoint.y - 9} ${vehiclePoint.x - 4},${vehiclePoint.y + 3} ${vehiclePoint.x + 4},${vehiclePoint.y + 3}`}
+              fill={colors.primary}
+            />
+          </G>
         ) : null}
       </Svg>
     </View>

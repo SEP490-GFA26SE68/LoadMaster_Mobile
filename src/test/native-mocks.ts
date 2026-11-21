@@ -24,6 +24,9 @@ export function resetNativeMocks(): void {
   state.locationServices = true
   state.locationGranted = true
   state.watchers.clear()
+  expoSpeech.speak.mockReset()
+  expoSpeech.stop.mockReset()
+  ;(globalThis as { resetGpsForTest?: () => void }).resetGpsForTest?.()
 }
 
 /** Quyền camera lúc màn mở; `null` là máy chưa trả lời. */
@@ -56,6 +59,11 @@ export const expoCamera = {
   /** Khung camera là một `View` mang đủ prop: test gửi mã bằng `fireEvent(camera, 'barcodeScanned', { data })`. */
   CameraView: (props: ViewProps) => createElement(View, { ...props, testID: 'qr-camera' }),
   useCameraPermissions: () => [state.camera, async () => state.camera, async () => state.camera] as const,
+}
+
+export const expoSpeech = {
+  speak: jest.fn(),
+  stop: jest.fn(),
 }
 
 export const expoLocation = {

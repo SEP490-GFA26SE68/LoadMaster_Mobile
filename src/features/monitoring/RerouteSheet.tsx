@@ -25,10 +25,9 @@ type RerouteSheetProps = {
 }
 
 /**
- * Tờ "Tìm tuyến khác" của điều phối viên (như `RerouteDialog` của web): mở tờ là một lần tìm mới — mock đưa ra 2–3 tuyến tới **điểm kế
- * tiếp** từ vị trí xe (tên, quãng đường, thời gian, giờ đến điểm đó) kèm nhãn **MOCK RESULT**. Chọn một tuyến thì xe thôi đứng chờ sự cố
- * và giờ đến tính lại theo vị trí; thứ tự điểm giao không đổi — tờ nói rõ điều đó. Kho không tìm được tuyến thì tờ nói lý do. Nơi gọi đổi
- * `key` mỗi lần mở.
+ * Tờ "Tìm tuyến khác" của điều phối viên (như `RerouteDialog` của web): mở tờ là một lần tìm mới — 2–3 tuyến tới **điểm kế tiếp** từ vị
+ * trí xe (tên, quãng đường, thời gian, giờ đến điểm đó). Nhãn **MOCK RESULT** chỉ khi nguồn báo `isMockResult`. Chọn xong máy chủ vẽ lại
+ * tuyến; thứ tự điểm giao không đổi. Kho không tìm được tuyến thì tờ nói lý do. Nơi gọi đổi `key` mỗi lần mở.
  */
 export function RerouteSheet({ tripId, stopName, open, onClose, onConfirmed }: RerouteSheetProps) {
   const t = useT()

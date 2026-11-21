@@ -8,6 +8,15 @@ const PLAN = {
   legs: [{ legSequence: 2, endStopId: 902, polyline: encodePolyline([{ lat: 10.78, lng: 106.7 }, { lat: 10.95, lng: 106.82 }]) }],
 }
 
+const TRAFFIC = {
+  id: 17,
+  type: 'TRAFFIC',
+  status: 'OPEN',
+  description: 'Kẹt xe',
+  delayMinutes: 20,
+  reportedAt: '2026-10-16T09:40:00',
+}
+
 const routeReads = (calls: readonly { path: string }[]) => calls.filter((call) => call.path === '/api/trips/41/route-plans/active').length
 
 describe('tuyến đang đi không đọc lại theo nhịp của màn điểm giao', () => {
@@ -31,6 +40,23 @@ describe('tuyến đang đi không đọc lại theo nhịp của màn điểm g
     now += ROUTE_REUSE_MS
     await driver.fetchTripScreen('41')
     expect(routeReads(calls)).toBe(3)
+  })
+
+  test('sự cố TRAFFIC đang mở: đọc lại tuyến dù còn trong cửa sổ dùng lại — planVersion dispatcher vừa confirm', async () => {
+    let version = 1
+    const routes = onTrip({
+      'GET /api/trips/41/route-plans/active': () => ok({ ...PLAN, planVersion: version }),
+      'GET /api/driver/trips/41/exceptions': () => ok([TRAFFIC]),
+    })
+    const { driver, calls } = backend(routes)
+
+    const first = await driver.fetchTripScreen('41')
+    expect(first.kind === 'stop' && first.screen.routeMap?.planVersion).toBe(1)
+
+    version = 2
+    const again = await driver.fetchTripScreen('41')
+    expect(routeReads(calls)).toBe(2)
+    expect(again.kind === 'stop' && again.screen.routeMap?.planVersion).toBe(2)
   })
 
   test('đọc tuyến lỗi thì không giữ: lần sau đọc tiếp', async () => {

@@ -24,6 +24,7 @@ export const liveTrip = {
   /** Lần đọc lại theo nhịp bị lỗi trong khi màn vẫn còn dữ liệu cũ. */
   refreshFailed: 'Chưa đọc lại được giám sát: {message}',
   openDetail: 'Chi tiết chuyến',
+  map: 'Bản đồ chuyến {id}',
   /** Danh sách điểm của màn một chuyến: điểm chưa có giờ đến (xe chưa có vị trí). */
   stops: { noEta: 'Chưa có giờ đến dự kiến' },
   notRunning: 'Chuyến {id} không còn đang vận chuyển: vị trí xe và giờ đến thôi cập nhật.',
