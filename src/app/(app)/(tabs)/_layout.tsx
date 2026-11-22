@@ -21,13 +21,14 @@ const TAB_LOOK: Readonly<Record<WorkTab, { readonly label: TabLabel; readonly ic
   payroll: { label: 'nav.payroll', icon: Wallet },
   warehouse: { label: 'nav.warehouse', icon: Warehouse },
   lookup: { label: 'nav.lookup', icon: PackageSearch },
+  'warehouse-payroll': { label: 'nav.payroll', icon: Wallet },
 }
 
 /**
  * Thanh tab đáy của người đã đăng nhập. Mỗi tab làm việc nằm sau `hasTab` (`features/auth/landing.ts`: phạm vi app của vai trò và quyền
  * của màn) qua `Tabs.Protected`: vai trò không có tab thì không thấy và không mở được route. Quản lý công ty: Tổng quan · Chuyến hàng ·
  * Giám sát · Tài khoản; điều phối viên: Chuyến hàng · Giám sát · Tài khoản; tài xế: Chuyến của tôi · Tài khoản; nhân viên kho: Kho · Tra
- * cứu kiện · Tài khoản. Tab có nguồn dữ liệu chưa làm được việc của nó thì ẩn (Tra cứu kiện theo
+ * cứu kiện · Lương · Tài khoản. Tab có nguồn dữ liệu chưa làm được việc của nó thì ẩn (Tra cứu kiện theo
  * `useLookupCapabilities().available`). Màn mới thêm tên vào `WORK_TABS` / `ROLE_TABS` và một `Tabs.Screen` ở đây, trong issue của màn đó.
  */
 export default function AppLayout() {
@@ -69,6 +70,7 @@ export default function AppLayout() {
       {tab('payroll')}
       {tab('warehouse')}
       {tab('lookup')}
+      {tab('warehouse-payroll')}
       <Tabs.Screen name="account" options={{ title: t('nav.account'), tabBarIcon: ({ color }) => <UserRound color={color} size={24} strokeWidth={1.5} /> }} />
     </Tabs>
   )

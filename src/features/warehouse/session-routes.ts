@@ -10,3 +10,6 @@ export const WAREHOUSE_LIST = '/warehouse'
 export function loadingPath(tripId: string) {
   return { pathname: '/loading/[tripId]', params: { tripId } } as const
 }
+
+/** Màn "Xe ở kho" (`src/app/(app)/vehicle-presence.tsx`, chỉ khi nguồn `warehouse` là máy chủ), mở chồng lên thanh tab. */
+export const VEHICLE_PRESENCE = '/vehicle-presence'

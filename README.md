@@ -32,9 +32,12 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
   thông báo, yêu cầu nhận hàng của tài xế, xác nhận tay ở điểm nhận, số liệu tổng kết chuyến — app ẩn phần đó.
 - Nối backend cho nhân viên kho: tab **Kho** đọc `GET /api/warehouse/tasks` (đang xếp, chờ xếp, xếp xong — chờ xuất phát, chờ điều
   phối tối ưu lại kèm lý do); phiên đọc lại từ máy chủ ở máy nào cũng được — soạn hàng (đối chiếu không cần thứ tự, xác nhận tay chờ
-  duyệt, báo thiếu), xếp theo thứ tự (đối chiếu, xác nhận tay, ghi sai lệch vị trí, kiện hỏng: bỏ lại kho hoặc chuyến về lập kế hoạch),
-  hoàn tất xếp (mờ khi còn xác nhận tay chờ). Tab **Tra cứu kiện** đọc máy chủ khi nguồn `packages` là `http` (quét QR, gõ mã QR / mã của kho / mã của bên gửi / mã vạch, báo đã tìm thấy kiện mang cờ "Không tìm thấy"). Chưa có trên máy chủ ở app: chuông của kho, khung vị
-  trí kiện (vị trí ghi bằng số).
+  duyệt, báo thiếu), xếp theo thứ tự (sơ đồ lòng thùng 2D, đối chiếu, xác nhận tay, ghi sai lệch vị trí, kiện hỏng: bỏ lại kho hoặc
+  chuyến về lập kế hoạch), hoàn tất xếp (mờ khi còn xác nhận tay chờ), xác nhận xe có ở kho xuất phát, chuông ở danh sách chuyến. Màn
+  **Xe ở kho** (`/api/warehouse/vehicle-presence`: xe của kho được phân công, ghi nhận có ở kho, lịch sử) và tab **Lương** (phiếu lương
+  kho `GET /api/warehouse/payroll`; kỳ chưa chốt máy chủ chỉ trả lương cứng). Gõ mã ở phiên máy chủ là Package Code in trên nhãn (máy chủ chỉ
+  khớp gõ mã với mã đó). Tab **Tra cứu kiện** đọc máy chủ khi nguồn `packages` là `http` (quét QR, gõ mã QR / mã của kho / mã của bên gửi / mã vạch, báo đã tìm thấy kiện mang cờ "Không tìm thấy"). Chưa có trên máy chủ ở app: khung vị
+  trí kiện 3D (bước xếp dùng sơ đồ 2D).
 - Nối backend cho điều phối viên và quản lý công ty: danh sách và chi tiết chuyến (duyệt xác nhận tay, quyết kiện báo thiếu), Giám sát
   (sự cố cấp chuyến, tìm tuyến khác, chuyển quản lý, gia hạn), Tổng quan theo kỳ. Ẩn khi dùng máy chủ: yêu cầu giao và dòng phụ phương
   án của chuyến, nhận hàng dọc đường ở Giám sát, chuông của hai vai trò.
@@ -43,7 +46,7 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
   thật (đăng nhập trọn vòng, các endpoint của tài xế), chưa kiểm camera QR, GPS thật, điện thoại thật và iOS; hai màn lỗi và toàn bộ
   màn kho thêm sau ngày đó chưa chạy trên máy.
 
-Kiểm thử: 462 test (Jest, 62 suite), lint và kiểm kiểu sạch; đóng gói Android (`expo export`) chạy được.
+Kiểm thử: 687 test (Jest, 93 suite), lint và kiểm kiểu sạch; đóng gói Android (`expo export`) chạy được.
 
 ## Chạy
 
@@ -70,7 +73,7 @@ Chép `.env.example` thành `.env` khi cần đổi. Mặc định mọi chức 
 | Biến | Nghĩa |
 |---|---|
 | `EXPO_PUBLIC_DATA_SOURCE` | `mock` (mặc định) hoặc `http` cho mọi chức năng |
-| `EXPO_PUBLIC_HTTP_FEATURES` | Các chức năng dùng backend khi mặc định là `mock`: `auth`, `driver`, `warehouse`, `packages` (Tra cứu kiện), `trips`, `monitoring`, `dashboard` |
+| `EXPO_PUBLIC_HTTP_FEATURES` | Các chức năng dùng backend khi mặc định là `mock`: `auth`, `driver`, `warehouse`, `packages` (Tra cứu kiện), `trips`, `monitoring`, `dashboard`. `auth` dùng backend thì `driver`, `payroll`, `warehouse`, `packages` luôn dùng backend |
 | `EXPO_PUBLIC_API_URL` | Địa chỉ backend |
 | `EXPO_PUBLIC_KEYCLOAK_URL`, `_REALM`, `_CLIENT_ID` | Keycloak của backend; bắt buộc khi `auth` dùng backend |
 | `EXPO_PUBLIC_GOONG_MAPTILES_KEY` | Khoá map tiles Goong (cùng loại với web). Trống: bản đồ nền trống, vẫn vẽ tuyến |

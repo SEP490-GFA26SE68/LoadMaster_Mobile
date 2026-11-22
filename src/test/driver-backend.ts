@@ -7,7 +7,7 @@ import type { DriverTripScreen, StopScreen } from '@/features/driver/driver-mode
  * đổi câu trả lời giữa chừng bằng cách gán vào bảng đó.
  */
 
-export type Call = { method: string; path: string; query: Record<string, string>; body: unknown }
+export type Call = { method: string; path: string; query: Record<string, string>; body: unknown; headers: Record<string, string> }
 export type Reply = { status: number; body?: unknown }
 export type Routes = Record<string, (call: Call) => Reply>
 
@@ -59,6 +59,7 @@ export function fakeDriverBackend(routes: Routes) {
       path: parsed.pathname,
       query: Object.fromEntries(parsed.searchParams),
       body: init.body === undefined ? undefined : (JSON.parse(String(init.body)) as unknown),
+      headers: { ...(init.headers as Record<string, string> | undefined) },
     }
     calls.push(call)
     const reply = routes[`${call.method} ${call.path}`]?.(call) ?? fail(404)

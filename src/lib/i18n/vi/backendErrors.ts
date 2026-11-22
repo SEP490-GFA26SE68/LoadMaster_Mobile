@@ -75,6 +75,11 @@ export const backendErrors = {
   LOADING_MANUAL_CONFIRM_PENDING: 'Còn xác nhận tay chờ điều phối viên duyệt — chưa hoàn tất xếp được.',
   /** Mã `STAGING_INCOMPLETE` của máy chủ — không kèm số kiện như mã cùng tên của kho mẫu, nên adapter đổi sang mã này. */
   STAGING_NOT_READY: 'Chưa soạn đủ hàng vào khu chờ, hoặc còn kiện báo thiếu chờ điều phối viên quyết — chưa xếp được.',
+  /** Máy chủ kiểm lại mã đã quét / gõ với kiện: gõ mã so Package Code, quét so mã QR hoặc mã vạch. */
+  PACKAGE_CODE_MISMATCH: 'Mã không khớp kiện cần xác nhận trong phiên xếp này. Hãy kiểm tra Package Code trên nhãn.',
+  VALIDATION_ERROR: 'Dữ liệu chưa hợp lệ, kiểm tra lại các ô.',
+  /** Phiên đọc lại sau khi ghi không cho thấy điều vừa ghi (máy khác vừa ghi), hoặc máy chủ báo dữ liệu đã đổi. */
+  CONFLICT: 'Dữ liệu bị trùng hoặc đã thay đổi trên máy chủ. Tải lại rồi thử lại.',
   // Màn phiếu lương nối backend (`payroll-http.ts`)
   PAYROLL_INVALID_PERIOD: 'Kỳ lương không hợp lệ. Chọn lại tháng cần xem.',
   PAYROLL_PERIOD_NOT_FOUND: 'Không tìm thấy kỳ lương này.',
@@ -86,4 +91,11 @@ export const backendErrors = {
   TRIP_CLAIM_TRIP_NOT_OPEN: 'Chuyến không còn ở trạng thái cho phép nhận.',
   TRIP_CLAIM_ALREADY_DECIDED: 'Phiếu xin chuyến này đã có quyết định.',
   TRIP_CLAIM_NOT_OWN: 'Bạn không thể thao tác trên phiếu của người khác.',
+  // Xe ở kho (ghi nhận xe có mặt ở kho)
+  VEHICLE_WAREHOUSE_FORBIDDEN: 'Bạn không được phân công ở kho này.',
+  VEHICLE_TRANSFER_CONFLICT: 'Xe đang được điều chuyển giữa hai kho nên chưa ghi nhận được.',
+  VEHICLE_PRESENCE_CONFLICT: 'Trạng thái xe vừa đổi nên chưa ghi nhận được — tải lại rồi thử lại.',
+  PRESENCE_VEHICLE_BUSY: 'Xe đang ở một chuyến Đang xếp hàng hoặc Đang vận chuyển nên chưa ghi nhận được ở đây.',
+  VEHICLE_NOT_FOUND: 'Không tìm thấy xe này.',
+  INVALID_INPUT: 'Dữ liệu gửi đi chưa hợp lệ.',
 } as const

@@ -1,7 +1,8 @@
 /**
  * Nguồn dữ liệu của từng feature: kho mẫu trong máy (`mock`) hoặc backend (`http`). Backend dùng chung với bản web và chưa có đủ mọi
  * phần, nên app nối **từng feature một**: feature nào backend đã sẵn thì khai ở `EXPO_PUBLIC_HTTP_FEATURES`, phần còn lại vẫn chạy
- * trên kho mẫu. Màn tài xế và phiếu lương luôn dùng backend khi đăng nhập Keycloak — không để danh sách feature tắt về kho mẫu.
+ * trên kho mẫu. Màn của hai vai trò ngoài hiện trường — tài xế (kèm phiếu lương) và nhân viên kho (kèm Tra cứu kiện) — luôn dùng
+ * backend khi đăng nhập Keycloak: không để danh sách feature tắt về kho mẫu.
  * Màn và hook không đọc file này — chỉ lớp `-api.ts` của feature (qua `createAdapter`) và màn Tài khoản.
  */
 
@@ -15,8 +16,11 @@ export const FEATURES = ['auth', 'driver', 'payroll', 'warehouse', 'packages', '
 
 export type Feature = (typeof FEATURES)[number]
 
-/** Màn tài xế (và phiếu lương) luôn đọc backend khi đăng nhập bằng Keycloak — không dùng kho mẫu / MOCK RESULT. */
-export const DRIVER_HTTP_FEATURES: readonly Feature[] = ['driver', 'payroll']
+/**
+ * Màn tài xế (và phiếu lương), màn kho (và Tra cứu kiện) luôn đọc backend khi đăng nhập bằng Keycloak — không dùng kho mẫu / MOCK RESULT:
+ * người ngoài hiện trường đăng nhập tài khoản thật thì phải thấy chuyến thật.
+ */
+export const FIELD_HTTP_FEATURES: readonly Feature[] = ['driver', 'payroll', 'warehouse', 'packages']
 
 export type DataSource = 'mock' | 'http'
 
@@ -79,7 +83,7 @@ export function resolveDataConfig(env: DataEnv): DataConfig {
   // Mỗi feature của `FEATURES` một nguồn: feature mới không phải thêm tay vào đây
   const sources = Object.fromEntries(FEATURES.map((feature) => [feature, sourceOfFeature(feature)])) as Record<Feature, DataSource>
   if (sources.auth === 'http') {
-    for (const feature of DRIVER_HTTP_FEATURES) sources[feature] = 'http'
+    for (const feature of FIELD_HTTP_FEATURES) sources[feature] = 'http'
   }
   const onHttp = FEATURES.filter((feature) => sources[feature] === 'http')
   const onMock = FEATURES.filter((feature) => sources[feature] === 'mock')

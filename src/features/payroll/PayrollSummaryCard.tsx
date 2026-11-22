@@ -9,19 +9,28 @@ import { Chip } from '@/components/Chip'
 import { useFormat, useT } from '@/lib/i18n'
 import { badgeTones, colors, radius, space, type BadgeTone } from '@/theme/tokens'
 
-import type { CalculatedPayrollStatement } from './payroll-model'
-import { payrollPeriodParts } from './payroll-period'
+import type { CalculatedPayrollStatement, PayrollPeriodStatus } from './payroll-model'
+import { payrollPeriodParts, type PayrollPeriodKey } from './payroll-period'
 
-type PayrollSummaryCardProps = {
-  readonly statement: CalculatedPayrollStatement
+type PayrollHeroProps = {
+  readonly period: PayrollPeriodKey
+  readonly status: PayrollPeriodStatus
+  /** Tên người nhận lương; rỗng thì không có dòng tên. */
+  readonly name: string
+  readonly totalVnd: number
+  /** Hàng ô chỉ số dưới tổng tiền (`MetricTile`). */
+  readonly metrics: ReactNode
 }
 
-/** Hero card tổng lương tháng tông màu sáng, tươi tắn: nền trắng, viền nhấn trái, khung tổng tiền cyan dịu và 3 ô chỉ số pastel. */
-export function PayrollSummaryCard({ statement }: PayrollSummaryCardProps) {
+/**
+ * Khung tổng lương tháng dùng chung của tài xế và nhân viên kho: nền trắng, viền nhấn trái theo trạng thái, khung tổng tiền cyan dịu, hàng ô
+ * chỉ số pastel; kỳ Bản nháp có thêm dải cảnh báo số liệu còn đổi.
+ */
+export function PayrollHero({ period, status, name, totalVnd, metrics }: PayrollHeroProps) {
   const t = useT()
   const format = useFormat()
-  const periodLabel = t('payroll.period.label', payrollPeriodParts(statement.period))
-  const statusTone: BadgeTone = statement.status === 'LOCKED' ? 'success' : 'warning'
+  const periodLabel = t('payroll.period.label', payrollPeriodParts(period))
+  const statusTone: BadgeTone = status === 'LOCKED' ? 'success' : 'warning'
   const accent = badgeTones[statusTone]
 
   return (
@@ -36,25 +45,48 @@ export function PayrollSummaryCard({ statement }: PayrollSummaryCardProps) {
               <AppText variant="meta" color={colors.text3}>
                 {t('payroll.summary.totalLabel', { period: periodLabel })}
               </AppText>
-              {statement.driverName !== '' ? (
+              {name !== '' ? (
                 <AppText variant="label" color={colors.text} numberOfLines={1}>
-                  {statement.driverName}
+                  {name}
                 </AppText>
               ) : null}
             </View>
           </View>
           <View style={styles.chipWrap}>
-            <Chip tone={statusTone} label={t(`payroll.status.${statement.status}`)} />
+            <Chip tone={statusTone} label={t(`payroll.status.${status}`)} />
           </View>
         </View>
 
         <View style={styles.amountBox}>
           <AppText variant="display" color={colors.primary} numberOfLines={1} adjustsFontSizeToFit style={styles.amount}>
-            {format.currency(statement.totalSalaryVnd)}
+            {format.currency(totalVnd)}
           </AppText>
         </View>
 
-        <View style={styles.metricsRow}>
+        <View style={styles.metricsRow}>{metrics}</View>
+      </Card>
+
+      {status === 'DRAFT' ? <Banner tone="warning">{t('payroll.summary.draftNotice')}</Banner> : null}
+    </View>
+  )
+}
+
+type PayrollSummaryCardProps = {
+  readonly statement: CalculatedPayrollStatement
+}
+
+/** Tổng lương tháng của tài xế: số chuyến, khối lượng, quãng đường. */
+export function PayrollSummaryCard({ statement }: PayrollSummaryCardProps) {
+  const t = useT()
+  const format = useFormat()
+  return (
+    <PayrollHero
+      period={statement.period}
+      status={statement.status}
+      name={statement.driverName}
+      totalVnd={statement.totalSalaryVnd}
+      metrics={
+        <>
           <MetricTile
             tone="azure"
             icon={<Truck color={badgeTones.azure.fg} size={15} strokeWidth={1.75} />}
@@ -73,15 +105,14 @@ export function PayrollSummaryCard({ statement }: PayrollSummaryCardProps) {
             label={t('payroll.summary.totalKm')}
             value={t('payroll.trips.kmUnit', { value: format.lengthValue(statement.totalKm) })}
           />
-        </View>
-      </Card>
-
-      {statement.status === 'DRAFT' ? <Banner tone="warning">{t('payroll.summary.draftNotice')}</Banner> : null}
-    </View>
+        </>
+      }
+    />
   )
 }
 
-function MetricTile({
+/** Một ô chỉ số của `PayrollHero`. */
+export function MetricTile({
   tone,
   icon,
   label,

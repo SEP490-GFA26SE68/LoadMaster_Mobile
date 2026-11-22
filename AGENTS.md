@@ -29,9 +29,14 @@ backend: bản web và máy khác không thấy gì trong đó. Mỗi feature n�
 đăng nhập (`auth`, Keycloak của backend — mục 6); màn tài xế (`driver`, trọn luồng như web: xuất phát ở thẻ chuyến và màn chi tiết chuyến, đã đến, dỡ,
 xác nhận tay, sự cố, nhận kiện ở điểm nhận, hoàn tất điểm, GPS); màn kho (`warehouse`, như `ServerWarehouseTripsPage` /
 `ServerLoadingSession` của web: danh sách `GET /api/warehouse/tasks`, bắt đầu kèm bước soạn, soạn — đối chiếu, xác nhận tay, báo
-thiếu —, xếp — đối chiếu, xác nhận tay, sai lệch vị trí, kiện hỏng —, hoàn tất; máy chủ giữ phiên nên mọi lệnh ghi đọc lại phiên);
+thiếu —, xếp — đối chiếu, xác nhận tay, sai lệch vị trí, kiện hỏng —, hoàn tất; máy chủ giữ phiên nên mọi lệnh ghi đọc lại phiên; đối chiếu
+gửi cách và đúng mã đã quét / gõ `{ method, code }` — gõ mã chỉ khớp Package Code, quét khớp mã QR hoặc mã vạch, như máy chủ —, lệnh của
+một chỗ xếp gửi kèm mã số chuyến; chuông ở danh sách chuyến đọc `GET /api/notifications`; bước xếp có sơ đồ lòng thùng 2D
+`ServerHoldSketch`; phiên và màn Xếp xong hỏi xe của chuyến có ở kho xuất phát không và cho xác nhận khi máy chủ chưa biết; màn **Xe ở
+kho** `/vehicle-presence` — `/api/warehouse/vehicle-presence`: xe của kho được phân công, ghi nhận có ở kho, lịch sử; tab **Lương** —
+`GET /api/warehouse/payroll`, cùng bố cục với phiếu lương tài xế);
 chuyến, giám sát và Tổng quan của điều phối viên, quản lý (`trips`, `monitoring`, `dashboard`). Việc backend chưa có thì màn ẩn theo bảng
-`capabilities` của từng feature (mục 5, luật 11), không lấy kho mẫu điền vào: chuông của kho và của hai vai trò văn phòng, khung vị trí kiện của phiên kho (vị trí ghi bằng số), yêu cầu giao và
+`capabilities` của từng feature (mục 5, luật 11), không lấy kho mẫu điền vào: chuông của hai vai trò văn phòng, khung 3D vị trí kiện của phiên kho (bước xếp dùng sơ đồ 2D), yêu cầu giao và
 dòng phụ phương án của chuyến, nhận hàng dọc đường ở Giám sát; của tài xế: tạo yêu cầu nhận hàng, xác nhận tay ở điểm nhận
 (`pickupManualConfirm`), thông báo, số liệu tổng kết — `driver-http.ts` từ chối `NOT_SUPPORTED` hoặc màn ẩn phần đó.
 Cách chạy với backend: README.
@@ -161,7 +166,12 @@ src/
                        adapter warehouse-mock.ts; nguồn máy chủ ở `server/` (`ServerWarehouseTripsScreen`,
                        `ServerLoadingSessionScreen`) với hợp đồng riêng `warehouse-server-api.ts` → warehouse-http.ts — route chọn màn
                        theo `useWarehouseCapabilities().backend`; ← chép từ web: `warehouse-trips.ts`, `loading-session.ts`,
-                       `describe-step.ts`, `server-loading.ts`
+                       `describe-step.ts`, `server-loading.ts`. `presence/`: xe có ở kho (chỉ nguồn máy chủ) — màn
+                       `VehiclePresenceScreen` và khối `VehiclePresenceCheck` của phiên
+    payroll/           phiếu lương: tài xế (`PayrollScreen`, `/api/driver/payroll`) và nhân viên kho (`WarehousePayrollScreen`,
+                       `/api/warehouse/payroll`) dùng chung bộ chọn tháng `usePayrollPeriod`, khung tổng `PayrollHero`, khung chi tiết
+                       `PayrollBreakdownShell`, danh sách chuyến `PayrollLineList`, thẻ "Chưa có phiếu lương"; adapter payroll-mock.ts,
+                       payroll-http.ts
     lookup/            Tra cứu kiện: quét hoặc gõ mã, thẻ kiện, báo đã tìm thấy kiện; adapter lookup-mock.ts, lookup-http.ts (máy chủ)
     errors/            màn lỗi chung `RouteErrorScreen` (là `ErrorBoundary` của route) và màn không tìm thấy `NotFoundScreen`
     notifications/     ← chép từ web: sự kiện nào báo cho ai
@@ -249,7 +259,8 @@ màn / component  →  hook Query của feature  →  features/<tên>/<tên>-api
 3. **Adapter `http` đổi DTO của backend sang kiểu của app** ngay tại chỗ (hàm `fromDto` trong cùng feature). Kiểu DTO không đi ra
    khỏi adapter. Mã vai trò của backend đổi qua `BACKEND_ROLE_CODES`.
 4. **Nguồn theo từng feature** (`src/data/config.ts`): `EXPO_PUBLIC_DATA_SOURCE` là mặc định, `EXPO_PUBLIC_HTTP_FEATURES` liệt kê
-   feature đã nối backend. Backend chưa có đủ mọi phần nên app nối dần; feature chưa có adapter `http` mà bị chọn `http` thì báo lỗi
+   feature đã nối backend. Đăng nhập bằng Keycloak thì màn của hai vai trò ngoài hiện trường luôn đọc backend dù danh sách không liệt kê
+   (`FIELD_HTTP_FEATURES`: `driver`, `payroll`, `warehouse`, `packages`). Backend chưa có đủ mọi phần nên app nối dần; feature chưa có adapter `http` mà bị chọn `http` thì báo lỗi
    `HTTP_NOT_WIRED`, **không** âm thầm dùng kho mẫu. Feature mới: thêm tên vào `FEATURES`.
 5. **Mọi lỗi mang mã + tham số**: `MockDbError` (kho mẫu) và `ApiError` (backend) hiện bằng cùng một hàm `dataErrorMessage(error, t)`.
    Mã nghiệp vụ trùng tên giữa hai nguồn dùng chung câu ở nhánh `dataErrors`; lỗi mạng / phiên / máy chủ ở nhánh `apiErrors`.
@@ -313,7 +324,8 @@ liệu. Backend lệch với hợp đồng của app thì ghi vào issue và h�
 - Ma trận quyền chép từ web (`features/auth/permissions.ts`): hỏi quyền bằng `useCan()`. Tab và route làm việc nằm sau quyền
   (`Tabs.Protected` / `Stack.Protected`); backend vẫn kiểm lại ở máy chủ.
 - **Tab theo vai trò** (`features/auth/landing.ts`, như `NAV_ITEMS` của web): `ROLE_TABS` là phạm vi app của từng vai trò, theo thứ tự
-  trên thanh, màn chính đứng đầu — tài xế Chuyến của tôi `/trips`; nhân viên kho Kho `/warehouse` · Tra cứu kiện `/lookup`; quản lý công
+  trên thanh, màn chính đứng đầu — tài xế Chuyến của tôi `/trips` · Chuyến đang mở `/open-trips` · Lương `/payroll`; nhân viên kho Kho
+  `/warehouse` · Tra cứu kiện `/lookup` · Lương `/warehouse-payroll`; quản lý công
   ty Tổng quan `/overview` · Chuyến hàng `/trip-list` · Giám sát `/monitoring`; điều phối viên Chuyến hàng · Giám sát; ai cũng có Tài
   khoản. `hasTab` đòi cả hai: tab nằm trong `ROLE_TABS` của vai trò **và** vai trò có quyền của màn (`TAB_PERMISSION`). Có quyền mà màn
   của vai trò đó ở web thì không có tab: điều phối viên có `dashboard.view`, `packages.lookup` nhưng bảng điều khiển và tra cứu kiện của
@@ -322,7 +334,8 @@ liệu. Backend lệch với hợp đồng của app thì ghi vào issue và h�
   `(tabs)/_layout.tsx`.
 - Sau khi đăng nhập mở màn chính của vai trò (`landingOf`: tab làm việc đầu tiên; vai trò không có tab làm việc nào — quản trị công ty,
   ba vai trò nền tảng — mở `/account`, kèm câu `scopeNote`). Màn đó phải là màn vai trò mở được (`landing.test.ts`).
-- Quyền của từng route chồng: `trip/[tripId]` sau `driver.operate`; phiên `loading/[tripId]` sau `warehouse.operate`;
+- Quyền của từng route chồng: `trip/[tripId]` sau `driver.operate`; phiên `loading/[tripId]` và `vehicle-presence` sau
+  `warehouse.operate` (`vehicle-presence` chỉ có ở nguồn máy chủ; kho mẫu thì về danh sách chuyến);
   `trip-detail/[tripId]` (chi tiết chuyến của điều phối viên, quản lý) sau `trips.view`; `live/[tripId]` (giám sát một chuyến đang
   chạy) sau `monitoring.view`; `notifications` sau `driver.operate`, `warehouse.operate` hoặc `trips.view`. Liên kết sâu tới route vai
   trò không mở được thì về màn chính của vai trò (`warehouse-routes.test.tsx`, `error-routes.test.tsx`).
@@ -420,6 +433,11 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
 - Bước xếp chưa có 3D: thẻ chỉ dẫn kèm **sơ đồ thùng 2D nhìn từ trên** (`HoldSketch`) và hình hướng đặt. Sơ đồ ẩn với trình đọc màn
   hình — chỗ đặt nằm ở chữ của thẻ; hình hướng đặt là `image` có tên. Xếp đúng một kiện thì bảng "Đã xếp" hiện ít nhất 1,2 giây
   (`CONFIRMED_OVERLAY_MS`) rồi mới sang kiện kế tiếp.
+- Phiên máy chủ: bước xếp vẽ `ServerHoldSketch` (nhìn từ trên và từ cửa sau, đúng tỉ lệ, kiện theo màu điểm giao kèm số, chú giải bằng
+  chữ; ẩn với trình đọc màn hình như `HoldSketch`). Phiên đang xếp và màn Xếp xong có khối `VehiclePresenceCheck`: phiên không mang mã xe
+  hay mã kho, nên khối tìm xe theo biển số ở các kho được phân công và chọn đúng xe đang xếp cho chuyến (`loading_trip_id`); xe ở kho
+  này là một dòng xác nhận, máy chủ chưa biết thì có nút phụ "Xác nhận xe có ở kho", trạng thái khác là cảnh báo liên hệ điều phối viên.
+  Lệnh ghi có mặt gửi header `Idempotency-Key` (một khoá mỗi việc, giữ nguyên khi bấm lại sau lỗi, bỏ khi ghi xong).
 - Không in nhãn trên app: in nhãn là việc của bản web. App không ghi số seal niêm phong thùng: màn Xếp xong chỉ báo kết quả và đưa về danh sách.
 
 ### Khả năng truy cập

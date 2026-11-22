@@ -83,6 +83,8 @@ export type ServerLoadingSession = {
   readonly tripId: string
   readonly code: string
   readonly vehicle: string
+  /** Biển số xe của chuyến (`licensePlate` của phiên); `null` khi máy chủ không trả — khi đó màn không có khối xe ở kho. */
+  readonly licensePlate: string | null
   readonly box: ServerCargoBox | null
   readonly placements: readonly ServerPlacement[]
   /** Kết quả từng kiện theo máy chủ; kiện chưa xử lý không có mục. */
@@ -114,11 +116,16 @@ export type DamageResult =
 
 const normalized = (value: string | null | undefined) => value?.trim().toLocaleUpperCase('vi') ?? ''
 
+/** Nhãn đã đối chiếu gửi lên máy chủ: cách đối chiếu và đúng mã đã quét / gõ. */
+export type LabelInput = { readonly method: 'QR' | 'CODE'; readonly code: string }
+
 /**
- * Mã quét hoặc gõ có khớp kiện không: mã QR, mã vạch, mã của bên gửi hoặc mã kho kiện, không phân biệt hoa thường (mã QR của máy chủ là chữ
- * thường, máy quét hay người gõ có thể đưa chữ hoa). Máy chủ không kiểm mã khi ghi, nên app kiểm trước khi gửi.
+ * Mã quét hoặc gõ có khớp kiện không, theo cùng luật máy chủ kiểm (`WarehouseLabelVerifier`, như `codeMatches` của web): gõ mã (`CODE`)
+ * chỉ so mã kiện in trên nhãn (Package Code); quét (`QR`) so mã QR hoặc mã vạch. Mã nội bộ không bao giờ tính là bằng chứng nhãn. Không phân
+ * biệt hoa thường (mã QR của máy chủ là chữ thường, máy quét hay người gõ có thể đưa chữ hoa). App kiểm trước cho người dùng biết ngay; máy
+ * chủ vẫn kiểm lại mã gửi lên (`PACKAGE_CODE_MISMATCH`).
  */
-export function codeMatches(placement: ServerPlacement, code: string): boolean {
+export function codeMatches(placement: ServerPlacement, code: string, method: 'QR' | 'CODE' = 'CODE'): boolean {
   const typed = normalized(code)
-  return typed !== '' && [placement.qrToken, placement.barcode, placement.packageCode, placement.packageId].some((value) => typed === normalized(value))
+  return typed !== '' && (method === 'CODE' ? [placement.packageCode] : [placement.qrToken, placement.barcode]).some((value) => typed === normalized(value))
 }

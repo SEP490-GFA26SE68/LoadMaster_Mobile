@@ -23,7 +23,10 @@ export { RouteErrorScreen as ErrorBoundary } from '@/features/errors/RouteErrorS
  */
 export default function AppLayout() {
   const can = useCan()
-  const lock = accountLockOf(useAuth().user)
+  const { status, user } = useAuth()
+  const lock = accountLockOf(user)
+  // Đang mở lại phiên (dưới splash): chưa biết quyền nên chưa dựng màn nào; trạng thái của liên kết sâu vẫn nằm ở router, mở được khi xong
+  if (status === 'restoring') return null
   if (lock !== null) return <AccountLockedScreen reason={lock} />
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -35,6 +38,7 @@ export default function AppLayout() {
       </Stack.Protected>
       <Stack.Protected guard={can('warehouse.operate')}>
         <Stack.Screen name="loading/[tripId]" />
+        <Stack.Screen name="vehicle-presence" />
       </Stack.Protected>
       <Stack.Protected guard={can('trips.view')}>
         <Stack.Screen name="trip-detail/[tripId]" />

@@ -75,7 +75,7 @@ afterEach(async () => {
  */
 
 describe('nhân viên kho trên app', () => {
-  test('mở app: vào tab Kho; thanh tab có Kho · Tra cứu kiện · Tài khoản, không có tab của tài xế', async () => {
+  test('mở app: vào tab Kho; thanh tab có Kho · Tra cứu kiện · Lương · Tài khoản, không có tab của tài xế', async () => {
     await signInAs(WAREHOUSE_EMAIL)
     const { pathname, tabScreens } = await openApp('/')
 
@@ -83,13 +83,18 @@ describe('nhân viên kho trên app', () => {
     expect(pathname()).toBe('/warehouse')
     expect(screen.getByRole('button', { name: tabNamed('Kho') })).toBeOnTheScreen()
     expect(screen.getByRole('button', { name: tabNamed('Tra cứu kiện') })).toBeOnTheScreen()
+    expect(screen.getByRole('button', { name: tabNamed('Lương') })).toBeOnTheScreen()
     expect(screen.getByRole('button', { name: tabNamed('Tài khoản') })).toBeOnTheScreen()
     expect(screen.queryByRole('button', { name: tabNamed('Chuyến của tôi') })).toBeNull()
-    expect(tabScreens()).toEqual(['index', 'warehouse', 'lookup', 'account'])
+    expect(tabScreens()).toEqual(['index', 'warehouse', 'lookup', 'warehouse-payroll', 'account'])
 
     await fireEvent.press(screen.getByRole('button', { name: tabNamed('Tra cứu kiện') }))
     await waitFor(() => expect(pathname()).toBe('/lookup'))
     expect(await screen.findByRole('header', { name: 'Tra cứu kiện' })).toBeOnTheScreen()
+
+    await fireEvent.press(screen.getByRole('button', { name: tabNamed('Lương') }))
+    await waitFor(() => expect(pathname()).toBe('/warehouse-payroll'))
+    expect(await screen.findByRole('header', { name: 'Phiếu lương' })).toBeOnTheScreen()
   })
 
   test('đăng nhập bằng tài khoản dùng thử của kho: form điền sẵn email và mật khẩu mẫu, vào tab Kho', async () => {

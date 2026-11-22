@@ -78,6 +78,8 @@ export function ServerStagingView({ tripId, session }: { tripId: string; session
         title={t('warehouse.staging.scanTitle')}
         description={t('warehouse.staging.scanDescription', { done: view.staged, total: view.total })}
         manualAllowed
+        codeLabel={t('serverWarehouse.session.codeLabel')}
+        codeHint={t('serverWarehouse.session.codeHint')}
       />
     </Screen>
   )

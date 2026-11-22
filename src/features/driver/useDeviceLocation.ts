@@ -244,10 +244,12 @@ export function useDeviceLocation(tripId: string): DeviceLocationControls {
  */
 export function useStartGpsWhenDelivering(active: boolean, allowed: boolean, gps: DeviceLocationControls) {
   const { enabled, state, toggle } = gps
+  // Lý do tắt chỉ có ở trạng thái `off`: tách ra ngoài effect, vì mảng phụ thuộc không được thu hẹp kiểu theo `status`
+  const offReason = state.status === 'off' ? state.reason : undefined
   useEffect(() => {
     if (!active || !allowed || enabled) return
     if (state.status !== 'off') return
-    if (state.reason !== undefined) return
+    if (offReason !== undefined) return
     toggle(true)
-  }, [active, allowed, enabled, state.status, state.reason, toggle])
+  }, [active, allowed, enabled, state.status, offReason, toggle])
 }

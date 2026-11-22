@@ -61,4 +61,27 @@ export const payroll = {
     description: 'Quản lý chưa tính lương cho kỳ này hoặc bạn chưa có bản ghi lương trong tháng.',
     viewPrevious: 'Xem tháng trước',
   },
+  /** Phiếu lương của nhân viên kho (`/api/warehouse/payroll`): máy chủ chỉ cho xem đủ phiếu khi kỳ đã chốt. */
+  warehouse: {
+    summary: {
+      trips: 'Số chuyến',
+      packages: 'Số kiện',
+      loadedKg: 'Khối lượng',
+    },
+    breakdown: {
+      loadedAmount: 'Tiền theo khối lượng xếp',
+      kpiProgress: 'Đã xếp {totalKg} trên chỉ tiêu {targetKg}',
+    },
+    trips: {
+      empty: 'Không có chuyến nào bạn xếp trong kỳ này.',
+      loadedOn: 'Xếp ngày {date}',
+      packages: '{count} kiện',
+    },
+    uncalculated: {
+      DRAFT: 'Kỳ lương đang được tính. Khối lượng đã xếp, tiền theo khối lượng và KPI hiện khi quản lý chốt kỳ.',
+      LOCKED: 'Kỳ lương đã chốt nhưng bạn không có bản ghi lương trong tháng này.',
+      none: 'Quản lý chưa tính lương kho cho kỳ này.',
+      baseSalary: 'Lương cứng tháng: {amount}',
+    },
+  },
 } as const

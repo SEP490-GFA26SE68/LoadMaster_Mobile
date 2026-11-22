@@ -33,6 +33,7 @@ import { warehouse } from './vi/warehouse'
 import { warehouseFinished } from './vi/warehouseFinished'
 import { warehouseLoading } from './vi/warehouseLoading'
 import { warehouseSession } from './vi/warehouseSession'
+import { vehiclePresence } from './vi/vehiclePresence'
 import { warehouseServer } from './vi/warehouseServer'
 import { warehouseStaging } from './vi/warehouseStaging'
 import { warehouseTrips } from './vi/warehouseTrips'
@@ -85,6 +86,7 @@ export const vi = {
   warehouseFinished,
   warehouseLoading,
   warehouseSession,
+  vehiclePresence,
   warehouseServer,
   warehouseStaging,
   warehouseTrips,

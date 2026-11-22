@@ -211,7 +211,7 @@ export function routeMapHtml(payload: RouteMapPayload): string {
   window.addEventListener('resize', afterResize);
   setTimeout(afterResize, 200);
   setTimeout(afterResize, 600);
-  // Chỉ cử chỉ tay / nút −+ (có originalEvent). easeTo của Về giữa không có — không tự unfollow rồi fit cả tuyến.
+  // Only user gestures and the zoom buttons carry originalEvent; the recenter easeTo does not, so it never unfollows.
   map.on('dragstart', onUserCamera);
   map.on('zoomstart', onUserCamera);
   map.on('rotatestart', onUserCamera);

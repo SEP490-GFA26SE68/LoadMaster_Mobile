@@ -28,8 +28,8 @@ describe('resolveDataConfig', () => {
         auth: 'http',
         driver: 'http',
         payroll: 'http',
-        warehouse: 'mock',
-        packages: 'mock',
+        warehouse: 'http',
+        packages: 'http',
         trips: 'mock',
         monitoring: 'mock',
         dashboard: 'mock',
@@ -40,12 +40,21 @@ describe('resolveDataConfig', () => {
     })
   })
 
-  test('đăng nhập backend thì màn tài xế luôn đọc API, dù không khai driver trong danh sách', () => {
-    const config = resolveDataConfig({ httpFeatures: 'auth,warehouse', apiUrl: 'http://10.0.2.2:8080/', ...KEYCLOAK })
+  test('đăng nhập backend thì màn tài xế và màn kho luôn đọc API, dù không khai trong danh sách', () => {
+    const config = resolveDataConfig({ httpFeatures: 'auth,trips', apiUrl: 'http://10.0.2.2:8080/', ...KEYCLOAK })
     expect(config.sources.driver).toBe('http')
     expect(config.sources.payroll).toBe('http')
     expect(config.sources.warehouse).toBe('http')
-    expect(config.sources.trips).toBe('mock')
+    expect(config.sources.packages).toBe('http')
+    expect(config.sources.trips).toBe('http')
+    expect(config.sources.monitoring).toBe('mock')
+    expect(config.sources.dashboard).toBe('mock')
+  })
+
+  test('đăng nhập trên kho mẫu thì màn kho và Tra cứu kiện vẫn ở kho mẫu', () => {
+    const config = resolveDataConfig({})
+    expect(config.sources.warehouse).toBe('mock')
+    expect(config.sources.packages).toBe('mock')
   })
 
   test('mặc định http: mọi feature dùng backend', () => {

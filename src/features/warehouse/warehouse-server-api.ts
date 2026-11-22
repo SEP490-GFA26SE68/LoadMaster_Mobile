@@ -20,6 +20,7 @@ import { httpWarehouseApi } from './warehouse-http'
 import type {
   DamageResult,
   DeviationInput,
+  LabelInput,
   ServerLoadingSession,
   ServerManualInput,
   ServerWarehouseTrip,
@@ -46,14 +47,14 @@ export type ServerWarehouseApi = {
   fetchSession(tripId: string): Promise<ServerLoadingSession>
   /** Bắt đầu phiên kèm bước soạn hàng; phiên đã bắt đầu ở thiết bị khác thì mở lại phiên đó. */
   start(tripId: string): Promise<ServerLoadingSession>
-  /** Soạn một kiện vào khu chờ bằng nhãn, không cần thứ tự; kiện đã soạn thì không ghi gì (`alreadyStaged`). */
-  stage(tripId: string, packageId: string, method: 'QR' | 'CODE'): Promise<StagingResult>
+  /** Soạn một kiện vào khu chờ bằng nhãn (máy chủ kiểm lại mã), không cần thứ tự; kiện đã soạn thì không ghi gì (`alreadyStaged`). */
+  stage(tripId: string, packageId: string, label: LabelInput): Promise<StagingResult>
   /** Soạn bằng xác nhận tay: chỉ tính là đã soạn khi điều phối viên duyệt. */
   stageManually(tripId: string, packageId: string, input: ServerManualInput): Promise<ServerLoadingSession>
   /** Báo một kiện chưa soạn là không tìm thấy: điều phối viên quyết tìm tiếp hay bỏ kiện. */
   reportShortage(tripId: string, packageId: string): Promise<ServerLoadingSession>
-  /** Xác nhận đã xếp đúng chỗ (mã đã được app đối chiếu với nhãn trước khi gửi), kèm cách đối chiếu: quét QR hay gõ mã. */
-  confirm(tripId: string, placementId: string, method: 'QR' | 'CODE'): Promise<ServerLoadingSession>
+  /** Xác nhận đã xếp đúng chỗ, kèm cách đối chiếu (quét QR hay gõ mã) và đúng mã đã đối chiếu — máy chủ kiểm lại mã với kiện. */
+  confirm(tripId: string, placementId: string, label: LabelInput): Promise<ServerLoadingSession>
   /** Xác nhận tay một kiện của bước xếp: tính là đã xếp, chờ điều phối viên duyệt. */
   confirmManually(tripId: string, placementId: string, input: ServerManualInput): Promise<ServerLoadingSession>
   /** Đã xếp kiện ở vị trí khác phương án: vị trí thật (cm nguyên) và lý do. */
@@ -96,8 +97,8 @@ export function startServerLoading(tripId: string): Promise<ServerLoadingSession
 }
 
 // POST /api/warehouse/tasks/{tripId}/staging/packages/{packageId}/confirm
-export function stageServerPackage(tripId: string, packageId: string, method: 'QR' | 'CODE'): Promise<StagingResult> {
-  return adapter().stage(tripId, packageId, method)
+export function stageServerPackage(tripId: string, packageId: string, label: LabelInput): Promise<StagingResult> {
+  return adapter().stage(tripId, packageId, label)
 }
 
 // POST /api/warehouse/tasks/{tripId}/staging/packages/{packageId}/manual
@@ -111,8 +112,8 @@ export function reportServerShortage(tripId: string, packageId: string): Promise
 }
 
 // POST /api/warehouse/placements/{id}/confirm
-export function confirmServerPlacement(tripId: string, placementId: string, method: 'QR' | 'CODE'): Promise<ServerLoadingSession> {
-  return adapter().confirm(tripId, placementId, method)
+export function confirmServerPlacement(tripId: string, placementId: string, label: LabelInput): Promise<ServerLoadingSession> {
+  return adapter().confirm(tripId, placementId, label)
 }
 
 // POST /api/warehouse/placements/{id}/manual

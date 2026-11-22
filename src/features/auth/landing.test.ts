@@ -10,7 +10,7 @@ const EXPECTED: Readonly<Record<Role, readonly WorkTab[]>> = {
   companyAdmin: [],
   companyManager: ['overview', 'trip-list', 'monitoring'],
   dispatcher: ['trip-list', 'monitoring'],
-  warehouse: ['warehouse', 'lookup'],
+  warehouse: ['warehouse', 'lookup', 'warehouse-payroll'],
   driver: ['trips', 'open-trips', 'payroll'],
 }
 
@@ -33,6 +33,13 @@ describe('tab làm việc theo vai trò', () => {
   test('điều phối viên có quyền bảng điều khiển và tra cứu kiện nhưng hai màn đó của họ ở bản web: không có tab', () => {
     expect(hasTab('dispatcher', 'overview')).toBe(false)
     expect(hasTab('dispatcher', 'lookup')).toBe(false)
+  })
+
+  test('phiếu lương kho chỉ của nhân viên kho, phiếu lương tài xế chỉ của tài xế', () => {
+    for (const role of ROLES) {
+      expect(hasTab(role, 'warehouse-payroll')).toBe(role === 'warehouse')
+      expect(hasTab(role, 'payroll')).toBe(role === 'driver')
+    }
   })
 
   test('chưa đăng nhập thì không có tab nào', () => {

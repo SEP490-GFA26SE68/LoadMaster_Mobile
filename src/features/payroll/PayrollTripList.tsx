@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp, Truck } from 'lucide-react-native'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
@@ -16,8 +16,21 @@ type PayrollTripListProps = {
   readonly trips: readonly PayrollTripLine[]
 }
 
-/** Danh sách chuyến đóng góp thu nhập trong kỳ: mặc định hiện 5 chuyến đầu, mở rộng khi nhiều chuyến. */
+/** Danh sách chuyến đóng góp thu nhập của tài xế trong kỳ; chạm một chuyến mở chi tiết chuyến. */
 export function PayrollTripList({ trips }: PayrollTripListProps) {
+  return <PayrollLineList trips={trips} keyOf={(line) => line.tripId} renderLine={(line) => <PayrollTripCard line={line} />} />
+}
+
+type PayrollLineListProps<T> = {
+  readonly trips: readonly T[]
+  readonly keyOf: (line: T) => string
+  readonly renderLine: (line: T) => ReactNode
+  /** Câu khi kỳ không có chuyến; mặc định là câu của tài xế. */
+  readonly empty?: string
+}
+
+/** Khung "Chi tiết theo chuyến" dùng chung: mặc định hiện 5 chuyến đầu, mở rộng khi nhiều chuyến; kỳ không có chuyến thì một câu. */
+export function PayrollLineList<T>({ trips, keyOf, renderLine, empty }: PayrollLineListProps<T>) {
   const t = useT()
   const [expanded, setExpanded] = useState(false)
 
@@ -39,13 +52,13 @@ export function PayrollTripList({ trips }: PayrollTripListProps) {
       {trips.length === 0 ? (
         <View style={styles.emptyBox}>
           <AppText variant="body" color={colors.text3} style={styles.emptyText}>
-            {t('payroll.trips.empty')}
+            {empty ?? t('payroll.trips.empty')}
           </AppText>
         </View>
       ) : (
         <View style={styles.list}>
           {visibleTrips.map((line) => (
-            <PayrollTripCard key={line.tripId} line={line} />
+            <View key={keyOf(line)}>{renderLine(line)}</View>
           ))}
 
           {hasMore ? (

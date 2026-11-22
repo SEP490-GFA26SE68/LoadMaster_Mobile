@@ -5,14 +5,15 @@ import type { Role, User } from '@/types/user'
 import { can, type Permission } from './permissions'
 
 /** Tab làm việc của thanh tab đáy (route `src/app/(app)/(tabs)/<tên>.tsx`), theo thứ tự trên thanh; Tài khoản luôn có nên không nằm ở đây. */
-export const WORK_TABS = ['overview', 'trip-list', 'monitoring', 'trips', 'open-trips', 'payroll', 'warehouse', 'lookup'] as const
+export const WORK_TABS = ['overview', 'trip-list', 'monitoring', 'trips', 'open-trips', 'payroll', 'warehouse', 'lookup', 'warehouse-payroll'] as const
 
 export type WorkTab = (typeof WORK_TABS)[number]
 
 /**
  * Quyền mở từng tab — cổng của route, như `RequirePermission` của bản web.
- * Lưu ý: `permissions.ts` được đồng bộ nguyên văn từ web (`web-mirror.json`); ở Phase 1 phiếu lương chỉ dành cho tài xế
- * (`/api/driver/payroll`) nên dùng cổng `driver.operate`, tới Feat 4 sẽ đổi sang quyền chung `payroll.viewOwn` khi web bổ sung.
+ * Lưu ý: `permissions.ts` được đồng bộ nguyên văn từ web (`web-mirror.json`); phiếu lương tài xế
+ * (`/api/driver/payroll`) dùng cổng `driver.operate`, phiếu lương kho (`/api/warehouse/payroll`, tab `warehouse-payroll`) dùng cổng
+ * `warehouse.operate`; tới Feat 4 sẽ đổi sang quyền chung `payroll.viewOwn` khi web bổ sung.
  */
 const TAB_PERMISSION: Readonly<Record<WorkTab, Permission>> = {
   overview: 'dashboard.view',
@@ -23,6 +24,7 @@ const TAB_PERMISSION: Readonly<Record<WorkTab, Permission>> = {
   payroll: 'driver.operate',
   warehouse: 'warehouse.operate',
   lookup: 'packages.lookup',
+  'warehouse-payroll': 'warehouse.operate',
 }
 
 /**
@@ -37,7 +39,7 @@ const ROLE_TABS: Readonly<Record<Role, readonly WorkTab[]>> = {
   companyAdmin: [],
   companyManager: ['overview', 'trip-list', 'monitoring'],
   dispatcher: ['trip-list', 'monitoring'],
-  warehouse: ['warehouse', 'lookup'],
+  warehouse: ['warehouse', 'lookup', 'warehouse-payroll'],
   driver: ['trips', 'open-trips', 'payroll'],
 }
 

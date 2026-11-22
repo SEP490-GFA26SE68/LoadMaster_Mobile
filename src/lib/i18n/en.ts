@@ -33,6 +33,7 @@ import { warehouse } from './en/warehouse'
 import { warehouseFinished } from './en/warehouseFinished'
 import { warehouseLoading } from './en/warehouseLoading'
 import { warehouseSession } from './en/warehouseSession'
+import { vehiclePresence } from './en/vehiclePresence'
 import { warehouseServer } from './en/warehouseServer'
 import { warehouseStaging } from './en/warehouseStaging'
 import { warehouseTrips } from './en/warehouseTrips'
@@ -75,6 +76,7 @@ export const en = {
   warehouseFinished,
   warehouseLoading,
   warehouseSession,
+  vehiclePresence,
   warehouseServer,
   warehouseStaging,
   warehouseTrips,
