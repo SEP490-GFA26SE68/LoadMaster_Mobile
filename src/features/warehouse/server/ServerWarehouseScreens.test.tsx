@@ -60,7 +60,7 @@ async function openCodeEntry() {
 }
 
 async function verifyCode(code: string) {
-  await fireEvent.changeText(screen.getByLabelText('Mã QR hoặc mã bên gửi'), code)
+  await fireEvent.changeText(screen.getByLabelText('Mã kiện'), code)
   await fireEvent.press(screen.getByRole('button', { name: 'Đối chiếu mã' }))
 }
 
@@ -99,6 +99,7 @@ describe('Danh sách chuyến của kho trên máy chủ', () => {
     await renderWarehouseScreen(<ServerWarehouseTripsScreen />)
 
     expect(await screen.findByRole('header', { name: 'Đang xếp hàng (1)' })).toBeOnTheScreen()
+    expect(screen.getByRole('button', { name: /^Thông báo/ })).toBeOnTheScreen()
     for (const group of ['Chờ xếp (1)', 'Xếp xong — chờ xuất phát (1)', 'Chờ điều phối tối ưu lại (1)']) {
       expect(screen.getByRole('header', { name: group })).toBeOnTheScreen()
     }
@@ -112,7 +113,7 @@ describe('Danh sách chuyến của kho trên máy chủ', () => {
 })
 
 describe('Phiên soạn → xếp trên máy chủ', () => {
-  test('soạn hàng: mã lạ không gửi gì; gõ mã QR chữ hoa vẫn khớp kiện, máy chủ ghi đã soạn bằng mã gõ và danh sách đọc lại', async () => {
+  test('soạn hàng: mã lạ không gửi gì; gõ mã kiện chữ thường vẫn khớp, máy chủ nhận đúng mã đã gõ và danh sách đọc lại', async () => {
     let staged = false
     serve(() => sessionDto({ placements: [step(901, 1, { staged }), step(902, 2)] }), {
       'POST /api/warehouse/tasks/51/staging/packages/7001/confirm': () => {
@@ -128,10 +129,31 @@ describe('Phiên soạn → xếp trên máy chủ', () => {
     expect(await screen.findByText('Mã PK-404 không phải kiện của chuyến này. Chưa ghi gì.')).toBeOnTheScreen()
     expect(posts()).toHaveLength(0)
 
+    // Mã QR không phải Package Code: máy chủ chỉ khớp gõ mã với Package Code, nên màn cũng không nhận
     await verifyCode('LM-QR-0001')
+    expect(await screen.findByText('Mã LM-QR-0001 không phải kiện của chuyến này. Chưa ghi gì.')).toBeOnTheScreen()
+    expect(posts()).toHaveLength(0)
+
+    await verifyCode('dmx-01')
     expect(await screen.findByText('Đã soạn DMX-01 · Tủ lạnh 1.')).toBeOnTheScreen()
     expect(await screen.findByRole('header', { name: 'Kiện chưa soạn (1)' })).toBeOnTheScreen()
-    expect(posts()).toEqual([expect.objectContaining({ body: { method: 'CODE' } })])
+    expect(posts()).toEqual([
+      expect.objectContaining({ path: '/api/warehouse/tasks/51/staging/packages/7001/confirm', body: { method: 'CODE', code: 'dmx-01' } }),
+    ])
+  })
+
+  test('soạn hàng: máy chủ báo mã không khớp (PACKAGE_CODE_MISMATCH) thì màn nói đúng lý do, không báo đã soạn', async () => {
+    serve(() => sessionDto(), {
+      'POST /api/warehouse/tasks/51/staging/packages/7001/confirm': () => fail(400, 'PACKAGE_CODE_MISMATCH'),
+    })
+    await renderSession()
+    expect(await screen.findByRole('header', { name: 'Kiện chưa soạn (2)' })).toBeOnTheScreen()
+    await openCodeEntry()
+    await verifyCode('DMX-01')
+    expect(
+      await screen.findByText('Mã không khớp kiện cần xác nhận trong phiên xếp này. Hãy kiểm tra Package Code trên nhãn.'),
+    ).toBeOnTheScreen()
+    expect(screen.queryByText('Đã soạn DMX-01 · Tủ lạnh 1.')).toBeNull()
   })
 
   test('xếp: mã của kiện khác không gửi gì; đúng kiện thì máy chủ ghi đã xếp và màn sang bước kế tiếp', async () => {
@@ -153,6 +175,9 @@ describe('Phiên soạn → xếp trên máy chủ', () => {
     await verifyCode('dmx-01')
     expect(await screen.findByText('Đã xếp Tủ lạnh 1.')).toBeOnTheScreen()
     expect(await screen.findByText('Kiện cần xếp — bước 2 / 2')).toBeOnTheScreen()
+    expect(posts()).toEqual([
+      expect.objectContaining({ path: '/api/warehouse/placements/901/confirm', body: { tripId: 51, method: 'CODE', code: 'dmx-01' } }),
+    ])
   })
 
   test('kiện hỏng có kiện tựa lên: chuyến về lập kế hoạch, màn nói đúng lý do thay cho lỗi đọc phiên', async () => {

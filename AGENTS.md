@@ -29,9 +29,11 @@ backend: bản web và máy khác không thấy gì trong đó. Mỗi feature n�
 đăng nhập (`auth`, Keycloak của backend — mục 6); màn tài xế (`driver`, trọn luồng như web: xuất phát ở thẻ chuyến và màn chi tiết chuyến, đã đến, dỡ,
 xác nhận tay, sự cố, nhận kiện ở điểm nhận, hoàn tất điểm, GPS); màn kho (`warehouse`, như `ServerWarehouseTripsPage` /
 `ServerLoadingSession` của web: danh sách `GET /api/warehouse/tasks`, bắt đầu kèm bước soạn, soạn — đối chiếu, xác nhận tay, báo
-thiếu —, xếp — đối chiếu, xác nhận tay, sai lệch vị trí, kiện hỏng —, hoàn tất; máy chủ giữ phiên nên mọi lệnh ghi đọc lại phiên);
+thiếu —, xếp — đối chiếu, xác nhận tay, sai lệch vị trí, kiện hỏng —, hoàn tất; máy chủ giữ phiên nên mọi lệnh ghi đọc lại phiên; đối chiếu
+gửi cách và đúng mã đã quét / gõ `{ method, code }` — gõ mã chỉ khớp Package Code, quét khớp mã QR hoặc mã vạch, như máy chủ —, lệnh của
+một chỗ xếp gửi kèm mã số chuyến; chuông ở danh sách chuyến đọc `GET /api/notifications`);
 chuyến, giám sát và Tổng quan của điều phối viên, quản lý (`trips`, `monitoring`, `dashboard`). Việc backend chưa có thì màn ẩn theo bảng
-`capabilities` của từng feature (mục 5, luật 11), không lấy kho mẫu điền vào: chuông của kho và của hai vai trò văn phòng, khung vị trí kiện của phiên kho (vị trí ghi bằng số), yêu cầu giao và
+`capabilities` của từng feature (mục 5, luật 11), không lấy kho mẫu điền vào: chuông của hai vai trò văn phòng, khung vị trí kiện của phiên kho (vị trí ghi bằng số), yêu cầu giao và
 dòng phụ phương án của chuyến, nhận hàng dọc đường ở Giám sát; của tài xế: tạo yêu cầu nhận hàng, xác nhận tay ở điểm nhận
 (`pickupManualConfirm`), thông báo, số liệu tổng kết — `driver-http.ts` từ chối `NOT_SUPPORTED` hoặc màn ẩn phần đó.
 Cách chạy với backend: README.
@@ -249,7 +251,8 @@ màn / component  →  hook Query của feature  →  features/<tên>/<tên>-api
 3. **Adapter `http` đổi DTO của backend sang kiểu của app** ngay tại chỗ (hàm `fromDto` trong cùng feature). Kiểu DTO không đi ra
    khỏi adapter. Mã vai trò của backend đổi qua `BACKEND_ROLE_CODES`.
 4. **Nguồn theo từng feature** (`src/data/config.ts`): `EXPO_PUBLIC_DATA_SOURCE` là mặc định, `EXPO_PUBLIC_HTTP_FEATURES` liệt kê
-   feature đã nối backend. Backend chưa có đủ mọi phần nên app nối dần; feature chưa có adapter `http` mà bị chọn `http` thì báo lỗi
+   feature đã nối backend. Đăng nhập bằng Keycloak thì màn của hai vai trò ngoài hiện trường luôn đọc backend dù danh sách không liệt kê
+   (`FIELD_HTTP_FEATURES`: `driver`, `payroll`, `warehouse`, `packages`). Backend chưa có đủ mọi phần nên app nối dần; feature chưa có adapter `http` mà bị chọn `http` thì báo lỗi
    `HTTP_NOT_WIRED`, **không** âm thầm dùng kho mẫu. Feature mới: thêm tên vào `FEATURES`.
 5. **Mọi lỗi mang mã + tham số**: `MockDbError` (kho mẫu) và `ApiError` (backend) hiện bằng cùng một hàm `dataErrorMessage(error, t)`.
    Mã nghiệp vụ trùng tên giữa hai nguồn dùng chung câu ở nhánh `dataErrors`; lỗi mạng / phiên / máy chủ ở nhánh `apiErrors`.

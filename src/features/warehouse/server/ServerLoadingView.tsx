@@ -164,6 +164,8 @@ export function ServerLoadingView({ tripId, session, onStopped }: ServerLoadingV
             title={t('serverWarehouse.session.verifyTitle', { step: view.step })}
             description={t('serverWarehouse.session.verifyDescription')}
             manualAllowed
+            codeLabel={t('serverWarehouse.session.codeLabel')}
+            codeHint={t('serverWarehouse.session.codeHint')}
           />
           <DamagedSheet
             open={asking === current.id}
