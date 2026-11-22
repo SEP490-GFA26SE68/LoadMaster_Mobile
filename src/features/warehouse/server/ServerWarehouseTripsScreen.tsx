@@ -4,6 +4,7 @@ import { AppText } from '@/components/AppText'
 import { Banner } from '@/components/Banner'
 import { Screen } from '@/components/Screen'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateView'
+import { NotificationBell } from '@/features/bell/NotificationBell'
 import { dataErrorMessage, useFormat, useT } from '@/lib/i18n'
 import { colors, CONTENT_MAX_WIDTH, space } from '@/theme/tokens'
 
@@ -16,8 +17,8 @@ type TripSection = { readonly stage: ServerWarehouseStage; readonly title: strin
 /**
  * Tab Kho khi nguồn `warehouse` là máy chủ (như `ServerWarehouseTripsPage` của web): `GET /api/warehouse/tasks` chia nhóm Đang xếp hàng ·
  * Chờ xếp · Xếp xong — chờ xuất phát · Chờ điều phối tối ưu lại, tiêu đề nhóm kèm số chuyến; trong nhóm chuyến xuất phát sớm trước. Một nút
- * chính: chuyến đang xếp dở, không thì chuyến chờ xếp sớm nhất. Không có chuông — máy chủ chưa có thông báo cho kho. Kéo xuống để đọc lại;
- * đã có danh sách mà lần đọc lại lỗi thì giữ danh sách, nói lỗi ở đầu danh sách.
+ * chính: chuyến đang xếp dở, không thì chuyến chờ xếp sớm nhất. Chuông ở dải trời như bản kho mẫu (thông báo của kho đọc
+ * `GET /api/notifications`). Kéo xuống để đọc lại; đã có danh sách mà lần đọc lại lỗi thì giữ danh sách, nói lỗi ở đầu danh sách.
  */
 export function ServerWarehouseTripsScreen() {
   const t = useT()
@@ -34,6 +35,7 @@ export function ServerWarehouseTripsScreen() {
   return (
     <Screen
       title={t('warehouse.list.title')}
+      actions={<NotificationBell />}
       below={<AppText color={colors.skyText2}>{rows === undefined ? today : t('warehouse.list.summary', { count: rows.length, date: today })}</AppText>}>
       {rows === undefined ? (
         query.isError ? (
