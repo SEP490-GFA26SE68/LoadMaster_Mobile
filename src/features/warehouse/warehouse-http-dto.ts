@@ -5,7 +5,17 @@
  * thùng là cm.
  */
 
-export type WarehouseTaskDto = {
+/** Xe của chuyến ở đâu theo kho ghi nhận (`VehiclePresenceSummary`): `UNKNOWN` | `AT_WAREHOUSE` | `IN_TRANSIT`. */
+export type VehiclePresenceSummaryDto = { readonly status?: string | null; readonly warehouseId?: number | null }
+
+/** Xe, kho xuất phát và nơi xe đang ở của chuyến, máy chủ trả cùng nhiệm vụ và phiên; vắng ở máy chủ cũ. */
+export type TripVehicleDto = {
+  readonly vehicleId?: number | null
+  readonly originWarehouseId?: number | null
+  readonly vehiclePresence?: VehiclePresenceSummaryDto | null
+}
+
+export type WarehouseTaskDto = TripVehicleDto & {
   readonly tripId: number
   readonly tripCode: string | null
   readonly vehicleInfo: string | null
@@ -52,7 +62,7 @@ export type PlacementStepDto = {
 }
 
 /** Phiên xếp: `POST /api/warehouse/tasks/{tripId}/start` và `GET /api/warehouse/tasks/{tripId}` trả cùng dạng. */
-export type StartLoadingDto = {
+export type StartLoadingDto = TripVehicleDto & {
   readonly tripId: number
   readonly tripCode: string | null
   readonly vehicleInfo: string | null

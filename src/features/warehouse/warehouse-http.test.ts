@@ -27,6 +27,26 @@ describe('httpWarehouseApi: danh sách chuyến', () => {
     expect(trips[0]).toMatchObject({ id: '54', replanReason: 'damaged', status: 'PLANNED', packageCount: 3 })
   })
 
+  test('xe, kho xuất phát và nơi xe đang ở: đọc khi máy chủ trả đủ, `null` khi máy chủ cũ không trả', async () => {
+    const tasks = [
+      { ...TASKS[0], vehicleId: 9, originWarehouseId: 3, vehiclePresence: { status: 'IN_TRANSIT', warehouseId: null } },
+      { ...TASKS[1], vehicleId: 10, originWarehouseId: 3, vehiclePresence: { status: 'AT_WAREHOUSE', warehouseId: 4 } },
+      { ...TASKS[2], vehicleId: 11, originWarehouseId: 3, vehiclePresence: { status: 'PARKED' } },
+      // Chuyến chưa có kho xuất phát: không đoán
+      { ...TASKS[3], vehicleId: 12, originWarehouseId: null, vehiclePresence: { status: 'UNKNOWN', warehouseId: null } },
+    ]
+    const { warehouse } = warehouseBackend({ 'GET /api/warehouse/tasks': () => ok(tasks) })
+    const byCode = new Map((await warehouse.fetchTasks()).map((trip) => [trip.code, trip.vehiclePresence]))
+
+    expect(byCode.get('TRIP-0052')).toEqual({ vehicleId: '9', originWarehouseId: '3', status: 'IN_TRANSIT', warehouseId: null })
+    expect(byCode.get('TRIP-0051')).toEqual({ vehicleId: '10', originWarehouseId: '3', status: 'AT_WAREHOUSE', warehouseId: '4' })
+    expect(byCode.get('TRIP-0053')).toEqual({ vehicleId: '11', originWarehouseId: '3', status: 'OTHER', warehouseId: null })
+    expect(byCode.get('TRIP-0054')).toBeNull()
+
+    const old = warehouseBackend({ 'GET /api/warehouse/tasks': () => ok(TASKS) })
+    expect((await old.warehouse.fetchTasks()).every((trip) => trip.vehiclePresence === null)).toBe(true)
+  })
+
   test('máy chủ trả rỗng: danh sách rỗng', async () => {
     const { warehouse } = warehouseBackend({ 'GET /api/warehouse/tasks': () => ok(null) })
     await expect(warehouse.fetchTasks()).resolves.toEqual([])
@@ -224,6 +244,20 @@ describe('httpWarehouseApi: phiên của máy chủ', () => {
   test('phiên bắt đầu không kèm bước soạn (app khác): coi như đã soạn đủ', async () => {
     const { warehouse } = warehouseBackend(onSession(sessionDto({ stagingRequired: undefined, stagingComplete: undefined })))
     await expect(warehouse.fetchSession('51')).resolves.toMatchObject({ stagingRequired: false, stagingComplete: true })
+  })
+
+  test('phiên mang xe, kho xuất phát và nơi xe đang ở; máy chủ cũ, hay chuyến chưa gắn xe, thì `null`', async () => {
+    const dto = sessionDto({ licensePlate: '51C-555.55', vehicleId: 9, originWarehouseId: 3, vehiclePresence: { status: 'UNKNOWN', warehouseId: null } })
+    const { warehouse } = warehouseBackend(onSession(dto))
+    await expect(warehouse.fetchSession('51')).resolves.toMatchObject({
+      licensePlate: '51C-555.55',
+      vehiclePresence: { vehicleId: '9', originWarehouseId: '3', status: 'UNKNOWN', warehouseId: null },
+    })
+
+    const old = warehouseBackend(onSession(sessionDto()))
+    await expect(old.warehouse.fetchSession('51')).resolves.toMatchObject({ vehiclePresence: null })
+    const noVehicle = warehouseBackend(onSession(sessionDto({ vehicleId: null, originWarehouseId: 3, vehiclePresence: null })))
+    await expect(noVehicle.warehouse.fetchSession('51')).resolves.toMatchObject({ vehiclePresence: null })
   })
 
   test('chỗ xếp thiếu vị trí là lỗi của máy chủ, không điền 0', async () => {

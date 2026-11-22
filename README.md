@@ -33,7 +33,7 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
 - Nối backend cho nhân viên kho: tab **Kho** đọc `GET /api/warehouse/tasks` (đang xếp, chờ xếp, xếp xong — chờ xuất phát, chờ điều
   phối tối ưu lại kèm lý do); phiên đọc lại từ máy chủ ở máy nào cũng được — soạn hàng (đối chiếu không cần thứ tự, xác nhận tay chờ
   duyệt, báo thiếu), xếp theo thứ tự (sơ đồ lòng thùng 2D, đối chiếu, xác nhận tay, ghi sai lệch vị trí, kiện hỏng: bỏ lại kho hoặc
-  chuyến về lập kế hoạch), hoàn tất xếp (mờ khi còn xác nhận tay chờ), xác nhận xe có ở kho xuất phát, chuông ở danh sách chuyến. Màn
+  chuyến về lập kế hoạch), hoàn tất xếp (mờ khi còn xác nhận tay chờ), xác nhận xe có ở kho xuất phát (kể cả xe đang ghi trên đường hay ở kho khác), chuông ở danh sách chuyến. Màn
   **Xe ở kho** (`/api/warehouse/vehicle-presence`: xe của kho được phân công, ghi nhận có ở kho, lịch sử) và tab **Lương** (phiếu lương
   kho `GET /api/warehouse/payroll`; kỳ chưa chốt máy chủ chỉ trả lương cứng). Gõ mã ở phiên máy chủ là Package Code in trên nhãn (máy chủ chỉ
   khớp gõ mã với mã đó). Tab **Tra cứu kiện** đọc máy chủ khi nguồn `packages` là `http` (quét QR, gõ mã QR / mã của kho / mã của bên gửi / mã vạch, báo đã tìm thấy kiện mang cờ "Không tìm thấy"). Chưa có trên máy chủ ở app: khung vị

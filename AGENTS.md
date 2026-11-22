@@ -434,9 +434,13 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
   hình — chỗ đặt nằm ở chữ của thẻ; hình hướng đặt là `image` có tên. Xếp đúng một kiện thì bảng "Đã xếp" hiện ít nhất 1,2 giây
   (`CONFIRMED_OVERLAY_MS`) rồi mới sang kiện kế tiếp.
 - Phiên máy chủ: bước xếp vẽ `ServerHoldSketch` (nhìn từ trên và từ cửa sau, đúng tỉ lệ, kiện theo màu điểm giao kèm số, chú giải bằng
-  chữ; ẩn với trình đọc màn hình như `HoldSketch`). Phiên đang xếp và màn Xếp xong có khối `VehiclePresenceCheck`: phiên không mang mã xe
-  hay mã kho, nên khối tìm xe theo biển số ở các kho được phân công và chọn đúng xe đang xếp cho chuyến (`loading_trip_id`); xe ở kho
-  này là một dòng xác nhận, máy chủ chưa biết thì có nút phụ "Xác nhận xe có ở kho", trạng thái khác là cảnh báo liên hệ điều phối viên.
+  chữ; ẩn với trình đọc màn hình như `HoldSketch`). Phiên đang xếp và màn Xếp xong có khối `VehiclePresenceCheck`: phiên (và nhiệm vụ)
+  mang `vehicleId`, `originWarehouseId`, `vehiclePresence` (`ServerVehiclePresence`; vắng ở máy chủ cũ là `null`). Có thì dùng thẳng:
+  xe ở kho xuất phát là một dòng xác nhận; chưa ghi nhận, đang trên đường hay ở kho khác đều có nút phụ "Xác nhận xe có ở kho" (máy chủ
+  nhận cả ba); máy chủ còn từ chối (đang điều chuyển, bận chuyến khác) thì câu lỗi của máy chủ hiện trên nút; nhân viên không được phân
+  công kho xuất phát là cảnh báo, không nút. Máy chủ cũ: tìm xe theo biển số ở các kho được phân công, đúng xe đang xếp cho chuyến
+  (`loading_trip_id`); chỉ xe chưa ghi nhận có nút, trạng thái khác là cảnh báo nhờ điều phối viên. Màn "Xe ở kho" cho ghi nhận xe của
+  chuyến Đang xếp hàng xuất phát từ kho đang xem (máy chủ coi là xác nhận xe ở kho xuất phát); xe ở chuyến khác vẫn mờ kèm lý do.
   Lệnh ghi có mặt gửi header `Idempotency-Key` (một khoá mỗi việc, giữ nguyên khi bấm lại sau lỗi, bỏ khi ghi xong).
 - Không in nhãn trên app: in nhãn là việc của bản web. App không ghi số seal niêm phong thùng: màn Xếp xong chỉ báo kết quả và đưa về danh sách.
 

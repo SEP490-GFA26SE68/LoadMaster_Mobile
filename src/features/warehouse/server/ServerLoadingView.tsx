@@ -159,7 +159,7 @@ export function ServerLoadingView({ tripId, session, onStopped }: ServerLoadingV
         </ServerPlacementCard>
       )}
       <ServerHoldSketch session={session} current={current} />
-      <VehiclePresenceCheck tripId={tripId} licensePlate={session.licensePlate} />
+      <VehiclePresenceCheck session={session} />
       <ServerPlacementList rows={view.rows} />
       {current === undefined ? null : (
         <>

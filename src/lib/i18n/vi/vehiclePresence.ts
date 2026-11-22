@@ -43,7 +43,7 @@ export const vehiclePresence = {
   checkIn: 'Ghi nhận có ở kho',
   /** Lý do nút ghi nhận mờ — máy chủ cũng từ chối các trường hợp này. */
   checkInBlocked: {
-    busy: 'Xe đang ở một chuyến Đang xếp hàng hoặc Đang vận chuyển — chưa ghi nhận được ở đây.',
+    busy: 'Xe đang ở một chuyến Đang vận chuyển hoặc đang xếp hàng ở kho khác — chưa ghi nhận được ở đây.',
     transferring: 'Xe đang được điều chuyển giữa hai kho — chưa ghi nhận được.',
     elsewhere: 'Xe đang được ghi nhận ở kho khác — kho đó phải ghi xe rời kho trước.',
   },
@@ -71,6 +71,13 @@ export const vehiclePresence = {
     title: 'Xe ở kho xuất phát',
     here: 'Xe {plate} đã được ghi nhận ở {warehouse}.',
     unknown: 'Xe {plate} chưa được ghi nhận ở {warehouse}. Tài xế chỉ xuất phát được khi xe đã được xác nhận ở kho xuất phát.',
+    /** Xe đang được ghi trên đường hoặc ở kho khác: máy chủ nhận xác nhận của kho xuất phát. */
+    elsewhere:
+      'Xe {plate} đang được ghi là "{presence}", chưa ở {warehouse}. Xe đang có mặt ở đây thì xác nhận để tài xế xuất phát được.',
+    /** Không có tên kho xuất phát (kho không nằm trong danh sách kho của nhân viên, hay chưa đọc được danh sách). */
+    origin: 'kho xuất phát',
+    notAssigned:
+      'Bạn không được phân công ở kho xuất phát của chuyến nên chưa xác nhận được xe {plate}. Nhờ nhân viên của kho đó xác nhận trước khi tài xế xuất phát.',
     confirm: 'Xác nhận xe có ở kho',
     confirmed: 'Đã xác nhận xe {plate} có ở {warehouse}.',
     blocked:

@@ -40,7 +40,7 @@ export const vehiclePresence = {
   observedNoActor: 'Recorded at {time}',
   checkIn: 'Record as present',
   checkInBlocked: {
-    busy: 'The vehicle is on a trip that is loading or in transit — it cannot be recorded here yet.',
+    busy: 'The vehicle is on a trip that is in transit or loading at another warehouse — it cannot be recorded here yet.',
     transferring: 'The vehicle is being transferred between warehouses — it cannot be recorded yet.',
     elsewhere: 'The vehicle is recorded at another warehouse — that warehouse must record it leaving first.',
   },
@@ -67,6 +67,11 @@ export const vehiclePresence = {
     title: 'Vehicle at the origin warehouse',
     here: 'Vehicle {plate} is recorded at {warehouse}.',
     unknown: 'Vehicle {plate} is not recorded at {warehouse} yet. The driver can only depart once the vehicle is confirmed at the origin warehouse.',
+    elsewhere:
+      'Vehicle {plate} is recorded as "{presence}", not at {warehouse}. If the vehicle is here, confirm it so the driver can depart.',
+    origin: 'the origin warehouse',
+    notAssigned:
+      'You are not assigned to the origin warehouse of this trip, so you cannot confirm vehicle {plate}. Ask a worker of that warehouse to confirm it before the driver departs.',
     confirm: 'Confirm vehicle is here',
     confirmed: 'Vehicle {plate} confirmed at {warehouse}.',
     blocked:
