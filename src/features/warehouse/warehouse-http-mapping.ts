@@ -108,6 +108,7 @@ export function sessionOf(dto: StartLoadingDto): ServerLoadingSession {
     tripId: id,
     code: text(dto.tripCode) ?? id,
     vehicle: text(dto.vehicleInfo) ?? text(dto.licensePlate) ?? '',
+    licensePlate: text(dto.licensePlate),
     box: boxOf(dto),
     placements: steps.map((item) => item.placement).sort((a, b) => a.sequence - b.sequence),
     outcomes: Object.fromEntries(

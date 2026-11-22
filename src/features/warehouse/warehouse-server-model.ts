@@ -83,6 +83,8 @@ export type ServerLoadingSession = {
   readonly tripId: string
   readonly code: string
   readonly vehicle: string
+  /** Biển số xe của chuyến (`licensePlate` của phiên); `null` khi máy chủ không trả — khi đó màn không có khối xe ở kho. */
+  readonly licensePlate: string | null
   readonly box: ServerCargoBox | null
   readonly placements: readonly ServerPlacement[]
   /** Kết quả từng kiện theo máy chủ; kiện chưa xử lý không có mục. */

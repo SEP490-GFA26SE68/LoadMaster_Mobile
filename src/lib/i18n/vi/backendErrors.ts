@@ -91,4 +91,11 @@ export const backendErrors = {
   TRIP_CLAIM_TRIP_NOT_OPEN: 'Chuyến không còn ở trạng thái cho phép nhận.',
   TRIP_CLAIM_ALREADY_DECIDED: 'Phiếu xin chuyến này đã có quyết định.',
   TRIP_CLAIM_NOT_OWN: 'Bạn không thể thao tác trên phiếu của người khác.',
+  // Xe ở kho (ghi nhận xe có mặt ở kho)
+  VEHICLE_WAREHOUSE_FORBIDDEN: 'Bạn không được phân công ở kho này.',
+  VEHICLE_TRANSFER_CONFLICT: 'Xe đang được điều chuyển giữa hai kho nên chưa ghi nhận được.',
+  VEHICLE_PRESENCE_CONFLICT: 'Trạng thái xe vừa đổi nên chưa ghi nhận được — tải lại rồi thử lại.',
+  PRESENCE_VEHICLE_BUSY: 'Xe đang ở một chuyến Đang xếp hàng hoặc Đang vận chuyển nên chưa ghi nhận được ở đây.',
+  VEHICLE_NOT_FOUND: 'Không tìm thấy xe này.',
+  INVALID_INPUT: 'Dữ liệu gửi đi chưa hợp lệ.',
 } as const

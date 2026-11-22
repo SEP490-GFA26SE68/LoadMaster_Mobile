@@ -38,6 +38,7 @@ export default function AppLayout() {
       </Stack.Protected>
       <Stack.Protected guard={can('warehouse.operate')}>
         <Stack.Screen name="loading/[tripId]" />
+        <Stack.Screen name="vehicle-presence" />
       </Stack.Protected>
       <Stack.Protected guard={can('trips.view')}>
         <Stack.Screen name="trip-detail/[tripId]" />

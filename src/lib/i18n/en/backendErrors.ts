@@ -75,4 +75,10 @@ export const backendErrors = {
   TRIP_CLAIM_TRIP_NOT_OPEN: 'This trip is no longer open for claims.',
   TRIP_CLAIM_ALREADY_DECIDED: 'This trip claim has already been decided.',
   TRIP_CLAIM_NOT_OWN: 'You cannot perform actions on another driver\'s claim.',
+  VEHICLE_WAREHOUSE_FORBIDDEN: 'You are not assigned to this warehouse.',
+  VEHICLE_TRANSFER_CONFLICT: 'The vehicle is being transferred between warehouses, so it cannot be recorded yet.',
+  VEHICLE_PRESENCE_CONFLICT: 'The vehicle status just changed, so it could not be recorded — reload and try again.',
+  PRESENCE_VEHICLE_BUSY: 'The vehicle is on a trip that is loading or in transit, so it cannot be recorded here.',
+  VEHICLE_NOT_FOUND: 'Vehicle not found.',
+  INVALID_INPUT: 'The data sent is not valid.',
 } satisfies Dictionary<typeof source>

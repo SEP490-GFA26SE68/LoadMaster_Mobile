@@ -12,6 +12,7 @@ import { dataErrorMessage, useT } from '@/lib/i18n'
 import { colors, space } from '@/theme/tokens'
 
 import { DamagedSheet } from '../loading/DamagedSheet'
+import { VehiclePresenceCheck } from '../presence/VehiclePresenceCheck'
 import { placementLabel, restingCount, serverLoadingView } from '../server-loading'
 import { SessionExitButton } from '../SessionExitButton'
 import { StepHeader } from '../StepHeader'
@@ -38,7 +39,7 @@ type ServerLoadingViewProps = {
 /**
  * Bước Xếp của phiên máy chủ (như `SessionView` của `ServerLoadingSession` web), một thao tác mỗi màn: kiện của bước hiện tại theo thứ tự
  * xếp của phương án đã duyệt. Thân màn: lý do điều phối viên từ chối xác nhận tay (khi có), thẻ kiện cần xếp (vị trí bằng số, nút phụ "Ghi
- * sai lệch vị trí"), sơ đồ 2D lòng thùng (khi phiên có kích thước thùng), rồi thứ tự xếp kèm trạng
+ * sai lệch vị trí"), sơ đồ 2D lòng thùng (khi phiên có kích thước thùng), xác nhận xe có ở kho (khi máy chủ cần), rồi thứ tự xếp kèm trạng
  * thái từng kiện. Chân màn: kết quả lần ghi vừa rồi (web: toast), "Kiện hỏng" (phụ) và "Đối chiếu kiện" (chính). Mọi kiện đã có kết quả
  * thì chân màn là "Hoàn tất xếp hàng" — mờ kèm lý do khi còn xác nhận tay chờ duyệt. Kéo xuống để đọc lại phiên.
  */
@@ -158,6 +159,7 @@ export function ServerLoadingView({ tripId, session, onStopped }: ServerLoadingV
         </ServerPlacementCard>
       )}
       <ServerHoldSketch session={session} current={current} />
+      <VehiclePresenceCheck tripId={tripId} licensePlate={session.licensePlate} />
       <ServerPlacementList rows={view.rows} />
       {current === undefined ? null : (
         <>

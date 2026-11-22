@@ -5,13 +5,15 @@ import { Screen } from '@/components/Screen'
 import { useT } from '@/lib/i18n'
 import { colors } from '@/theme/tokens'
 
+import { VehiclePresenceCheck } from '../presence/VehiclePresenceCheck'
 import { SessionExitButton } from '../SessionExitButton'
 import { useLeaveSession } from '../useLeaveSession'
 import type { ServerLoadingSession } from '../warehouse-server-model'
 
 /**
  * Phiên máy chủ đã xếp xong, chuyến chờ tài xế xuất phát (như `ServerLoadingFinished` của web): tiêu đề, số kiện hỏng bỏ lại kho. Chân
- * màn: "Về danh sách chuyến" là nút chính duy nhất. Máy chủ không trả tuyến, ngày chạy, số kiện theo điểm giao của phiên: màn không vẽ
+ * màn: "Về danh sách chuyến" là nút chính duy nhất. Dưới thẻ là khối xác nhận xe có ở kho xuất phát (`VehiclePresenceCheck`), vì tài xế chỉ
+ * xuất phát được khi xe đã được ghi nhận ở đó. Máy chủ không trả tuyến, ngày chạy, số kiện theo điểm giao của phiên: màn không vẽ
  * các phần đó.
  */
 export function ServerFinishedView({ session }: { session: ServerLoadingSession }) {
@@ -30,6 +32,7 @@ export function ServerFinishedView({ session }: { session: ServerLoadingSession 
           {damaged > 0 ? `${description} ${t('serverWarehouse.session.finishedDamaged', { count: damaged })}` : description}
         </AppText>
       </Card>
+      <VehiclePresenceCheck tripId={session.tripId} licensePlate={session.licensePlate} />
     </Screen>
   )
 }

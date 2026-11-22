@@ -49,6 +49,15 @@ describe('createApiClient', () => {
     expect(calls[0]?.init.headers).not.toHaveProperty('Authorization')
   })
 
+  test('gắn header riêng của lượt gọi (Idempotency-Key), không để nó đè Authorization hay Accept', async () => {
+    const { client, calls } = clientWith(respond(200, { success: true, data: null }))
+    await client.post('/api/warehouse/vehicle-presence/3/check-in', {
+      body: { vehicleId: 9 },
+      headers: { 'Idempotency-Key': 'k-1', Authorization: 'Bearer KHAC', Accept: 'text/plain' },
+    })
+    expect(calls[0]?.init.headers).toMatchObject({ 'Idempotency-Key': 'k-1', Authorization: 'Bearer TOKEN', Accept: 'application/json' })
+  })
+
   test('lỗi nghiệp vụ: giữ mã của backend, mã HTTP và tham số', async () => {
     const { client } = clientWith(respond(409, { success: false, code: 'USER_ALREADY_EXISTS', message: 'không dùng', errors: { email: 'a@b.vn' } }))
     const error = await failure(() => client.post('/api/users'))
