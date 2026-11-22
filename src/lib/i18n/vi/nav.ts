@@ -3,7 +3,7 @@ export const nav = {
   trips: 'Chuyến của tôi',
   /** Tab chuyến chưa có tài xế để xin nhận. */
   openTrips: 'Chuyến đang mở',
-  /** Tab phiếu lương của tài xế (và các vai trò khác khi mở rộng). */
+  /** Tab phiếu lương của tài xế và của nhân viên kho. */
   payroll: 'Lương',
   /** Tab của nhân viên kho: danh sách chuyến cần xếp (như mục "Kho" của bản web). */
   warehouse: 'Kho',

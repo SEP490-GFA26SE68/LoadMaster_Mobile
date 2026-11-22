@@ -4,6 +4,8 @@ import type { PayrollApi } from './payroll-api'
 import { toNumber, toOptionalNumber, type PayrollStatementDto, type PayrollTripLineDto } from './payroll-http-dto'
 import type { PayrollStatement, PayrollTripLine } from './payroll-model'
 import { isPayrollPeriodKey, type PayrollPeriodKey } from './payroll-period'
+import { mapWarehousePayroll, type WarehousePayrollStatementDto } from './warehouse-payroll-mapping'
+import type { WarehousePayrollStatement } from './warehouse-payroll-model'
 
 type HttpPayrollDeps = {
   readonly client?: () => ApiClient
@@ -78,6 +80,10 @@ export function httpPayrollApi({ client = api }: HttpPayrollDeps = {}): PayrollA
     async fetchMyPayroll(period: PayrollPeriodKey): Promise<PayrollStatement> {
       const dto = await client().get<PayrollStatementDto>(`/api/driver/payroll?period=${encodeURIComponent(period)}`)
       return mapPayrollStatement(dto, period)
+    },
+    async fetchMyWarehousePayroll(period: PayrollPeriodKey): Promise<WarehousePayrollStatement> {
+      const dto = await client().get<WarehousePayrollStatementDto>(`/api/warehouse/payroll?period=${encodeURIComponent(period)}`)
+      return mapWarehousePayroll(dto, period)
     },
   }
 }
