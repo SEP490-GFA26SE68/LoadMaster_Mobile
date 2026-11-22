@@ -42,6 +42,7 @@ export const monitoring = {
     arrived: 'Arrived {time}',
     noDeadline: 'No deadline',
     incidents: { one: '{count} incident', other: '{count} incidents' },
+    pagination: 'Trip list pages',
   },
   panel: {
     label: 'Monitoring of trip {id}',
@@ -61,10 +62,12 @@ export const monitoring = {
       columns: { time: 'Time', position: 'Latitude, longitude', speed: 'Speed', source: 'Source' },
       speed: '{speed} km/h',
       empty: 'No position point yet.',
+      pagination: 'Position history pages',
     },
   },
   exceptions: {
     title: 'Incidents of the trip',
+    pagination: 'Trip incident pages',
     report: 'Report incident',
     none: 'The trip has no incident.',
     statuses: { OPEN: 'Not handled', ESCALATED: 'Sent to manager', RESOLVED: 'Handled' },

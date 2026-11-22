@@ -50,6 +50,7 @@ export const monitoring = {
     arrived: 'Đã đến {time}',
     noDeadline: 'Không có hạn',
     incidents: { one: '{count} sự cố', other: '{count} sự cố' },
+    pagination: 'Trang danh sách chuyến',
   },
   panel: {
     label: 'Giám sát chuyến {id}',
@@ -69,10 +70,12 @@ export const monitoring = {
       columns: { time: 'Giờ', position: 'Vĩ độ, kinh độ', speed: 'Tốc độ', source: 'Nguồn' },
       speed: '{speed} km/h',
       empty: 'Chưa có điểm vị trí nào.',
+      pagination: 'Trang lịch sử vị trí',
     },
   },
   exceptions: {
     title: 'Sự cố của chuyến',
+    pagination: 'Trang sự cố của chuyến',
     report: 'Báo sự cố',
     none: 'Chuyến chưa có sự cố nào.',
     statuses: { OPEN: 'Chưa xử lý', ESCALATED: 'Đã chuyển quản lý', RESOLVED: 'Đã xử lý' },
