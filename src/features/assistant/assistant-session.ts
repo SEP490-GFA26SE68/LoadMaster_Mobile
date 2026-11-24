@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react'
 
+import { thinkingPace } from '@/features/marketing/assistant/assistant-pace'
 import type { Locale } from '@/lib/i18n'
 
 import { askAssistant } from './assistant-api'
@@ -33,6 +34,8 @@ let generation = 0
 let nextId = 1
 const listeners = new Set<() => void>()
 
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
 function set(next: AssistantSession): void {
   session = next
   for (const listener of listeners) listener()
@@ -58,7 +61,11 @@ export function restartSession(): void {
   reset(session.owner)
 }
 
-/** Gửi một câu hỏi của `owner`. Đang chờ câu trước thì không gửi. */
+/**
+ * Gửi một câu hỏi của `owner`. Đang chờ câu trước thì không gửi. Nhịp như bản web (`assistant-pace.ts`, chép từ web): câu trả lời chỉ
+ * hiện khi đã qua 2–6 giây tính từ lúc gửi, theo độ dài câu hỏi và câu trả lời, để "Lumo đang trả lời…" chạy đủ; câu về muộn hơn thì hiện
+ * ngay, lỗi báo ngay.
+ */
 export async function sendQuestion(owner: string | null, message: string, { locale, page }: SendContext): Promise<void> {
   const text = message.trim()
   if (text === '') return
@@ -66,8 +73,11 @@ export async function sendQuestion(owner: string | null, message: string, { loca
   if (session.pending) return
   const mine = generation
   set({ ...session, pending: true, entries: [...session.entries, { id: nextId++, kind: 'question', text }] })
+  const sentAt = Date.now()
   try {
     const reply = await askAssistant({ message: text, locale, conversationId: session.conversationId, page })
+    const remaining = sentAt + thinkingPace(text.length, reply.text.length) - Date.now()
+    if (remaining > 0) await wait(remaining)
     if (mine !== generation) return
     set({ ...session, pending: false, conversationId: reply.conversationId, entries: [...session.entries, { id: nextId++, kind: 'answer', reply }] })
   } catch (error) {

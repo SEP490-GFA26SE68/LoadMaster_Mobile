@@ -52,3 +52,11 @@ jest.mock('react-native-webview', () => {
   const WebView = (props: object) => createElement(View, props)
   return { WebView }
 })
+
+/*
+ * Nhịp "đang trả lời" của trợ lý Lumo (2–6 giây mỗi câu, `assistant-pace.ts` chép từ web) về 0 cho mọi test: màn trò chuyện không chậm
+ * đi mỗi câu hỏi. Test của chính nhịp (`assistant-session.test.ts`) đặt lại nhịp thật.
+ */
+jest.requireActual<typeof import('@/features/marketing/assistant/assistant-pace')>('@/features/marketing/assistant/assistant-pace').setThinkingPace(
+  () => 0,
+)

@@ -40,7 +40,10 @@ chuyến, giám sát và Tổng quan của điều phối viên, quản lý (`tr
 dòng phụ phương án của chuyến; của tài xế: thông báo, số liệu tổng kết — màn ẩn phần đó.
 **Trợ lý AI Lumo** (`features/assistant`, tài xế và nhân viên kho, chỉ khi đăng nhập bằng máy chủ): nút 56 px trên dải trời của
 "Chuyến của tôi", danh sách chuyến của kho và hai bước soạn / xếp của phiên kho máy chủ (màn điểm giao không có: thanh đã đủ bốn điều
-khiển ở 360 px) mở màn trò chuyện toàn màn hình `/assistant` — `POST /api/assistant/messages` như bản web (mục 5).
+khiển ở 360 px) mở màn trò chuyện toàn màn hình `/assistant` — `POST /api/assistant/messages` như bản web (mục 5). Câu trả lời hiện sau
+2–6 giây tính từ lúc gửi, theo độ dài câu hỏi và câu trả lời (`thinkingDelayMs`, chép từ web; đặt ở `sendQuestion` của
+`assistant-session.ts`), để "Lumo đang trả lời…" chạy đủ; câu về muộn hơn đích thì hiện ngay, lỗi báo ngay; test đặt nhịp 0 ở
+`src/test/setup.ts`.
 Nhận hàng dọc đường đã bỏ khỏi sản phẩm (web, backend, app): điểm `stopType: PICKUP` cũ máy chủ còn trả đọc như một điểm không có kiện
 phải dỡ — "Đã đến" rồi hoàn tất.
 Cách chạy với backend: README.
@@ -157,7 +160,8 @@ src/
                        `AssistantLog`, câu trả lời `AssistantAnswer`, ô gõ `AssistantComposer`), cuộc trò chuyện trong bộ nhớ
                        `assistant-session.ts`, điều kiện hiện nút `assistant-visibility.ts`, liên kết → màn của app `app-links.ts`;
                        adapter assistant-http.ts (kho mẫu: không có trợ lý); ← chép từ web: `features/marketing/assistant/
-                       app-starters.ts` (câu hỏi gợi ý theo vai trò), `assistant-text.ts` (chữ trả lời → đoạn / danh sách)
+                       app-starters.ts` (câu hỏi gợi ý theo vai trò), `assistant-text.ts` (chữ trả lời → đoạn / danh sách),
+                       `assistant-pace.ts` (nhịp "đang trả lời" 2–6 giây)
     bell/              chuông theo vai trò (`NotificationBell`) và màn thông báo `NotificationsScreen` của tài xế, kho, điều phối
                        viên, quản lý (dòng của văn phòng: `office-rows.ts`)
     driver/            màn của tài xế: chuyến của tôi, một chuyến (điểm giao, dỡ, hoàn tất, sự cố, GPS, tờ "Thêm" — sự cố trên
@@ -235,7 +239,7 @@ hai lần. Bản web là nguồn chuẩn.
   (`features/monitoring/monitoring-view.ts` — nó import kiểu từ `./monitoring-api` của mobile, nên `monitoring-api.ts` phải giữ bốn kiểu
   `LiveMonitoring`, `MonitoringBoard`, `MonitoringStop`, `MonitoringTrip`), `lib/list-filter.ts` (tìm bỏ dấu), `components/map/coordinates.ts` + `place-search.ts` (phần thuần của
   ô chọn toạ độ: chữ → toạ độ, tìm địa danh mẫu; bản đồ của web không chép),
-  phần thuần của trợ lý (`features/marketing/assistant/app-starters.ts`, `assistant-text.ts`),
+  phần thuần của trợ lý (`features/marketing/assistant/app-starters.ts`, `assistant-text.ts`, `assistant-pace.ts`),
   các nhánh từ điển `assistant`, `dataErrors`, `issues`, `language`, `lookup`, `manager`, `monitoring`, `roles`, `serverWarehouse`,
   `status`, `trips`, `warehouse`, và hai file test dùng chung `test/trip-flow.ts`, `test/mock-db-samples.ts`.
 - Hàm chép từ web mà dựng đường dẫn của web thì không dùng: `loadingSessionPath` (`warehouse-trips.ts`) ra `/kho?chuyen=`; app mở

@@ -1,6 +1,6 @@
 {
   "syncedOn": "2026-11-24",
-  "digest": "cb1ac3589952237b0a116346230b7e058c598bbda006c4bb26b8d7544823e549",
+  "digest": "cdfd8b7d8255df524c43277281f1807254325c331b6483eea31781ca56b34d8b",
   "files": [
     "components/map/coordinates.ts",
     "components/map/place-search.ts",
@@ -79,6 +79,7 @@
     "features/manager/dashboard-summary.ts",
     "features/manager/trip-facts.ts",
     "features/marketing/assistant/app-starters.ts",
+    "features/marketing/assistant/assistant-pace.ts",
     "features/marketing/assistant/assistant-text.ts",
     "features/monitoring/monitoring-view.ts",
     "features/notifications/notifications.ts",
