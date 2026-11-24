@@ -10,17 +10,18 @@
  * Feature có lớp dữ liệu riêng. Thêm feature mới thì thêm tên vào đây, trong cùng issue với `-api.ts` của nó. `warehouse`: màn kho
  * (soạn, xếp); `packages`: tra cứu kiện của kho kiện; `trips`: chuyến của điều phối viên và quản lý (danh sách, chi tiết, duyệt
  * xác nhận tay và kiện báo thiếu); `monitoring`: giám sát chuyến đang chạy, sự cố cấp chuyến và thông báo của
- * hai vai trò đó; `dashboard`: số liệu chính của quản lý; `payroll`: phiếu lương của tài xế (`GET /api/driver/payroll`).
+ * hai vai trò đó; `dashboard`: số liệu chính của quản lý; `payroll`: phiếu lương của tài xế (`GET /api/driver/payroll`); `assistant`: trợ lý AI
+ * Lumo của tài xế và nhân viên kho (`POST /api/assistant/messages`) — kho mẫu không có trợ lý.
  */
-export const FEATURES = ['auth', 'driver', 'payroll', 'warehouse', 'packages', 'trips', 'monitoring', 'dashboard'] as const
+export const FEATURES = ['auth', 'driver', 'payroll', 'warehouse', 'packages', 'trips', 'monitoring', 'dashboard', 'assistant'] as const
 
 export type Feature = (typeof FEATURES)[number]
 
 /**
- * Màn tài xế (và phiếu lương), màn kho (và Tra cứu kiện) luôn đọc backend khi đăng nhập bằng Keycloak — không dùng kho mẫu / MOCK RESULT:
+ * Màn tài xế (và phiếu lương), màn kho (và Tra cứu kiện), trợ lý AI của hai vai trò đó luôn đọc backend khi đăng nhập bằng Keycloak — không dùng kho mẫu / MOCK RESULT:
  * người ngoài hiện trường đăng nhập tài khoản thật thì phải thấy chuyến thật.
  */
-export const FIELD_HTTP_FEATURES: readonly Feature[] = ['driver', 'payroll', 'warehouse', 'packages']
+export const FIELD_HTTP_FEATURES: readonly Feature[] = ['driver', 'payroll', 'warehouse', 'packages', 'assistant']
 
 export type DataSource = 'mock' | 'http'
 

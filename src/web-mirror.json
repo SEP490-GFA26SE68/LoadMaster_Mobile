@@ -1,6 +1,6 @@
 {
   "syncedOn": "2026-11-24",
-  "digest": "d0c3abfd89a7431b98ea2a905284aa33b26f699eeefc3089775c1a6d7c08813a",
+  "digest": "cb1ac3589952237b0a116346230b7e058c598bbda006c4bb26b8d7544823e549",
   "files": [
     "components/map/coordinates.ts",
     "components/map/place-search.ts",
@@ -78,6 +78,8 @@
     "features/manager/dashboard-period.ts",
     "features/manager/dashboard-summary.ts",
     "features/manager/trip-facts.ts",
+    "features/marketing/assistant/app-starters.ts",
+    "features/marketing/assistant/assistant-text.ts",
     "features/monitoring/monitoring-view.ts",
     "features/notifications/notifications.ts",
     "features/trips/trip-dates.ts",
@@ -95,6 +97,7 @@
     "features/warehouse/server-loading.ts",
     "features/warehouse/warehouse-trips.ts",
     "lib/calendar-date.ts",
+    "lib/i18n/en/assistant.ts",
     "lib/i18n/en/dataErrors.ts",
     "lib/i18n/en/issues.ts",
     "lib/i18n/en/language.ts",
@@ -108,6 +111,7 @@
     "lib/i18n/en/warehouse.ts",
     "lib/i18n/hardcoded-strings.ts",
     "lib/i18n/types.ts",
+    "lib/i18n/vi/assistant.ts",
     "lib/i18n/vi/dataErrors.ts",
     "lib/i18n/vi/issues.ts",
     "lib/i18n/vi/language.ts",

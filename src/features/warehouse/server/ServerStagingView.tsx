@@ -7,6 +7,7 @@ import { Banner } from '@/components/Banner'
 import { Button } from '@/components/Button'
 import { Screen } from '@/components/Screen'
 import { PackageVerifySheet } from '@/components/verify/PackageVerifySheet'
+import { AssistantButton } from '@/features/assistant/AssistantButton'
 import { useT } from '@/lib/i18n'
 import { colors, CONTENT_MAX_WIDTH, space } from '@/theme/tokens'
 
@@ -37,6 +38,7 @@ export function ServerStagingView({ tripId, session }: { tripId: string; session
     <Screen
       title={session.code}
       leading={<SessionExitButton />}
+      actions={<AssistantButton page="/kho" title={session.code} />}
       below={<StepHeader kind="staging" staged={view.staged} total={view.total} />}
       footer={
         <Button write icon={ScanLine} disabled={verify.pending} onPress={() => verify.setOpen(true)}>
