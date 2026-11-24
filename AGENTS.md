@@ -38,6 +38,9 @@ kho** `/vehicle-presence` — `/api/warehouse/vehicle-presence`: xe của kho đ
 chuyến, giám sát và Tổng quan của điều phối viên, quản lý (`trips`, `monitoring`, `dashboard`). Việc backend chưa có thì màn ẩn theo bảng
 `capabilities` của từng feature (mục 5, luật 11), không lấy kho mẫu điền vào: chuông của hai vai trò văn phòng, khung 3D vị trí kiện của phiên kho (bước xếp dùng sơ đồ 2D), yêu cầu giao và
 dòng phụ phương án của chuyến; của tài xế: thông báo, số liệu tổng kết — màn ẩn phần đó.
+**Trợ lý AI Lumo** (`features/assistant`, tài xế và nhân viên kho, chỉ khi đăng nhập bằng máy chủ): nút 56 px trên dải trời của
+"Chuyến của tôi", danh sách chuyến của kho và hai bước soạn / xếp của phiên kho máy chủ (màn điểm giao không có: thanh đã đủ bốn điều
+khiển ở 360 px) mở màn trò chuyện toàn màn hình `/assistant` — `POST /api/assistant/messages` như bản web (mục 5).
 Nhận hàng dọc đường đã bỏ khỏi sản phẩm (web, backend, app): điểm `stopType: PICKUP` cũ máy chủ còn trả đọc như một điểm không có kiện
 phải dỡ — "Đã đến" rồi hoàn tất.
 Cách chạy với backend: README.
@@ -145,11 +148,16 @@ src/
     +not-found.tsx     địa chỉ không khớp route nào: màn "Không có màn này", nút về màn chính
     (app)/_layout.tsx  Stack: thanh tab `(tabs)` và các màn mở chồng có lối quay lại (`trip/[tripId]` của tài xế, `loading/[tripId]`
                        — phiên soạn → xếp của kho, `trip-detail/[tripId]` và `live/[tripId]` của điều phối viên, quản lý,
-                       `notifications`), sau quyền; export `ErrorBoundary` cho cả nhóm (`sign-in.tsx`, `+not-found.tsx` cũng export)
+                       `notifications`, `assistant` — trò chuyện với Lumo), sau quyền; export `ErrorBoundary` cho cả nhóm (`sign-in.tsx`, `+not-found.tsx` cũng export)
     (app)/(tabs)/      thanh tab đáy; mỗi tab nằm sau `hasTab` (mục 6): tài xế Chuyến của tôi; kho Kho, Tra cứu kiện; quản lý Tổng
                        quan, Chuyến hàng, Giám sát; điều phối viên Chuyến hàng, Giám sát; ai cũng có Tài khoản
   features/<tên>/      màn, component, hook, <tên>-api.ts của một feature
     auth/              đăng nhập (kho mẫu, Keycloak), phiên, quyền, màn Tài khoản
+    assistant/         trợ lý AI Lumo của tài xế, kho: nút `AssistantButton` (dải trời), màn `AssistantScreen` (cuộc trò chuyện
+                       `AssistantLog`, câu trả lời `AssistantAnswer`, ô gõ `AssistantComposer`), cuộc trò chuyện trong bộ nhớ
+                       `assistant-session.ts`, điều kiện hiện nút `assistant-visibility.ts`, liên kết → màn của app `app-links.ts`;
+                       adapter assistant-http.ts (kho mẫu: không có trợ lý); ← chép từ web: `features/marketing/assistant/
+                       app-starters.ts` (câu hỏi gợi ý theo vai trò), `assistant-text.ts` (chữ trả lời → đoạn / danh sách)
     bell/              chuông theo vai trò (`NotificationBell`) và màn thông báo `NotificationsScreen` của tài xế, kho, điều phối
                        viên, quản lý (dòng của văn phòng: `office-rows.ts`)
     driver/            màn của tài xế: chuyến của tôi, một chuyến (điểm giao, dỡ, hoàn tất, sự cố, GPS, tờ "Thêm" — sự cố trên
@@ -178,7 +186,7 @@ src/
     viewer3d/          ← chép từ web: phần thuần (kiện theo điểm giao, thứ tự dỡ) — không có Three.js
   components/          component dùng từ hai feature trở lên: AppText, Button, IconButton, TextField, Screen, Card, Chip,
                        ChoiceGroup, FilterChips (hàng tab / công tắc lọc cuộn ngang), Sheet, Banner, StateView, LanguageSwitch,
-                       TripStatus, StopDot
+                       TripStatus, StopDot, SkyActions (hàng điều khiển bên phải dải trời)
     map/               ← chép từ web: phần thuần của ô chọn toạ độ (`coordinates.ts`, `place-search.ts`)
     verify/            đối chiếu kiện ba mức của tài xế và kho (mục 7): `PackageVerifySheet`, `QrScanner`, `ManualConfirmForm`,
                        `CandidatePicker`
@@ -227,7 +235,8 @@ hai lần. Bản web là nguồn chuẩn.
   (`features/monitoring/monitoring-view.ts` — nó import kiểu từ `./monitoring-api` của mobile, nên `monitoring-api.ts` phải giữ bốn kiểu
   `LiveMonitoring`, `MonitoringBoard`, `MonitoringStop`, `MonitoringTrip`), `lib/list-filter.ts` (tìm bỏ dấu), `components/map/coordinates.ts` + `place-search.ts` (phần thuần của
   ô chọn toạ độ: chữ → toạ độ, tìm địa danh mẫu; bản đồ của web không chép),
-  các nhánh từ điển `dataErrors`, `issues`, `language`, `lookup`, `manager`, `monitoring`, `roles`, `serverWarehouse`,
+  phần thuần của trợ lý (`features/marketing/assistant/app-starters.ts`, `assistant-text.ts`),
+  các nhánh từ điển `assistant`, `dataErrors`, `issues`, `language`, `lookup`, `manager`, `monitoring`, `roles`, `serverWarehouse`,
   `status`, `trips`, `warehouse`, và hai file test dùng chung `test/trip-flow.ts`, `test/mock-db-samples.ts`.
 - Hàm chép từ web mà dựng đường dẫn của web thì không dùng: `loadingSessionPath` (`warehouse-trips.ts`) ra `/kho?chuyen=`; app mở
   phiên bằng `loadingPath` của `features/warehouse/session-routes.ts`.
@@ -259,14 +268,15 @@ màn / component  →  hook Query của feature  →  features/<tên>/<tên>-api
    khỏi adapter. Mã vai trò của backend đổi qua `BACKEND_ROLE_CODES`.
 4. **Nguồn theo từng feature** (`src/data/config.ts`): `EXPO_PUBLIC_DATA_SOURCE` là mặc định, `EXPO_PUBLIC_HTTP_FEATURES` liệt kê
    feature đã nối backend. Đăng nhập bằng Keycloak thì màn của hai vai trò ngoài hiện trường luôn đọc backend dù danh sách không liệt kê
-   (`FIELD_HTTP_FEATURES`: `driver`, `payroll`, `warehouse`, `packages`). Backend chưa có đủ mọi phần nên app nối dần; feature chưa có adapter `http` mà bị chọn `http` thì báo lỗi
+   (`FIELD_HTTP_FEATURES`: `driver`, `payroll`, `warehouse`, `packages`, `assistant`). Backend chưa có đủ mọi phần nên app nối dần; feature chưa có adapter `http` mà bị chọn `http` thì báo lỗi
    `HTTP_NOT_WIRED`, **không** âm thầm dùng kho mẫu. Feature mới: thêm tên vào `FEATURES`.
 5. **Mọi lỗi mang mã + tham số**: `MockDbError` (kho mẫu) và `ApiError` (backend) hiện bằng cùng một hàm `dataErrorMessage(error, t)`.
    Mã nghiệp vụ trùng tên giữa hai nguồn dùng chung câu ở nhánh `dataErrors`; lỗi mạng / phiên / máy chủ ở nhánh `apiErrors`.
    Không hiện thông điệp thô của máy chủ. Mã backend app chưa có câu hiện câu của mã HTTP như phản hồi không kèm mã (`codeOfStatus` của
    `api-error.ts`, dùng chung với client), không về câu chung.
 6. **Chỉ `src/data/http/api-client.ts` gọi `fetch`.** Nó gắn token của phiên, giới hạn thời gian, mở phong bì
-   `{ success, code, message, data, errors }` của backend và báo cho `AuthProvider` khi backend trả 401.
+   `{ success, code, message, data, errors }` của backend và báo cho `AuthProvider` khi backend trả 401. Lượt gọi chờ lâu hơn giới
+   hạn chung (trợ lý AI: 45 giây) truyền `timeoutMs` của riêng lượt đó.
 7. **Lọc theo công ty và kiểm quyền là việc của nguồn dữ liệu** (kho mẫu làm như server; backend làm thật). Màn không tự lọc theo
    công ty. Ẩn nút theo quyền (`useCan`) chỉ là lớp giao diện.
 8. Mỗi hàm export của `-api.ts` có một dòng chú thích ghi endpoint ngay trên nó (`// GET /api/driver/trips`), đầu file có bảng
@@ -309,6 +319,16 @@ màn / component  →  hook Query của feature  →  features/<tên>/<tên>-api
     đọc ghi backend mà máy mất mạng thì `Screen` hiện dải "Mất kết nối" dưới dải trời và mọi `Button write` (nút gửi lệnh ghi hoặc mở
     bước ghi, kể cả trong tờ trượt) mờ, gợi ý cho trình đọc màn hình nói lý do. Nút ghi mới ở các màn đó phải mang `write`. Chống ghi
     trùng giữ như cũ: nút khoá trong lúc gửi, và 409 "đã làm rồi" (đã đến, đã dỡ, đã nhận) tính là xong.
+
+**Trợ lý AI** (`assistant`; `assistant-http.ts`, DTO ở `assistant-http-dto.ts`): `POST /api/assistant/messages` gửi `message`,
+`locale`, `conversationId` (giữ trong bộ nhớ của lần mở app, theo người đăng nhập — đổi người hay "Bắt đầu lại" là hội thoại mới; không
+cất xuống máy) và `page` (route web của màn đã mở trợ lý — `/tai-xe`, `/kho` — kèm tên màn). Hội thoại máy chủ không còn (404 khi gửi kèm
+`conversationId`) thì gửi lại một lần không kèm mã; 404 khác là `ASSISTANT_UNAVAILABLE`. Lỗi `ASSISTANT_*` hiện bằng câu của nhánh
+`backendErrors` ngay trong cuộc trò chuyện. Kho mẫu không có trợ lý (`capabilities.available` sai): không có nút. Nút chỉ hiện khi
+nguồn có trợ lý, người đăng nhập là tài xế hoặc nhân viên kho và tài khoản không bị khoá (`accountLockOf`: không gắn cờ, công ty còn
+gói). `links` của câu trả lời thành nút mở màn của app (`appLinksOf`: `/tai-xe` → `/trips`, `/kho` → `/warehouse`, `/tra-cuu-kien` →
+`/lookup`, `/phieu-luong` → tab Lương của vai trò, `/ho-so` → `/account`, chỉ tab vai trò có — `hasTab`); route web khác bị bỏ, không
+mở trình duyệt. `handoff.ticketCode` hiện mã yêu cầu hỗ trợ đã tạo; `uiActions` (lệnh cho khung 3D của web) bị bỏ qua.
 
 Trước khi viết adapter `http` cho một feature: đọc controller và DTO thật ở repo backend (nhánh `develop`), không đoán dạng dữ
 liệu. Backend lệch với hợp đồng của app thì ghi vào issue và hỏi nhóm backend, không uốn màn theo.
@@ -467,7 +487,9 @@ Token ở `src/theme/tokens.ts`, lấy đúng giá trị của bản web (V2.3 "
   kiểu. Màn mới thêm nhánh bằng file mới và một dòng ghép ở `vi.ts`, `en.ts`. Mỗi nhánh có chú thích nói nó phục vụ màn nào.
 - Các nhánh chép từ web (mục 4) không sửa ở đây. Màn kho viết câu riêng ở nhánh của từng màn (`warehouseTrips`, `warehouseSession`,
   `warehouseStaging`, `warehouseLoading`, `warehouseFinished`, `warehouseServer` — câu riêng của màn kho máy chủ, `packageLookup`; tờ
-  đối chiếu ở `verify`), và dùng lại câu của web ở `warehouse.*`, `serverWarehouse.*`, `lookup.*` khi câu đó đã có.
+  đối chiếu ở `verify`), và dùng lại câu của web ở `warehouse.*`, `serverWarehouse.*`, `lookup.*` khi câu đó đã có. Trợ lý AI dùng câu của
+  web ở `assistant.*` (câu riêng của app mang hậu tố `App`: `labelApp`, `introHintApp`, `disclaimerAiApp`, `appStarters`) và câu riêng ở
+  nhánh `lumo`.
 - Câu số nhiều là object `{ one, other }` với `{count}`; hai dạng của câu tiếng Việt giống hệt nhau.
 - Không dịch: **MOCK RESULT**, LoadMaster, tên riêng trong dữ liệu.
 - Logic thuần trả mã, component dịch. Schema zod dùng key từ điển làm message.

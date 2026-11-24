@@ -78,4 +78,8 @@ export const backendErrors = {
   PRESENCE_VEHICLE_BUSY: 'The vehicle is on a trip that is loading or in transit, so it cannot be recorded here.',
   VEHICLE_NOT_FOUND: 'Vehicle not found.',
   INVALID_INPUT: 'The data sent is not valid.',
+  ASSISTANT_UNAVAILABLE: 'The AI assistant cannot answer right now. Try again in a few minutes.',
+  ASSISTANT_RATE_LIMITED: 'You have asked the assistant too many times this hour. Try again later.',
+  ASSISTANT_BUDGET_EXCEEDED: 'The AI assistant has used up today’s allowance. Try again tomorrow.',
+  ASSISTANT_MESSAGE_TOO_LONG: 'The question is too long. Shorten it and send again.',
 } satisfies Dictionary<typeof source>

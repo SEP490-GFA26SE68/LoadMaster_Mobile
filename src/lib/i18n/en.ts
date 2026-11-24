@@ -1,6 +1,7 @@
 import { account } from './en/account'
 import { accountLock } from './en/accountLock'
 import { apiErrors } from './en/apiErrors'
+import { assistant } from './en/assistant'
 import { auth } from './en/auth'
 import { backendErrors } from './en/backendErrors'
 import { common } from './en/common'
@@ -12,6 +13,7 @@ import { issues } from './en/issues'
 import { language } from './en/language'
 import { liveTrip } from './en/liveTrip'
 import { lookup } from './en/lookup'
+import { lumo } from './en/lumo'
 import { manager } from './en/manager'
 import { monitoring } from './en/monitoring'
 import { nav } from './en/nav'
@@ -42,6 +44,7 @@ export const en = {
   account,
   accountLock,
   apiErrors,
+  assistant,
   auth,
   backendErrors,
   common,
@@ -53,6 +56,7 @@ export const en = {
   language,
   liveTrip,
   lookup,
+  lumo,
   manager,
   monitoring,
   nav,

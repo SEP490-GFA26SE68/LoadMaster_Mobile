@@ -14,6 +14,7 @@ describe('resolveDataConfig', () => {
         trips: 'mock',
         monitoring: 'mock',
         dashboard: 'mock',
+        assistant: 'mock',
       },
       apiUrl: null,
       keycloak: null,
@@ -33,6 +34,7 @@ describe('resolveDataConfig', () => {
         trips: 'mock',
         monitoring: 'mock',
         dashboard: 'mock',
+        assistant: 'http',
       },
       apiUrl: 'http://10.0.2.2:8080',
       keycloak: { issuer: 'http://localhost:8180/realms/loadmaster', clientId: 'loadmaster-mobile' },
@@ -46,6 +48,7 @@ describe('resolveDataConfig', () => {
     expect(config.sources.payroll).toBe('http')
     expect(config.sources.warehouse).toBe('http')
     expect(config.sources.packages).toBe('http')
+    expect(config.sources.assistant).toBe('http')
     expect(config.sources.trips).toBe('http')
     expect(config.sources.monitoring).toBe('mock')
     expect(config.sources.dashboard).toBe('mock')

@@ -36,6 +36,10 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
   kho `GET /api/warehouse/payroll`; kỳ chưa chốt máy chủ chỉ trả lương cứng). Gõ mã ở phiên máy chủ là Package Code in trên nhãn (máy chủ chỉ
   khớp gõ mã với mã đó). Tab **Tra cứu kiện** đọc máy chủ khi nguồn `packages` là `http` (quét QR, gõ mã QR / mã của kho / mã của bên gửi / mã vạch, báo đã tìm thấy kiện mang cờ "Không tìm thấy"). Chưa có trên máy chủ ở app: khung vị
   trí kiện 3D (bước xếp dùng sơ đồ 2D).
+- Trợ lý AI **Lumo** cho tài xế và nhân viên kho khi đăng nhập bằng backend (`POST /api/assistant/messages`): nút trên dải trời
+  của "Chuyến của tôi", danh sách chuyến của kho và hai bước soạn / xếp; màn trò chuyện toàn màn hình kèm câu hỏi gợi ý theo vai trò,
+  liên kết mở màn tương ứng của app, mã yêu cầu hỗ trợ khi Lumo chuyển cho đội hỗ trợ. Kho mẫu, tài khoản bị khoá hay công ty hết gói
+  thì không có nút. Chưa chạy trên máy thật.
 - Nối backend cho điều phối viên và quản lý công ty: danh sách và chi tiết chuyến (duyệt xác nhận tay, quyết kiện báo thiếu), Giám sát
   (sự cố cấp chuyến, tìm tuyến khác, chuyển quản lý, gia hạn), Tổng quan theo kỳ. Ẩn khi dùng máy chủ: yêu cầu giao và dòng phụ phương
   án của chuyến, chuông của hai vai trò.
@@ -44,7 +48,7 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
   thật (đăng nhập trọn vòng, các endpoint của tài xế), chưa kiểm camera QR, GPS thật, điện thoại thật và iOS; hai màn lỗi và toàn bộ
   màn kho thêm sau ngày đó chưa chạy trên máy.
 
-Kiểm thử: 687 test (Jest, 93 suite), lint và kiểm kiểu sạch; đóng gói Android (`expo export`) chạy được.
+Kiểm thử: 707 test (Jest, 97 suite), lint và kiểm kiểu sạch; đóng gói Android (`expo export`) chạy được.
 
 ## Chạy
 
@@ -71,7 +75,7 @@ Chép `.env.example` thành `.env` khi cần đổi. Mặc định mọi chức 
 | Biến | Nghĩa |
 |---|---|
 | `EXPO_PUBLIC_DATA_SOURCE` | `mock` (mặc định) hoặc `http` cho mọi chức năng |
-| `EXPO_PUBLIC_HTTP_FEATURES` | Các chức năng dùng backend khi mặc định là `mock`: `auth`, `driver`, `warehouse`, `packages` (Tra cứu kiện), `trips`, `monitoring`, `dashboard`. `auth` dùng backend thì `driver`, `payroll`, `warehouse`, `packages` luôn dùng backend |
+| `EXPO_PUBLIC_HTTP_FEATURES` | Các chức năng dùng backend khi mặc định là `mock`: `auth`, `driver`, `warehouse`, `packages` (Tra cứu kiện), `trips`, `monitoring`, `dashboard`, `assistant` (trợ lý AI). `auth` dùng backend thì `driver`, `payroll`, `warehouse`, `packages`, `assistant` luôn dùng backend |
 | `EXPO_PUBLIC_API_URL` | Địa chỉ backend |
 | `EXPO_PUBLIC_KEYCLOAK_URL`, `_REALM`, `_CLIENT_ID` | Keycloak của backend; bắt buộc khi `auth` dùng backend |
 | `EXPO_PUBLIC_GOONG_MAPTILES_KEY` | Khoá map tiles Goong (cùng loại với web). Trống: bản đồ nền trống, vẫn vẽ tuyến |

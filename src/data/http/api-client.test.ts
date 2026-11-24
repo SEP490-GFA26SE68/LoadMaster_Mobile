@@ -170,6 +170,31 @@ describe('createApiClient', () => {
     expect((await failure(() => client.get('/x'))).code).toBe('TIMEOUT')
     expect(calls[0]?.aborted).toBe(true)
   })
+
+  test('lượt gọi tự đặt giới hạn thời gian thì không theo giới hạn của client', async () => {
+    jest.useFakeTimers()
+    try {
+      const calls: AbortSignal[] = []
+      const client = createApiClient({
+        baseUrl: 'http://api.test',
+        accessToken: async () => null,
+        timeoutMs: 10,
+        fetch: ((_url: string, init: RequestInit) => {
+          calls.push(init.signal as AbortSignal)
+          return new Promise(() => {})
+        }) as unknown as typeof fetch,
+      })
+      void client.post('/x', { body: {}, timeoutMs: 1_000 }).catch(() => {})
+      await Promise.resolve()
+      await Promise.resolve()
+      jest.advanceTimersByTime(500)
+      expect(calls[0]?.aborted).toBe(false)
+      jest.advanceTimersByTime(600)
+      expect(calls[0]?.aborted).toBe(true)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
 })
 
 describe('tài khoản bị khoá ở máy chủ', () => {

@@ -1,6 +1,7 @@
 import { account } from './vi/account'
 import { accountLock } from './vi/accountLock'
 import { apiErrors } from './vi/apiErrors'
+import { assistant } from './vi/assistant'
 import { auth } from './vi/auth'
 import { backendErrors } from './vi/backendErrors'
 import { common } from './vi/common'
@@ -12,6 +13,7 @@ import { issues } from './vi/issues'
 import { language } from './vi/language'
 import { liveTrip } from './vi/liveTrip'
 import { lookup } from './vi/lookup'
+import { lumo } from './vi/lumo'
 import { manager } from './vi/manager'
 import { monitoring } from './vi/monitoring'
 import { nav } from './vi/nav'
@@ -39,12 +41,12 @@ import { warehouseTrips } from './vi/warehouseTrips'
 /**
  * Từ điển nguồn của app. `en.ts` khai `satisfies Dictionary<typeof vi>`: thiếu hoặc thừa key là lỗi lúc kiểm kiểu.
  *
- * - Mỗi nhánh cấp 1 là một file trong `vi/`. Nhánh `dataErrors`, `issues`, `language`, `lookup`, `manager`, `monitoring`,
+ * - Mỗi nhánh cấp 1 là một file trong `vi/`. Nhánh `assistant`, `dataErrors`, `issues`, `language`, `lookup`, `manager`, `monitoring`,
  *   `roles`, `serverWarehouse`, `status`, `trips`, `warehouse` chép từ bản web (`src/web-mirror.json`) — không sửa ở đây; nhánh còn lại là của mobile. Màn
  *   ưu tiên câu của nhánh chép (cùng chữ với web): kho `warehouse` (phiên xếp của máy chủ `serverWarehouse`), tra cứu kiện `lookup`, chuyến của điều phối viên và quản lý `trips`,
  *   giám sát và sự cố `monitoring`, số liệu của quản lý `manager`. Câu chỉ mobile cần nằm ở nhánh riêng
  *   của từng màn (`warehouseTrips`, `warehouseSession`, `warehouseStaging`, `warehouseLoading`, `warehouseFinished`, `packageLookup`,
- *   `companyTrips`, `overview`, `liveTrip`), và phần máy chủ trả khác kho mẫu ở nhánh `officeServer` (màn văn phòng), `warehouseServer` (màn kho).
+ *   `companyTrips`, `overview`, `liveTrip`, trợ lý AI `lumo` cạnh nhánh chép `assistant`), và phần máy chủ trả khác kho mẫu ở nhánh `officeServer` (màn văn phòng), `warehouseServer` (màn kho).
  * - Tham số viết `{ten}`; câu đổi theo số lượng là object đúng hai key `one` / `other` với tham số `{count}`.
  * - Tên riêng không dịch (LoadMaster, MOCK RESULT) để thẳng trong JSX.
  */
@@ -52,6 +54,7 @@ export const vi = {
   account,
   accountLock,
   apiErrors,
+  assistant,
   auth,
   backendErrors,
   common,
@@ -63,6 +66,7 @@ export const vi = {
   language,
   liveTrip,
   lookup,
+  lumo,
   manager,
   monitoring,
   nav,

@@ -95,4 +95,9 @@ export const backendErrors = {
   PRESENCE_VEHICLE_BUSY: 'Xe đang ở một chuyến Đang xếp hàng hoặc Đang vận chuyển nên chưa ghi nhận được ở đây.',
   VEHICLE_NOT_FOUND: 'Không tìm thấy xe này.',
   INVALID_INPUT: 'Dữ liệu gửi đi chưa hợp lệ.',
+  // Trợ lý AI Lumo (POST /api/assistant/messages); ba câu đầu cùng chữ với bản web
+  ASSISTANT_UNAVAILABLE: 'Trợ lý AI tạm thời không trả lời được. Thử lại sau ít phút.',
+  ASSISTANT_RATE_LIMITED: 'Bạn đã hỏi trợ lý quá nhiều lần trong một giờ. Thử lại sau.',
+  ASSISTANT_BUDGET_EXCEEDED: 'Trợ lý AI đã dùng hết hạn mức hôm nay. Thử lại vào ngày mai.',
+  ASSISTANT_MESSAGE_TOO_LONG: 'Câu hỏi quá dài. Rút gọn rồi gửi lại.',
 } as const

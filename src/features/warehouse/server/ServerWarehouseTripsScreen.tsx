@@ -6,7 +6,9 @@ import { AppText } from '@/components/AppText'
 import { Banner } from '@/components/Banner'
 import { Button } from '@/components/Button'
 import { Screen } from '@/components/Screen'
+import { SkyActions } from '@/components/SkyActions'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateView'
+import { AssistantButton } from '@/features/assistant/AssistantButton'
 import { NotificationBell } from '@/features/bell/NotificationBell'
 import { dataErrorMessage, useFormat, useT } from '@/lib/i18n'
 import { colors, CONTENT_MAX_WIDTH, space } from '@/theme/tokens'
@@ -41,7 +43,12 @@ export function ServerWarehouseTripsScreen() {
   return (
     <Screen
       title={t('warehouse.list.title')}
-      actions={<NotificationBell />}
+      actions={
+        <SkyActions>
+          <AssistantButton page="/kho" title={t('warehouse.list.title')} />
+          <NotificationBell />
+        </SkyActions>
+      }
       below={<AppText color={colors.skyText2}>{rows === undefined ? today : t('warehouse.list.summary', { count: rows.length, date: today })}</AppText>}>
       {rows === undefined ? (
         query.isError ? (

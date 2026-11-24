@@ -8,6 +8,7 @@ import { Button } from '@/components/Button'
 import { Card } from '@/components/Card'
 import { Screen } from '@/components/Screen'
 import { PackageVerifySheet } from '@/components/verify/PackageVerifySheet'
+import { AssistantButton } from '@/features/assistant/AssistantButton'
 import { dataErrorMessage, useT } from '@/lib/i18n'
 import { colors, space } from '@/theme/tokens'
 
@@ -125,6 +126,7 @@ export function ServerLoadingView({ tripId, session, onStopped }: ServerLoadingV
     <Screen
       title={session.code}
       leading={<SessionExitButton />}
+      actions={<AssistantButton page="/kho" title={session.code} />}
       below={<StepHeader kind="loading" step={view.step} total={view.total} recorded={view.done} />}
       scroll
       refresh={refresh}
