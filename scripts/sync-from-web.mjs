@@ -57,8 +57,8 @@ const MIRRORED_FILES = [
   'lib/stops.ts',
   // Ngày lịch `YYYY-MM-DD` (ngày chạy) → giữa trưa giờ máy, để ngày hiện đúng ở mọi múi giờ
   'lib/calendar-date.ts',
-  // Trợ lý AI Lumo của tài xế và nhân viên kho: câu hỏi gợi ý theo vai trò, chữ của mô hình thành đoạn / danh sách (thuần)
-  ...['app-starters', 'assistant-text'].map((name) => `features/marketing/assistant/${name}.ts`),
+  // Trợ lý AI Lumo của tài xế và nhân viên kho: câu hỏi gợi ý theo vai trò, chữ của mô hình thành đoạn / danh sách, nhịp "đang trả lời" (thuần)
+  ...['app-starters', 'assistant-text', 'assistant-pace'].map((name) => `features/marketing/assistant/${name}.ts`),
   'lib/i18n/types.ts',
   ...['assistant', 'dataErrors','issues', 'language', 'lookup', 'manager', 'monitoring', 'roles', 'serverWarehouse', 'status', 'trips', 'warehouse'].flatMap((branch) => [
     `lib/i18n/vi/${branch}.ts`,
