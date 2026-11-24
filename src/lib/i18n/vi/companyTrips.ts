@@ -27,7 +27,6 @@ export const companyTrips = {
     STAGING: 'Soạn hàng',
     LOADING: 'Xếp hàng',
     UNLOADING: 'Dỡ hàng',
-    PICKUP: 'Nhận hàng dọc đường',
   },
   /** Thẻ "Yêu cầu giao của chuyến" (như `requirements.trip` của web), chỉ đọc. */
   requirements: {

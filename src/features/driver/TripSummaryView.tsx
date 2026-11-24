@@ -91,11 +91,9 @@ function SummaryBody({ summary }: { summary: TripSummaryModel }) {
           <View style={styles.list}>
             {stops.map((stop, index) => {
               const line =
-                stop.kind === 'PICKUP'
-                  ? t('driver.stopKinds.PICKUP')
-                  : stop.completedAt !== undefined
-                    ? t('driver.tripSummary.stopLine', { time: format.time(stop.completedAt), count: stop.delivered })
-                    : t('driver.stopList.state.waiting')
+                stop.completedAt !== undefined
+                  ? t('driver.tripSummary.stopLine', { time: format.time(stop.completedAt), count: stop.delivered })
+                  : t('driver.stopList.state.waiting')
               const issuesLine = stop.issues > 0 ? t('driver.myTrips.issues', { count: stop.issues }) : undefined
               const done = stop.completedAt !== undefined
               return (

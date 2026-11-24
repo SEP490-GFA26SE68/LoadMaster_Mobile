@@ -32,7 +32,7 @@ export function footerStep({ mode, arrived }: StopScreen, capabilities: DriverCa
 
 /**
  * Chân màn điểm giao (như `StopFooter` của web): **đúng một nút chính** theo bước (`footerStep`) — "Xuất phát" khi kho đã xếp xong; đang
- * vận chuyển thì "Đã đến điểm n" (ghi giờ đến thật), rồi "Hoàn tất điểm giao" / "Hoàn tất điểm nhận". Còn xác nhận tay chờ duyệt thì nút
+ * vận chuyển thì "Đã đến điểm n" (ghi giờ đến thật), rồi "Hoàn tất điểm giao". Còn xác nhận tay chờ duyệt thì nút
  * mờ, lý do ngay trên nút. Bấm hoàn tất mở tờ hỏi lại; tờ gắn với điểm đang hỏi nên điểm đổi hoặc hết hoàn tất được (điều phối viên vừa
  * từ chối một xác nhận tay) thì tờ tự đóng và không tự mở lại. Câu báo của lần ghi vừa rồi (`actions.flash`) nằm ngay trên nút — app
  * không có toast.
@@ -42,7 +42,6 @@ export function StopFooter({ screen, actions, capabilities, verifyPending }: Sto
   const [asking, setAsking] = useState<string | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
   const { stop, arrived, remaining, pendingConfirms } = screen
-  const pickupStop = stop.kind === 'PICKUP'
   const completable = arrived && remaining === 0 && pendingConfirms === 0 && !verifyPending
   const asked = completable && asking === stop.ref
   // Tờ đã tự đóng: quên câu hỏi, để tờ không tự mở lại khi điểm hoàn tất được trở lại
@@ -69,7 +68,7 @@ export function StopFooter({ screen, actions, capabilities, verifyPending }: Sto
     ) : (
       <>
         {pendingConfirms > 0 ? (
-          <Banner tone="warning">{t(pickupStop ? 'driver.pickup.blocked' : 'driver.confirms.blocked', { count: pendingConfirms })}</Banner>
+          <Banner tone="warning">{t('driver.confirms.blocked', { count: pendingConfirms })}</Banner>
         ) : null}
         <Button write
           trailingIcon={ArrowRight}
@@ -78,7 +77,7 @@ export function StopFooter({ screen, actions, capabilities, verifyPending }: Sto
             setFailure(null)
             setAsking(stop.ref)
           }}>
-          {t(pickupStop ? 'driver.pickup.complete' : 'driver.complete')}
+          {t('driver.complete')}
         </Button>
       </>
     )

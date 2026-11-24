@@ -39,7 +39,6 @@ export type TripStopDto = {
   readonly plannedArrival?: string | null
   readonly actualArrival?: string | null
   readonly deadline?: string | null
-  readonly stopType?: string | null
 }
 
 export type TripDetailDto = {

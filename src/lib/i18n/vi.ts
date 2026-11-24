@@ -21,8 +21,6 @@ import { openTrips } from './vi/openTrips'
 import { overview } from './vi/overview'
 import { packageLookup } from './vi/packageLookup'
 import { payroll } from './vi/payroll'
-import { pickupRequest } from './vi/pickupRequest'
-import { pickups } from './vi/pickups'
 import { roles } from './vi/roles'
 import { serverWarehouse } from './vi/serverWarehouse'
 import { status } from './vi/status'
@@ -41,12 +39,12 @@ import { warehouseTrips } from './vi/warehouseTrips'
 /**
  * Từ điển nguồn của app. `en.ts` khai `satisfies Dictionary<typeof vi>`: thiếu hoặc thừa key là lỗi lúc kiểm kiểu.
  *
- * - Mỗi nhánh cấp 1 là một file trong `vi/`. Nhánh `dataErrors`, `issues`, `language`, `lookup`, `manager`, `monitoring`, `pickups`,
+ * - Mỗi nhánh cấp 1 là một file trong `vi/`. Nhánh `dataErrors`, `issues`, `language`, `lookup`, `manager`, `monitoring`,
  *   `roles`, `serverWarehouse`, `status`, `trips`, `warehouse` chép từ bản web (`src/web-mirror.json`) — không sửa ở đây; nhánh còn lại là của mobile. Màn
  *   ưu tiên câu của nhánh chép (cùng chữ với web): kho `warehouse` (phiên xếp của máy chủ `serverWarehouse`), tra cứu kiện `lookup`, chuyến của điều phối viên và quản lý `trips`,
- *   giám sát và sự cố `monitoring`, nhận hàng dọc đường `pickups`, số liệu của quản lý `manager`. Câu chỉ mobile cần nằm ở nhánh riêng
+ *   giám sát và sự cố `monitoring`, số liệu của quản lý `manager`. Câu chỉ mobile cần nằm ở nhánh riêng
  *   của từng màn (`warehouseTrips`, `warehouseSession`, `warehouseStaging`, `warehouseLoading`, `warehouseFinished`, `packageLookup`,
- *   `companyTrips`, `overview`, `liveTrip`, `pickupRequest`), và phần máy chủ trả khác kho mẫu ở nhánh `officeServer` (màn văn phòng), `warehouseServer` (màn kho).
+ *   `companyTrips`, `overview`, `liveTrip`), và phần máy chủ trả khác kho mẫu ở nhánh `officeServer` (màn văn phòng), `warehouseServer` (màn kho).
  * - Tham số viết `{ten}`; câu đổi theo số lượng là object đúng hai key `one` / `other` với tham số `{count}`.
  * - Tên riêng không dịch (LoadMaster, MOCK RESULT) để thẳng trong JSX.
  */
@@ -74,8 +72,6 @@ export const vi = {
   overview,
   packageLookup,
   payroll,
-  pickupRequest,
-  pickups,
   roles,
   serverWarehouse,
   status,

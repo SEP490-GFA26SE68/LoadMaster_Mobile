@@ -92,9 +92,9 @@ export function tripOf(dto: BoardTripDto): MonitoringTrip {
   }
 }
 
-/** Bảng giám sát. Máy chủ chưa có nhận hàng dọc đường ở đây: không có số yêu cầu chờ duyệt. */
+/** Bảng giám sát. */
 export function boardOf(dto: MonitoringBoardDto | null): MonitoringBoard {
-  return { trips: (dto?.trips ?? []).map(tripOf), userNames: { ...dto?.userNames }, pendingPickups: {} }
+  return { trips: (dto?.trips ?? []).map(tripOf), userNames: { ...dto?.userNames } }
 }
 
 /** Giờ đến của một điểm chưa hoàn tất; cờ `arrived` của backend không có nghĩa "xe đã tới" nên mọi điểm đọc là giờ đến dự kiến. */

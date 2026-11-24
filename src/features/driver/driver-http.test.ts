@@ -80,7 +80,7 @@ describe('httpDriverApi: chuyến và điểm hiện tại', () => {
       mode: 'delivering',
       arrived: true,
       arrivedAt: '2026-10-16T09:15:00+07:00',
-      stop: { number: 2, ref: '902', kind: 'DELIVERY', name: 'Điện máy Xanh Biên Hoà', address: '12 Phạm Văn Thuận, Biên Hoà' },
+      stop: { number: 2, ref: '902', name: 'Điện máy Xanh Biên Hoà', address: '12 Phạm Văn Thuận, Biên Hoà' },
       stopCount: 3,
       total: 2,
       doneCount: 0,
@@ -128,7 +128,7 @@ describe('httpDriverApi: chuyến và điểm hiện tại', () => {
       ['7', false, undefined, undefined, undefined, false, 7],
     ])
     expect(stop).toMatchObject({ doneCount: 3, remaining: 2, verifiable: 3, pendingConfirms: 1, issueCount: 2 })
-    expect(stop.completion).toMatchObject({ delivered: 3, issues: 2, picked: 0, nextKnown: false })
+    expect(stop.completion).toMatchObject({ delivered: 3, issues: 2, nextKnown: false })
     expect(stop.completion.returned.map(({ id }) => id)).toEqual(['4', '5', '6', '7'])
   })
 
@@ -257,33 +257,21 @@ describe('httpDriverApi: xuất phát, đã đến, vị trí, sự cố trên �
     })
   })
 
-  test('việc máy chủ làm được bật ở capabilities; việc chưa có gọi tới là NOT_SUPPORTED, không gọi mạng', async () => {
+  test('việc máy chủ làm được bật ở capabilities; bật GPS không gọi mạng', async () => {
     const { driver, calls } = backend(onTrip())
     expect(driver.capabilities).toEqual({
       depart: false,
       departFromList: true,
       arrive: true,
       manualConfirm: true,
-      pickupManualConfirm: false,
       deliveryIssues: true,
       tripExceptions: true,
-      pickups: false,
       gps: true,
       notifications: true,
       payroll: true,
       gpsLocalOnly: false,
       tripClaims: true,
     })
-    for (const run of [
-      () =>
-        driver.createPickupRequest('41', {
-          pickup: { name: 'Xưởng may', address: 'Thuận An', lat: 10.93, lng: 106.71 },
-          delivery: { name: 'Kho Sóng Thần', address: 'Dĩ An', lat: 10.89, lng: 106.75 },
-          packages: [{ packageCode: 'HG-1', lengthCm: 40, widthCm: 30, heightCm: 30, weightKg: 8, handlingClass: 'STANDARD' }],
-        }),
-    ]) {
-      expect((await failure(run)).code).toBe('NOT_SUPPORTED')
-    }
     await expect(driver.setDriverGps('41', true)).resolves.toBeUndefined()
     expect(calls).toHaveLength(0)
   })
@@ -331,7 +319,6 @@ describe('httpDriverApi: xuất phát, đã đến, vị trí, sự cố trên �
           contactName: 'Anh Bình',
           contactPhone: '0901234567',
           status: 'PENDING',
-          stopType: 'DELIVERY',
           packages: [
             {
               packageId: 501,

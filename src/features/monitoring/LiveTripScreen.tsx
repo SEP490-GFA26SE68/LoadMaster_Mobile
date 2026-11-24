@@ -14,7 +14,6 @@ import { useCan } from '@/features/auth/AuthProvider'
 import { NotificationBell } from '@/features/bell/NotificationBell'
 import { RouteMap } from '@/features/driver/RouteMap'
 import { TripExceptionSheet } from '@/features/driver/TripExceptionSheet'
-import { PickupRequestsCard } from '@/features/pickups/PickupRequestsCard'
 import { tripDetailPath } from '@/features/trips/trip-routes'
 import { dataErrorMessage, useT } from '@/lib/i18n'
 import { colors, space } from '@/theme/tokens'
@@ -66,8 +65,8 @@ function LiveTripMap({ tripId, trip, live }: { tripId: string; trip: MonitoringT
 
 /**
  * Giám sát một chuyến của điều phối viên và quản lý công ty (như `MonitoringTripPanel` của web): vị trí xe bằng chữ và bản đồ tuyến
- * (`RouteMap` tái dùng của tài xế, GPS từ `GET /api/trips/{id}/monitoring`), giờ đến từng điểm so với hạn, sự cố của chuyến, yêu cầu nhận
- * hàng dọc đường, và lối sang Chi tiết chuyến. Đọc lại theo nhịp điểm vị trí của kho (`refetchInterval`), kéo xuống để đọc lại ngay; chuyến
+ * (`RouteMap` tái dùng của tài xế, GPS từ `GET /api/trips/{id}/monitoring`), giờ đến từng điểm so với hạn, sự cố của chuyến và lối
+ * sang Chi tiết chuyến. Đọc lại theo nhịp điểm vị trí của kho (`refetchInterval`), kéo xuống để đọc lại ngay; chuyến
  * thôi chạy thì màn nói vậy và thôi đọc theo nhịp. Nút chính duy nhất là "Báo sự cố" ở chân màn, của người có `exceptions.report` (điều phối
  * viên); quản lý công ty chỉ xem, trừ việc nhập hạn mới.
  */
@@ -143,7 +142,6 @@ export function LiveTripScreen({ tripId }: { readonly tripId: string }) {
       </Button>
       <LiveStopList trip={trip} live={live} />
       <LiveExceptionsCard trip={trip} live={live} userNames={userNames} running={running} notice={notice} onNotice={setNotice} />
-      {caps.pickups ? <PickupRequestsCard tripId={tripId} running={running} stops={trip.stops.map(({ id, name }) => ({ id, name }))} /> : null}
       {canReport ? (
         <TripExceptionSheet
           key={`report-${reporting.key}`}

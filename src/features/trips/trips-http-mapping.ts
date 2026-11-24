@@ -86,7 +86,6 @@ function stopOf(dto: TripStopDto, index: number): ServerTripStop {
     name: dto.stopName?.trim() || dto.address?.trim() || '',
     address: dto.address?.trim() ?? '',
     ...coordinates,
-    kind: dto.stopType === 'PICKUP' ? 'PICKUP' : 'DELIVERY',
     status: pick(STOP_STATUSES, dto.status) ?? 'PENDING',
     ...(dto.deliveryRequirementId === null || dto.deliveryRequirementId === undefined ? {} : { requirementId: String(dto.deliveryRequirementId) }),
     ...(plannedArrival === undefined ? {} : { plannedArrival }),

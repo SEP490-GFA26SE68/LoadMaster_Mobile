@@ -1,5 +1,5 @@
 /**
- * Tờ đối chiếu kiện ba mức (`components/verify/PackageVerifySheet.tsx`; tài xế dỡ, nhận dọc đường; kho soạn, xếp): quét QR bằng camera →
+ * Tờ đối chiếu kiện ba mức (`components/verify/PackageVerifySheet.tsx`; tài xế dỡ; kho soạn, xếp): quét QR bằng camera →
  * gõ mã in trên nhãn → xác nhận tay chờ điều phối viên duyệt. Câu theo bản web (nhánh `qr.verify`, `qr.scan.camera`); tên ba mức và lý do
  * xác nhận tay ở nhánh `common`. Tiêu đề và mô tả của tờ là của từng bước, ở nhánh của màn đó.
  */

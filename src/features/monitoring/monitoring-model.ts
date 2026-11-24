@@ -1,4 +1,4 @@
-import type { AuditAction, StopKind, TripMonitoring } from '@/lib/mock-db'
+import type { AuditAction, TripMonitoring } from '@/lib/mock-db'
 
 /**
  * Kiểu dữ liệu của màn giám sát, cùng hình với bản web (`features/monitoring/monitoring-api.ts`): hàm thuần chép từ web
@@ -13,8 +13,6 @@ export type MonitoringStop = {
   readonly id: string
   readonly number: number
   readonly name: string
-  /** Điểm nhận hàng dọc đường; vắng là điểm giao. */
-  readonly kind?: StopKind
   readonly lat?: number
   readonly lng?: number
   readonly arrivedAt?: string
@@ -37,11 +35,6 @@ export type MonitoringBoard = {
   readonly trips: readonly MonitoringTrip[]
   /** Họ tên theo mã người dùng, để đọc người báo và người xử lý sự cố. */
   readonly userNames: Readonly<Record<string, string>>
-  /**
-   * Mobile: số yêu cầu nhận hàng dọc đường còn chờ duyệt (Chờ duyệt, Đạt mười luật) theo mã chuyến, cho thẻ của chuyến. Bản web không có
-   * trường này — nó đọc yêu cầu ở thẻ của chuyến đang chọn. Nguồn chưa có nhận hàng dọc đường thì rỗng.
-   */
-  readonly pendingPickups: Readonly<Record<string, number>>
 }
 
 /** Việc của màn giám sát mà nguồn dữ liệu đang dùng làm được; màn ẩn việc nguồn chưa làm được — không nút giả. */
@@ -52,8 +45,6 @@ export type MonitoringCapabilities = {
   readonly reroute: boolean
   /** Chuyển sự cố cho quản lý công ty; quản lý liên hệ khách và nhập hạn mới. */
   readonly escalation: boolean
-  /** Yêu cầu nhận hàng dọc đường: xem, gửi, kiểm lại mười luật, duyệt, từ chối. */
-  readonly pickups: boolean
   /** Chuông của điều phối viên và quản lý công ty. */
   readonly notifications: boolean
 }

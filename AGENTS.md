@@ -37,8 +37,9 @@ kho** `/vehicle-presence` — `/api/warehouse/vehicle-presence`: xe của kho đ
 `GET /api/warehouse/payroll`, cùng bố cục với phiếu lương tài xế);
 chuyến, giám sát và Tổng quan của điều phối viên, quản lý (`trips`, `monitoring`, `dashboard`). Việc backend chưa có thì màn ẩn theo bảng
 `capabilities` của từng feature (mục 5, luật 11), không lấy kho mẫu điền vào: chuông của hai vai trò văn phòng, khung 3D vị trí kiện của phiên kho (bước xếp dùng sơ đồ 2D), yêu cầu giao và
-dòng phụ phương án của chuyến, nhận hàng dọc đường ở Giám sát; của tài xế: tạo yêu cầu nhận hàng, xác nhận tay ở điểm nhận
-(`pickupManualConfirm`), thông báo, số liệu tổng kết — `driver-http.ts` từ chối `NOT_SUPPORTED` hoặc màn ẩn phần đó.
+dòng phụ phương án của chuyến; của tài xế: thông báo, số liệu tổng kết — màn ẩn phần đó.
+Nhận hàng dọc đường đã bỏ khỏi sản phẩm (web, backend, app): điểm `stopType: PICKUP` cũ máy chủ còn trả đọc như một điểm không có kiện
+phải dỡ — "Đã đến" rồi hoàn tất.
 Cách chạy với backend: README.
 
 Luật chung, giữ từ bản web:
@@ -152,7 +153,7 @@ src/
     bell/              chuông theo vai trò (`NotificationBell`) và màn thông báo `NotificationsScreen` của tài xế, kho, điều phối
                        viên, quản lý (dòng của văn phòng: `office-rows.ts`)
     driver/            màn của tài xế: chuyến của tôi, một chuyến (điểm giao, dỡ, hoàn tất, sự cố, GPS, tờ "Thêm" — sự cố trên
-                       đường, nhận hàng dọc đường), tổng kết; adapter driver-mock.ts (kho mẫu) và driver-http.ts (backend)
+                       đường), tổng kết; adapter driver-mock.ts (kho mẫu) và driver-http.ts (backend)
     trips/             Chuyến hàng (điều phối viên, quản lý): danh sách theo ngày chạy (`list/`), chi tiết chuyến chỉ đọc (`detail/`:
                        tiến trình, điểm giao, hàng, yêu cầu giao, xe, duyệt xác nhận tay, kiện báo thiếu); adapter trips-mock.ts
     manager/           Tổng quan của quản lý (`overview/`: kỳ, ô số liệu kèm nguồn, chuyến theo trạng thái, đội xe, chuyến gần đây);
@@ -160,7 +161,6 @@ src/
     monitoring/        Giám sát (danh sách chuyến đang chạy, tab sự cố cần xử lý của quản lý) và Giám sát chuyến (vị trí bằng chữ,
                        điểm giao, sự cố: báo, chuyển quản lý, tìm tuyến khác, xử lý, gia hạn); adapter monitoring-mock.ts. Chưa có
                        bản đồ — chờ đợt bản đồ native
-    pickups/           nhận hàng dọc đường: form tạo (tài xế, điều phối viên), mười luật, thẻ yêu cầu, duyệt / từ chối
     warehouse/         màn của nhân viên kho: danh sách chuyến (`WarehouseTripsScreen`, `trips/`) và phiên soạn → xếp một chuyến
                        (`LoadingSessionScreen` chọn bước: `staging/` soạn hàng, `loading/` xếp, `finished/` xếp xong);
                        adapter warehouse-mock.ts; nguồn máy chủ ở `server/` (`ServerWarehouseTripsScreen`,
@@ -189,7 +189,7 @@ src/
     format.ts          số, đơn vị, ngày giờ theo ngôn ngữ
     storage.ts         nơi lưu nhỏ của app (kho khoá của máy)
     mock-db/           ← chép từ web
-  domain/              ← chép từ web: logic nghiệp vụ thuần (hình học, ràng buộc, tuyến, vùng, nhận dọc đường…)
+  domain/              ← chép từ web: logic nghiệp vụ thuần (hình học, ràng buộc, tuyến, vùng…)
   services/optimization/ ← chép từ web (trừ phần Web Worker)
   types/               ← chép từ web
   providers/           Providers.tsx: mọi provider của app
@@ -225,10 +225,9 @@ hai lần. Bản web là nguồn chuẩn.
   phần thuần của màn chuyến và số liệu của điều phối viên, quản lý (`features/trips/`: dòng danh sách chuyến, tab trạng thái, "cần bạn
   xử lý", điểm giao và hàng, lý do lỗi thời, tiến trình; `features/manager/`: số liệu bảng điều khiển, kỳ), của giám sát
   (`features/monitoring/monitoring-view.ts` — nó import kiểu từ `./monitoring-api` của mobile, nên `monitoring-api.ts` phải giữ bốn kiểu
-  `LiveMonitoring`, `MonitoringBoard`, `MonitoringStop`, `MonitoringTrip`), của nhận hàng dọc đường (`features/pickups/`: câu của mười
-  luật, tên điểm, màu trạng thái), `lib/list-filter.ts` (tìm bỏ dấu), `components/map/coordinates.ts` + `place-search.ts` (phần thuần của
+  `LiveMonitoring`, `MonitoringBoard`, `MonitoringStop`, `MonitoringTrip`), `lib/list-filter.ts` (tìm bỏ dấu), `components/map/coordinates.ts` + `place-search.ts` (phần thuần của
   ô chọn toạ độ: chữ → toạ độ, tìm địa danh mẫu; bản đồ của web không chép),
-  các nhánh từ điển `dataErrors`, `issues`, `language`, `lookup`, `manager`, `monitoring`, `pickups`, `roles`, `serverWarehouse`,
+  các nhánh từ điển `dataErrors`, `issues`, `language`, `lookup`, `manager`, `monitoring`, `roles`, `serverWarehouse`,
   `status`, `trips`, `warehouse`, và hai file test dùng chung `test/trip-flow.ts`, `test/mock-db-samples.ts`.
 - Hàm chép từ web mà dựng đường dẫn của web thì không dùng: `loadingSessionPath` (`warehouse-trips.ts`) ra `/kho?chuyen=`; app mở
   phiên bằng `loadingPath` của `features/warehouse/session-routes.ts`.
@@ -281,7 +280,7 @@ màn / component  →  hook Query của feature  →  features/<tên>/<tên>-api
    chuyến, chuông) và cả `['packages']` làm mới không chờ, sau mọi lần ghi: người xếp không phải đợi chúng giữa hai lần quét. Nhãn không
    đọc lại sau từng bước (không đổi trong phiên xếp).
    Màn của điều phối viên và quản lý đọc dưới ba gốc (`OFFICE_QUERY_ROOTS` ở `src/data/query-roots.ts`): `['trips', …]` (danh sách, chi
-   tiết chuyến, việc chờ duyệt), `['monitoring', …]` (giám sát, sự cố, nhận hàng dọc đường, thông báo của hai vai trò), `['dashboard', …]`
+   tiết chuyến, việc chờ duyệt), `['monitoring', …]` (giám sát, sự cố, thông báo của hai vai trò), `['dashboard', …]`
    (số liệu). Một lệnh ghi ở màn này đổi thứ màn kia đang hiện, nên lệnh ghi của hai vai trò **chờ** khoá của chính màn đang hiện (cả
    khi lỗi) và làm mới **không chờ** các gốc còn lại.
 10. Không thêm store phía client cho dữ liệu nghiệp vụ. Không lưu dữ liệu nghiệp vụ vào `expo-secure-store`.

@@ -15,7 +15,7 @@ import { MonitoringScreen } from './MonitoringScreen'
 
 configure({ asyncUtilTimeout: 5000 })
 
-/** Chuyến Đang vận chuyển duy nhất của Long Bình trong seed (xe đang ở điểm 2, một yêu cầu nhận hàng chờ duyệt). */
+/** Chuyến Đang vận chuyển duy nhất của Long Bình trong seed (xe đang ở điểm 2). */
 const RUNNING_TRIP = 'TRIP-009'
 const CARD_START = 'TRIP-009, Tuyến Thủ Dầu Một – Sóng Thần, Thaco Ollin 720 · 61C-339.05 · Tài xế Ngô Văn Bảo, Mô phỏng, '
 const card = (rest = '') => new RegExp(`^${CARD_START.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*${rest}`)
@@ -63,7 +63,7 @@ describe('tab Giám sát của điều phối viên', () => {
   test('một thẻ mỗi chuyến đang chạy, không tab của quản lý; bấm thẻ mở màn giám sát chuyến đó', async () => {
     await renderOfficeScreen(<MonitoringScreen />)
 
-    const tripCard = await screen.findByRole('button', { name: card('1 yêu cầu nhận hàng chờ duyệt$') })
+    const tripCard = await screen.findByRole('button', { name: card() })
     expect(screen.getByText('1 chuyến đang vận chuyển')).toBeOnTheScreen()
     expect(screen.getByText('Đang ở điểm 2 · Nhà sách Phương Nam Thủ Dầu Một · Đã đến 08:20')).toBeOnTheScreen()
     expect(screen.queryAllByRole('tab')).toHaveLength(0)
@@ -90,7 +90,7 @@ describe('tab Giám sát của điều phối viên', () => {
     await reportIncident(RUNNING_TRIP, { escalate: false })
     await renderOfficeScreen(<MonitoringScreen />)
 
-    expect(await screen.findByRole('button', { name: card('1 sự cố, 1 yêu cầu nhận hàng chờ duyệt$') })).toBeOnTheScreen()
+    expect(await screen.findByRole('button', { name: card('1 sự cố$') })).toBeOnTheScreen()
     await fireEvent.press(screen.getByRole('checkbox', { name: 'Có sự cố 1' }))
     expect(screen.getByRole('button', { name: card('1 sự cố') })).toBeOnTheScreen()
     expect(screen.queryByText('Không có chuyến khớp bộ lọc.')).toBeNull()

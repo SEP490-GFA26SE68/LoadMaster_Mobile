@@ -9,11 +9,10 @@ import { Button } from '@/components/Button'
 import { ChoiceGroup } from '@/components/ChoiceGroup'
 import { Sheet } from '@/components/Sheet'
 import { TextField } from '@/components/TextField'
-import type { SheetView } from '@/features/pickups/pickup-model'
 import { dataErrorMessage, useT } from '@/lib/i18n'
 import { MAX_EXCEPTION_DELAY_MINUTES, MAX_EXCEPTION_NOTE_LENGTH, TRIP_EXCEPTION_TYPES } from '@/lib/mock-db'
 
-import type { TripExceptionRequest } from './driver-model'
+import type { SheetView, TripExceptionRequest } from './driver-model'
 
 /** Lỗi của form là mã; component dịch qua `tripException.errors.<mã>` (cùng schema với `ReportExceptionDialog` của web). */
 const ERRORS = ['typeRequired', 'detailsRequired', 'detailsTooLong', 'delayInvalid'] as const

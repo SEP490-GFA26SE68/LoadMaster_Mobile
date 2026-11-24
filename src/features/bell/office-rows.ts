@@ -20,7 +20,7 @@ import type { BellRow } from './bell-rows'
 /**
  * Dòng của chuông điều phối viên và quản lý công ty, như một thông báo của chuông web (`NotificationItem`): câu là nhãn hành động của
  * nhật ký, đối tượng là chuyến (mã kèm tên hiện tại), chi tiết là người làm rồi từng tham số kho ghi — có nhãn, mã đã dịch, không thêm số
- * nào. Thông báo về một chuyến mở Chi tiết chuyến; nguy cơ trễ hạn, sự cố cấp chuyến và yêu cầu nhận hàng dọc đường mở màn giám sát chuyến
+ * nào. Thông báo về một chuyến mở Chi tiết chuyến; nguy cơ trễ hạn và sự cố cấp chuyến mở màn giám sát chuyến
  * đó khi người đọc xem được giám sát — việc phải làm nằm ở đó. Kiện tìm thấy lại và trả lời yêu cầu hỗ trợ không mở gì: app chưa có màn
  * của chúng.
  */
@@ -29,19 +29,19 @@ import type { BellRow } from './bell-rows'
 export const OFFICE_ACTIONS = [
   'revision.approved', 'loading.completed', 'loading.shortageReported', 'loading.shortageDropped', 'loading.damaged', 'package.found',
   'delivery.issue', 'delivery.etaRisk', 'delivery.completed', 'trip.cancelled', 'manualConfirm.requested', 'exception.reported',
-  'exception.escalated', 'exception.deadlineRenegotiated', 'pickup.requested',
+  'exception.escalated', 'exception.deadlineRenegotiated',
 ] as const satisfies readonly AuditAction[]
 
 /** Việc phải làm ở màn giám sát chuyến: thông báo này mở màn đó thay Chi tiết chuyến. */
 export const LIVE_ACTIONS: readonly AuditAction[] = [
-  'delivery.etaRisk', 'exception.reported', 'exception.escalated', 'exception.deadlineRenegotiated', 'pickup.requested',
+  'delivery.etaRisk', 'exception.reported', 'exception.escalated', 'exception.deadlineRenegotiated',
 ]
 
 /** Tham số có nhãn ở `notifications.office.params`, theo nhãn tham số nhật ký của web. */
 const PARAM_KEYS = [
   'reason', 'note', 'revisionId', 'sourceRevisionId', 'edits', 'loaded', 'returned', 'damaged', 'supporting', 'requirementId',
   'packageInstanceId', 'packageCode', 'stopNumber', 'kind', 'stops', 'issues', 'count', 'flag', 'lateStops', 'verifyContext', 'manualReason',
-  'requestedBy', 'deadlineStatus', 'eta', 'deadline', 'exceptionId', 'exceptionType', 'delayMinutes', 'escalation', 'pickupId', 'failedRules',
+  'requestedBy', 'deadlineStatus', 'eta', 'deadline', 'exceptionId', 'exceptionType', 'delayMinutes', 'escalation',
   'driverId',
 ] as const
 

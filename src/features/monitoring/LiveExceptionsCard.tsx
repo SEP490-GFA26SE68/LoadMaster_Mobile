@@ -51,7 +51,7 @@ export function LiveExceptionsCard({ trip, live, userNames, running, notice, onN
   const canRenegotiate = running && caps.escalation && can('deadlines.renegotiate')
   const stopName = (stopNumber: number) => trip.stops.find((stop) => stop.number === stopNumber)?.name ?? ''
   const renegotiateRow = canRenegotiate
-    ? escalationRows({ trips: [trip], userNames, pendingPickups: {} }, [live]).find((row) => row.exception.id === renegotiating.target)
+    ? escalationRows({ trips: [trip], userNames }, [live]).find((row) => row.exception.id === renegotiating.target)
     : undefined
 
   const actions: ExceptionActions | undefined =

@@ -8,7 +8,7 @@ import type { MonitoringTrip, OfficeNotification, RenegotiableRequirement } from
 
 /*
  * Nguồn kho mẫu của màn giám sát, như bản web: kho biết người đang đăng nhập và tự xét vai trò cho từng lệnh ghi (`ROLE_NOT_ALLOWED`) —
- * điều phối viên báo, chuyển, xử lý sự cố và duyệt nhận hàng; quản lý công ty gia hạn. Kho không chạy hẹn giờ: mỗi lần đọc giám sát nó
+ * điều phối viên báo, chuyển, xử lý sự cố; quản lý công ty gia hạn. Kho không chạy hẹn giờ: mỗi lần đọc giám sát nó
  * ghi bù vị trí xe tới giờ của kho.
  */
 
@@ -35,7 +35,6 @@ function tripHead(trip: Trip, vehicleNames: ReadonlyMap<string, string>, userNam
         id: stop.id,
         number: index + 1,
         name: stop.name,
-        ...(stop.kind === undefined ? {} : { kind: stop.kind }),
         ...(stop.lat === undefined || stop.lng === undefined ? {} : { lat: stop.lat, lng: stop.lng }),
         ...(progress?.arrivedAt === undefined ? {} : { arrivedAt: progress.arrivedAt }),
         ...(progress?.completedAt === undefined ? {} : { completedAt: progress.completedAt }),
@@ -51,14 +50,7 @@ async function fetchMonitoringBoard() {
   const running = trips.filter((trip) => trip.phase === 'delivering')
   const vehicleNames = new Map(vehicles.map((vehicle) => [vehicle.id, vehicle.name]))
   const userNames = userNamesOf(names)
-  const pickups = await Promise.all(running.map((trip) => db.listPickupRequests(trip.id)))
-  const pendingPickups = Object.fromEntries(
-    running.map((trip, index) => [
-      trip.id,
-      (pickups[index] ?? []).filter((request) => request.status === 'PENDING' || request.status === 'VALIDATED').length,
-    ]),
-  )
-  return { trips: running.map((trip) => tripHead(trip, vehicleNames, userNames)), userNames, pendingPickups }
+  return { trips: running.map((trip) => tripHead(trip, vehicleNames, userNames)), userNames }
 }
 
 async function fetchLiveTrip(tripId: string) {
@@ -130,7 +122,7 @@ async function fetchNotifications(): Promise<OfficeNotification[]> {
 export function mockMonitoringApi(): MonitoringApi {
   const db = () => getMockDb()
   return {
-    capabilities: { exceptions: true, reroute: true, escalation: true, pickups: true, notifications: true },
+    capabilities: { exceptions: true, reroute: true, escalation: true, notifications: true },
     fetchMonitoringBoard,
     async listTripMonitoring() {
       signedIn(db())
@@ -154,25 +146,6 @@ export function mockMonitoringApi(): MonitoringApi {
     fetchTripRequirements,
     async renegotiateDeadline(tripId, exceptionId, input) {
       await db().renegotiateDeadline(tripId, exceptionId, input)
-    },
-    async fetchPickupRows(tripId) {
-      const requests = await db().listPickupRequests(tripId)
-      if (requests.length === 0) return []
-      const users = new Map((await db().listAuditNames()).users.map((user) => [user.id, user.fullName]))
-      return requests.map((request) => ({ request, createdByName: request.createdBy === null ? null : (users.get(request.createdBy) ?? null) }))
-    },
-    async createPickupRequest(tripId, input) {
-      const request = await db().createPickupRequest(tripId, input)
-      const trip = await db().getTrip(tripId)
-      return { request, stops: trip.stops.map(({ id, name }) => ({ id, name })) }
-    },
-    validatePickupRequest: (tripId, pickupId) => db().validatePickupRequest(tripId, pickupId),
-    async approvePickupRequest(tripId, pickupId, input) {
-      const { request, packages } = await db().approvePickupRequest(tripId, pickupId, input)
-      return { request, packages: packages.map(({ id, packageCode, qrToken }) => ({ id, packageCode, qrToken })) }
-    },
-    async rejectPickupRequest(tripId, pickupId, reason) {
-      await db().rejectPickupRequest(tripId, pickupId, reason)
     },
     fetchNotifications,
   }

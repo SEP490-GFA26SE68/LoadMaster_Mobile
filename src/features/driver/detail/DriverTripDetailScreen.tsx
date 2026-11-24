@@ -557,14 +557,6 @@ function StopDetailCard({ stop }: { readonly stop: DriverTripDetailStop }) {
                     : t('driver.detail.stopStatus.PENDING')
               }
             />
-            <Chip
-              tone="cyan"
-              label={
-                stop.kind === 'PICKUP'
-                  ? t('driver.detail.stopKind.PICKUP')
-                  : t('driver.detail.stopKind.DELIVERY')
-              }
-            />
             {stop.plannedStatus && stop.plannedStatus !== 'OK' ? (
               <Chip tone={stop.plannedStatus === 'MISSED' ? 'danger' : 'warning'} label={stop.plannedStatus} />
             ) : null}

@@ -19,9 +19,6 @@ export const backendErrors = {
   MANUAL_CONFIRM_NOTE_REQUIRED: 'Lý do "Khác" cần ghi chú.',
   /** Máy chủ không nói còn bao nhiêu xác nhận tay chờ (mã `MANUAL_CONFIRM_PENDING` của kho mẫu có số). */
   STOP_MANUAL_CONFIRM_PENDING: 'Còn xác nhận tay chờ điều phối viên duyệt — chưa hoàn tất điểm được.',
-  PICKUP_PACKAGE_NOT_AT_STOP: 'Kiện này không phải kiện nhận ở điểm hiện tại.',
-  PICKUP_PACKAGE_ALREADY_PICKED: 'Kiện này đã được nhận lên xe.',
-  PICKUP_STOP_INCOMPLETE: 'Còn kiện nhận chưa đối chiếu lên xe — chưa hoàn tất điểm nhận được.',
   // Màn điều phối viên và quản lý công ty nối backend
   TRIP_NOT_FOUND: 'Không tìm thấy chuyến này, hoặc chuyến không thuộc công ty của bạn.',
   PAYROLL_RATE_ALREADY_EXISTS: 'Đã có phiên bản mức lương bắt đầu từ tháng này.',

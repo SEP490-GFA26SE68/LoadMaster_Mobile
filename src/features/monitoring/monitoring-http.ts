@@ -19,8 +19,8 @@ import type { MonitoringTrip } from './monitoring-model'
 
 /*
  * Nguồn backend của màn giám sát (điều phối viên, quản lý công ty), như `monitoring-backend-api.ts` của web. Mã chuyến (`tripCode`) là mã
- * trên đường dẫn; endpoint giám sát nhận cả mã chuyến lẫn mã số. Giờ đến máy chủ tính không mang MOCK RESULT. Máy chủ chưa có nhận hàng
- * dọc đường ở màn này và chưa có chuông cho văn phòng: `pickups`, `notifications` tắt, hàm của chúng từ chối `NOT_SUPPORTED`.
+ * trên đường dẫn; endpoint giám sát nhận cả mã chuyến lẫn mã số. Giờ đến máy chủ tính không mang MOCK RESULT. Máy chủ chưa có chuông cho
+ * văn phòng: `notifications` tắt, hàm của nó từ chối `NOT_SUPPORTED`.
  */
 
 const tripPath = (tripId: string) => `/api/trips/${encodeURIComponent(tripId)}`
@@ -40,7 +40,6 @@ function headOf(detail: ServerTripDetail): MonitoringTrip {
       id: stop.id,
       number: stop.number,
       name: stop.name,
-      ...(stop.kind === 'PICKUP' ? { kind: 'PICKUP' as const } : {}),
       ...(stop.lat !== undefined && stop.lng !== undefined ? { lat: stop.lat, lng: stop.lng } : {}),
       ...(stop.actualArrival !== undefined && stop.status !== 'PENDING' ? { arrivedAt: stop.actualArrival } : {}),
       ...(stop.actualArrival !== undefined && stop.status === 'COMPLETED' ? { completedAt: stop.actualArrival } : {}),
@@ -51,7 +50,7 @@ function headOf(detail: ServerTripDetail): MonitoringTrip {
 export function httpMonitoringApi({ client = api }: { readonly client?: () => ApiClient } = {}): MonitoringApi {
   const fetchMonitoringBoard = async () => boardOf(await client().get<MonitoringBoardDto | null>('/api/dispatcher/dashboard'))
   return {
-    capabilities: { exceptions: true, reroute: true, escalation: true, pickups: false, notifications: false },
+    capabilities: { exceptions: true, reroute: true, escalation: true, notifications: false },
     fetchMonitoringBoard,
     async listTripMonitoring() {
       return ((await client().get<readonly TripMonitoringDto[] | null>('/api/trips/monitoring')) ?? []).map(liveOf)
@@ -106,11 +105,6 @@ export function httpMonitoringApi({ client = api }: { readonly client?: () => Ap
       const body = { requirementId, newDeadline: backendLocalDateTime(input.deadline), contactNote: input.contactNote }
       await withStatusCode(client().post<TripExceptionDto>(`${exceptionPath(tripId, exceptionId)}/renegotiate`, { body }), { 404: 'TRIP_EXCEPTION_NOT_FOUND' })
     },
-    fetchPickupRows: notSupported,
-    createPickupRequest: notSupported,
-    validatePickupRequest: notSupported,
-    approvePickupRequest: notSupported,
-    rejectPickupRequest: notSupported,
     fetchNotifications: notSupported,
   }
 }

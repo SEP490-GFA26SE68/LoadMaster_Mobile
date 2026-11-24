@@ -204,10 +204,9 @@ describe('httpMonitoringApi', () => {
     )
   })
 
-  test('nhận hàng dọc đường và chuông văn phòng chưa có ở máy chủ: ẩn và từ chối NOT_SUPPORTED, không gọi mạng', async () => {
+  test('chuông văn phòng chưa có ở máy chủ: ẩn và từ chối NOT_SUPPORTED, không gọi mạng', async () => {
     const { calls, api } = monitoring({})
-    expect(api.capabilities).toEqual({ exceptions: true, reroute: true, escalation: true, pickups: false, notifications: false })
-    expect((await failure(() => api.fetchPickupRows('TRIP-0041'))).code).toBe('NOT_SUPPORTED')
+    expect(api.capabilities).toEqual({ exceptions: true, reroute: true, escalation: true, notifications: false })
     expect((await failure(() => api.fetchNotifications())).code).toBe('NOT_SUPPORTED')
     expect(calls).toEqual([])
   })

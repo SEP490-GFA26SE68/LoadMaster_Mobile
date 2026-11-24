@@ -28,8 +28,6 @@ export const notifications = {
     cancelled: 'Trip cancelled',
     assigned: 'New trip: you now drive this trip',
     unassigned: 'You no longer drive this trip',
-    pickupApproved: 'The dispatcher approved an en-route pickup — the route has a new pickup stop',
-    pickupRejected: 'En-route pickup request rejected',
     stopsReordered: 'The dispatcher changed the stop order — check the route',
   },
   warehouse: {
@@ -86,9 +84,6 @@ export const notifications = {
         escalated: 'Sent the incident to the manager',
         deadlineRenegotiated: 'Contacted the customer, entered a new deadline',
       },
-      pickup: {
-        requested: 'Sent an en-route pickup request',
-      },
     },
     params: {
       actor: 'Done by',
@@ -121,12 +116,11 @@ export const notifications = {
       exceptionType: 'Incident type',
       delayMinutes: 'Expected delay (min)',
       escalation: 'Reason sent up',
-      pickupId: 'Pickup request',
       failedRules: 'Failed rules',
       driverId: 'Driver',
     },
     escalations: { NO_ROUTE: 'No feasible route', TIMEOUT: 'Not handled for over 30 minutes' },
-    verifyContexts: { STAGING: 'Staging', LOADING: 'Loading', UNLOADING: 'Unloading', PICKUP: 'En-route pickup' },
+    verifyContexts: { STAGING: 'Staging', LOADING: 'Loading', UNLOADING: 'Unloading' },
     system: 'System',
     deletedUser: 'Deleted account ({id})',
     package: 'Package {id}',

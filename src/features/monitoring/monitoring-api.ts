@@ -10,23 +10,10 @@
  *   confirmReroute          POST  /api/trips/{id}/reroute/{routeIndex}/confirm
  *   fetchTripRequirements   GET   /api/delivery-requirements · GET /api/trips/{id}/detail
  *   renegotiateDeadline     POST  /api/trips/{id}/exceptions/{eid}/renegotiate
- *   fetchPickupRows         GET   /api/trips/{id}/pickup-requests
- *   createPickupRequest     POST  /api/trips/{id}/pickup-requests
- *   validatePickupRequest   POST  /api/trips/{id}/pickup-requests/{pid}/validate
- *   approvePickupRequest    POST  /api/trips/{id}/pickup-requests/{pid}/approve
- *   rejectPickupRequest     POST  /api/trips/{id}/pickup-requests/{pid}/reject
  *   chưa có ở BE: fetchNotifications (chuông của văn phòng)
  */
 import { createAdapter } from '@/data/adapter'
-import type { PickupApprovalResult, PickupRequestResult, PickupRow } from '@/features/pickups/pickup-model'
-import type {
-  DeadlineRenegotiationInput,
-  PickupApproveInput,
-  PickupRequest,
-  PickupRequestInput,
-  RerouteProposal,
-  TripExceptionInput,
-} from '@/lib/mock-db'
+import type { DeadlineRenegotiationInput, RerouteProposal, TripExceptionInput } from '@/lib/mock-db'
 
 import { httpMonitoringApi } from './monitoring-http'
 import { mockMonitoringApi } from './monitoring-mock'
@@ -39,7 +26,7 @@ import type {
   RenegotiableRequirement,
 } from './monitoring-model'
 
-/** Lớp dữ liệu của màn giám sát (điều phối viên, quản lý công ty), sự cố cấp chuyến, nhận hàng dọc đường và chuông của hai vai trò đó. */
+/** Lớp dữ liệu của màn giám sát (điều phối viên, quản lý công ty), sự cố cấp chuyến và chuông của hai vai trò đó. */
 export type {
   LiveMonitoring,
   LiveTrip,
@@ -67,11 +54,6 @@ export type MonitoringApi = {
   confirmReroute(tripId: string, routeIndex: number): Promise<void>
   fetchTripRequirements(tripId: string): Promise<RenegotiableRequirement[]>
   renegotiateDeadline(tripId: string, exceptionId: string, input: DeadlineRenegotiationInput): Promise<void>
-  fetchPickupRows(tripId: string): Promise<PickupRow[]>
-  createPickupRequest(tripId: string, input: PickupRequestInput): Promise<PickupRequestResult>
-  validatePickupRequest(tripId: string, pickupId: string): Promise<PickupRequest>
-  approvePickupRequest(tripId: string, pickupId: string, input: PickupApproveInput): Promise<PickupApprovalResult>
-  rejectPickupRequest(tripId: string, pickupId: string, reason: string): Promise<void>
   fetchNotifications(): Promise<OfficeNotification[]>
 }
 
@@ -130,31 +112,6 @@ export function fetchTripRequirements(tripId: string): Promise<RenegotiableRequi
 // POST /api/trips/{id}/exceptions/{eid}/renegotiate
 export function renegotiateDeadline(tripId: string, exceptionId: string, input: DeadlineRenegotiationInput): Promise<void> {
   return adapter().renegotiateDeadline(tripId, exceptionId, input)
-}
-
-// GET /api/trips/{id}/pickup-requests
-export function fetchPickupRows(tripId: string): Promise<PickupRow[]> {
-  return adapter().fetchPickupRows(tripId)
-}
-
-// POST /api/trips/{id}/pickup-requests
-export function createPickupRequest(tripId: string, input: PickupRequestInput): Promise<PickupRequestResult> {
-  return adapter().createPickupRequest(tripId, input)
-}
-
-// POST /api/trips/{id}/pickup-requests/{pid}/validate
-export function validatePickupRequest(tripId: string, pickupId: string): Promise<PickupRequest> {
-  return adapter().validatePickupRequest(tripId, pickupId)
-}
-
-// POST /api/trips/{id}/pickup-requests/{pid}/approve
-export function approvePickupRequest(tripId: string, pickupId: string, input: PickupApproveInput): Promise<PickupApprovalResult> {
-  return adapter().approvePickupRequest(tripId, pickupId, input)
-}
-
-// POST /api/trips/{id}/pickup-requests/{pid}/reject
-export function rejectPickupRequest(tripId: string, pickupId: string, reason: string): Promise<void> {
-  return adapter().rejectPickupRequest(tripId, pickupId, reason)
 }
 
 // chưa có ở BE
