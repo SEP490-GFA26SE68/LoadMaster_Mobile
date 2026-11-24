@@ -1,7 +1,8 @@
 import { ApiError } from '@/data/http'
-import { isoFromBackend } from '@/lib/office-backend'
+import { isoFromBackend, pick } from '@/lib/office-backend'
 
-import type { PlacementStepDto, StartLoadingDto, WarehouseTaskDto } from './warehouse-http-dto'
+import { PRESENCE_STATUSES } from './presence/presence-model'
+import type { PlacementStepDto, StartLoadingDto, TripVehicleDto, WarehouseTaskDto } from './warehouse-http-dto'
 import type {
   PlacementOutcome,
   ServerCargoBox,
@@ -9,6 +10,7 @@ import type {
   ServerManualState,
   ServerPlacement,
   ServerStagingState,
+  ServerVehiclePresence,
   ServerWarehouseStage,
   ServerWarehouseTrip,
 } from './warehouse-server-model'
@@ -28,6 +30,25 @@ const finiteOrNull = (value: number | null | undefined) => (typeof value === 'nu
 const positive = (value: number | null | undefined): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0
 
 const text = (value: string | null | undefined) => value?.trim() || null
+
+const idOf = (value: number | null | undefined) => (typeof value === 'number' && Number.isFinite(value) ? String(value) : null)
+
+/**
+ * Xe, kho xuất phát và nơi xe đang ở của chuyến. Thiếu một trong ba (máy chủ cũ, chuyến chưa gắn xe hay chưa có kho xuất phát) là `null`,
+ * không đoán. Trạng thái lạ đọc là `OTHER`.
+ */
+function vehiclePresenceOf(dto: TripVehicleDto): ServerVehiclePresence | null {
+  const vehicleId = idOf(dto.vehicleId)
+  const originWarehouseId = idOf(dto.originWarehouseId)
+  const presence = dto.vehiclePresence
+  if (vehicleId === null || originWarehouseId === null || presence === null || presence === undefined) return null
+  return {
+    vehicleId,
+    originWarehouseId,
+    status: pick(PRESENCE_STATUSES, presence.status ?? 'UNKNOWN') ?? 'OTHER',
+    warehouseId: idOf(presence.warehouseId),
+  }
+}
 
 function stageOf(dto: WarehouseTaskDto): ServerWarehouseStage {
   if (dto.awaitingReplan === true) return 'stale'
@@ -52,6 +73,7 @@ export function taskOf(dto: WarehouseTaskDto): ServerWarehouseTrip {
     stage: stageOf(dto),
     status: dto.status === 'LOADING' ? 'LOADING' : dto.status === 'DRAFT' ? 'DRAFT' : 'PLANNED',
     replanReason: replanOf(dto),
+    vehiclePresence: vehiclePresenceOf(dto),
   }
 }
 
@@ -109,6 +131,7 @@ export function sessionOf(dto: StartLoadingDto): ServerLoadingSession {
     code: text(dto.tripCode) ?? id,
     vehicle: text(dto.vehicleInfo) ?? text(dto.licensePlate) ?? '',
     licensePlate: text(dto.licensePlate),
+    vehiclePresence: vehiclePresenceOf(dto),
     box: boxOf(dto),
     placements: steps.map((item) => item.placement).sort((a, b) => a.sequence - b.sequence),
     outcomes: Object.fromEntries(

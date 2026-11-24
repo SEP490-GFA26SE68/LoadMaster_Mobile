@@ -32,7 +32,7 @@ export function ServerFinishedView({ session }: { session: ServerLoadingSession 
           {damaged > 0 ? `${description} ${t('serverWarehouse.session.finishedDamaged', { count: damaged })}` : description}
         </AppText>
       </Card>
-      <VehiclePresenceCheck tripId={session.tripId} licensePlate={session.licensePlate} />
+      <VehiclePresenceCheck session={session} />
     </Screen>
   )
 }

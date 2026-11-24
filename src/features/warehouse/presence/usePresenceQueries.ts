@@ -3,6 +3,8 @@ import { useRef } from 'react'
 
 import { randomUuid } from '@/lib/uuid'
 
+import { serverWarehouseKeys } from '../server/useServerWarehouseQueries'
+
 import {
   checkInVehicle,
   confirmLoadingPresence,
@@ -93,7 +95,10 @@ export function useCheckInVehicle(warehouseId: string) {
   })
 }
 
-/** Xác nhận xe của chuyến đang xếp có ở kho xuất phát (máy chủ chỉ nhận khi xe còn "Chưa ghi nhận"). */
+/**
+ * Xác nhận xe của chuyến đang xếp có ở kho xuất phát (máy chủ nhận xe chưa ghi nhận, đang trên đường hay ở kho khác; máy chủ cũ chỉ nhận
+ * xe chưa ghi nhận). Xong hay lỗi đều đọc lại xe và phiên — phiên mang nơi xe đang ở.
+ */
 export function useConfirmLoadingPresence(tripId: string) {
   const client = useQueryClient()
   const keys = useIdempotencyKeys()
@@ -103,6 +108,10 @@ export function useConfirmLoadingPresence(tripId: string) {
       await confirmLoadingPresence(warehouseId, tripId, vehicleId, keys.keyOf(scope))
       keys.done(scope)
     },
-    onSettled: () => client.invalidateQueries({ queryKey: presenceKeys.all }),
+    onSettled: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: presenceKeys.all }),
+        client.invalidateQueries({ queryKey: serverWarehouseKeys.session(tripId) }),
+      ]),
   })
 }
