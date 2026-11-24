@@ -38,7 +38,7 @@ type PackageVerifySheetProps = {
 }
 
 /**
- * Tờ đối chiếu kiện ba mức (như `PackageVerify` của web) cho mọi bước có đối chiếu — tài xế dỡ, nhận dọc đường; kho soạn, xếp: (1) quét
+ * Tờ đối chiếu kiện ba mức (như `PackageVerify` của web) cho mọi bước có đối chiếu — tài xế dỡ; kho soạn, xếp: (1) quét
  * nhãn QR bằng camera, (2) gõ mã in dưới hình QR hoặc mã của bên gửi, (3) xác nhận tay kèm lý do — chỉ khi `manualAllowed`. Ba mức là ba
  * tab; kết quả lần đối chiếu gần nhất là một vùng đọc được (thành công, cảnh báo, lỗi) thay cho toast. Tờ không biết kiện nào đúng: mã đi
  * thẳng tới `verify` của nơi gọi, và nơi gọi quyết khi nào tờ đóng (`VerifyController`).

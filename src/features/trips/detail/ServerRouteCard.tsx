@@ -63,7 +63,6 @@ function StopRow({ stop, total }: { stop: ServerTripStop; total: number }) {
   ]
   const spoken = [
     t('officeServer.trips.stop', { number: stop.number, total, name: stop.name }),
-    ...(stop.kind === 'PICKUP' ? [t('trips.route.pickupTag')] : []),
     ...(stop.address && stop.address !== stop.name ? [stop.address] : []),
     status,
     ...times.map((item) => item.text),
@@ -73,7 +72,6 @@ function StopRow({ stop, total }: { stop: ServerTripStop; total: number }) {
       <StopDot number={stop.number} />
       <View style={styles.body}>
         <AppText variant="label">{stop.name}</AppText>
-        {stop.kind === 'PICKUP' ? <Chip tone="azure" label={t('trips.route.pickupTag')} /> : null}
         {stop.address && stop.address !== stop.name ? <AppText color={colors.text3}>{stop.address}</AppText> : null}
         <View style={styles.line}>
           <Chip tone={STATUS_TONE[stop.status]} label={status} />

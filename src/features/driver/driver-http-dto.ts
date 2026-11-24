@@ -50,13 +50,13 @@ export type StopPackageDto = {
   readonly manualReason?: string | null
   /** Lý do điều phối viên ghi khi từ chối xác nhận tay. */
   readonly manualRejectReason?: string | null
-  /** Kiện nhận dọc đường: yêu cầu nhận của kiện. */
-  readonly pickupRequestId?: number | null
-  /** Điểm nhận: kiện đã đối chiếu lên xe chưa. */
-  readonly picked?: boolean | null
 }
 
-/** `GET /api/driver/trips/{id}/current-stop` — điểm chưa hoàn tất đầu tiên và kiện của điểm đó theo thứ tự dỡ. */
+/**
+ * `GET /api/driver/trips/{id}/current-stop` — điểm chưa hoàn tất đầu tiên và kiện của điểm đó theo thứ tự dỡ. Máy chủ còn trả `stopType`
+ * và `pickupPackages` cho điểm nhận dọc đường cũ; app đã bỏ tính năng đó nên không đọc hai trường này: điểm như vậy là một điểm không có
+ * kiện nào phải dỡ — tài xế bấm "Đã đến" rồi hoàn tất như điểm giao.
+ */
 export type CurrentStopDto = {
   readonly stopId: number
   readonly stopSequence: number
@@ -65,10 +65,6 @@ export type CurrentStopDto = {
   /** Giờ đến thật (`LocalDateTime`); `null` khi chưa báo đến. */
   readonly actualArrival?: string | null
   readonly packages: readonly StopPackageDto[] | null
-  /** `DELIVERY` hoặc `PICKUP` (điểm nhận dọc đường chèn lúc duyệt); máy chủ cũ không trả thì là điểm giao. */
-  readonly stopType?: string | null
-  /** Điểm nhận: kiện phải đối chiếu lên xe; điểm giao: rỗng. */
-  readonly pickupPackages?: readonly StopPackageDto[] | null
 }
 
 /** `GET /api/trips/{id}/route-plans/active` — DRIVER được đọc. */
@@ -140,7 +136,6 @@ export type DriverTripDetailStopDto = {
   readonly lat: number | null
   readonly lng: number | null
   readonly status: string | null
-  readonly stopType: string | null
   readonly plannedArrival: string | null
   readonly actualArrival: string | null
   readonly deadline: string | null

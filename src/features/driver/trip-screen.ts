@@ -3,7 +3,6 @@ import { adaptResult } from '@/features/viewer3d/scene-input'
 import { leftOutIds, type PackageVerification, type Revision, type Trip, type TripMonitoring } from '@/lib/mock-db'
 
 import { deliverySummary, deliveryView, summaryStops, type DeliveryView } from './delivery-progress'
-import type { PickupFacts } from './driver-pickups'
 import { stopDeliveries, type StopDelivery } from './driver-plan'
 import type { DriverTripScreen, DriverTripStop, StopScreen, TripSummaryModel, VerifyVia } from './driver-model'
 import { stopCompletion } from './stop-completion'
@@ -18,7 +17,6 @@ export type DriverTripSource = {
   readonly trip: Trip
   /** Phương án tài xế làm theo (`driverPlan`); `null` khi chưa có bản duyệt. */
   readonly plan: Revision | null
-  readonly pickups: PickupFacts
   /** Vị trí xe và giờ đến trực tiếp — chỉ khi chuyến Đang vận chuyển và đã có tuyến. */
   readonly live: TripMonitoring | undefined
 }
@@ -35,7 +33,7 @@ function rejectedReason(done: boolean, verification: PackageVerification | undef
   return !done && verification?.manual?.status === 'MANUAL_REJECTED' ? (verification.manual.rejectReason ?? '') : undefined
 }
 
-export function tripScreen({ trip, plan, pickups, live }: DriverTripSource): DriverTripScreen {
+export function tripScreen({ trip, plan, live }: DriverTripSource): DriverTripScreen {
   const head = { id: trip.id, code: trip.id, name: trip.name }
   if (trip.phase === 'cancelled') return { kind: 'cancelled', trip: head, reason: trip.cancellation?.reason ?? '' }
   if (!plan) return { kind: 'noPlan', trip: head }
@@ -43,7 +41,7 @@ export function tripScreen({ trip, plan, pickups, live }: DriverTripSource): Dri
   if (trip.phase === 'completed') return { kind: 'completed', trip: head, summary: tripSummary(trip, plan) }
 
   const model = adaptResult({ trip: { id: trip.id, stops: trip.stops, inputVersion: trip.inputVersion }, revision: plan })
-  const stops = stopDeliveries(trip.stops, model, pickups)
+  const stops = stopDeliveries(trip.stops, model)
   const view = deliveryView(trip, stops)
   if (!view) return { kind: 'noStops', trip: head }
   return { kind: 'stop', trip: head, screen: stopScreen(trip, view, stops, live) }
@@ -56,15 +54,11 @@ function stopScreen(trip: Trip, view: DeliveryView, stops: readonly StopDelivery
   const left = leftOutIds(trip)
   const completion = stopCompletion(view, stops)
   const names: Record<string, string> = {}
-  for (const stop of stops) {
-    for (const item of stop.items) names[item.id] = item.name
-    for (const item of stop.pickupItems ?? []) names[item.id] = item.name
-  }
+  for (const stop of stops) for (const item of stop.items) names[item.id] = item.name
   const tripStops = stops.map(
     (stop): DriverTripStop => ({
       number: stop.number,
       name: stop.name,
-      kind: stop.kind ?? 'DELIVERY',
       packageCount: stop.items.filter((item) => !left.has(item.id)).length,
       done: view.completedStops.has(stop.number),
       timing: byStop.get(stop.number),
@@ -80,7 +74,6 @@ function stopScreen(trip: Trip, view: DeliveryView, stops: readonly StopDelivery
       address: stop.address,
       phone: stop.phone,
       contactName: stop.contactName,
-      kind: stop.kind ?? 'DELIVERY',
       lat: trip.stops[stop.number - 1]?.lat,
       lng: trip.stops[stop.number - 1]?.lng,
     },
@@ -111,17 +104,6 @@ function stopScreen(trip: Trip, view: DeliveryView, stops: readonly StopDelivery
         returned,
       }
     }),
-    pickupItems: view.pickupItems.map(({ item, done, verification }) => ({
-      id: item.id,
-      label: item.id,
-      name: item.name,
-      weightKg: item.weightKg,
-      requestId: item.requestId,
-      role: item.role,
-      done,
-      via: done ? verifyVia(verification) : undefined,
-      rejectedReason: rejectedReason(done, verification),
-    })),
     leftAtWarehouse: view.leftAtWarehouse.length,
     total: view.total,
     doneCount: view.unloadedCount,
@@ -132,13 +114,11 @@ function stopScreen(trip: Trip, view: DeliveryView, stops: readonly StopDelivery
     completion: {
       delivered: completion.delivered,
       returned: completion.returned.map((item) => ({ id: item.id, label: item.label ?? item.id, name: item.name })),
-      picked: completion.picked,
       issues: completion.issues,
       next: completion.next === undefined ? undefined : { number: completion.next.number, name: completion.next.name },
       nextKnown: true,
     },
     names,
-    hasPickupStops: stops.some((item) => item.kind === 'PICKUP'),
     // Giờ đến tính từ vị trí xe đổi theo nhịp kho trả; đã đến điểm thì giờ đến là giờ thật, không cần đọc lại
     refreshMs: delivering && trip.routePlan !== undefined ? (live?.refreshMs ?? null) : null,
     routeMap: {

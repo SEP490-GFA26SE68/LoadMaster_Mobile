@@ -100,10 +100,6 @@ function driverNotice(item: ServerNotification, viewerId: string | null): Driver
     case 'TRIP_UPDATED':
       if (same(item.after.driverId, viewerId)) return 'assigned'
       return same(item.before.driverId, viewerId) ? 'unassigned' : null
-    case 'PICKUP_APPROVED':
-      return 'pickupApproved'
-    case 'PICKUP_REJECTED':
-      return 'pickupRejected'
     case 'TRIP_STOPS_REORDERED':
       return 'stopsReordered'
     // Máy chủ chỉ báo tài xế khi chuyến quay về lập kế hoạch: kiện hỏng có kiện tựa lên, kiện thiếu bị bỏ khỏi chuyến
@@ -123,12 +119,6 @@ function driverDetails(notice: DriverNotice, after: Scalars): Readonly<Record<st
       return details({ loaded: numberOf(after.loadedPackages) })
     case 'cancelled':
       return details({ reason: textOf(after.reason), loaded: numberOf(after.loadedPackages), returned: numberOf(after.returned) })
-    case 'pickupApproved': {
-      const count = (numberOf(after.placed) ?? 0) + (numberOf(after.unplaced) ?? 0)
-      return details({ count: count > 0 ? count : undefined })
-    }
-    case 'pickupRejected':
-      return details({ reason: textOf(after.reason) })
     default:
       return {}
   }

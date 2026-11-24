@@ -30,12 +30,10 @@ export function StopItem({ stop, total, state, eta, missingCoordinates }: {
   const format = useFormat()
   const packages = t('companyTrips.packageCount', { count: stop.packageCount })
   const weight = format.weight(stop.weightKg)
-  const pickup = stop.kind === 'PICKUP'
   const unloaded = state?.kind === 'current' ? t('trips.route.unloaded', { done: format.integer(state.unloaded), total: format.integer(stop.packageCount) }) : null
   const issues = state && state.issues > 0 ? t('trips.route.issueTag', { count: state.issues }) : null
   const spoken = [
     t('trips.route.stop', { number: stop.number, total, name: stop.name, packages, weight }),
-    ...(pickup ? [t('trips.route.pickupTag')] : []),
     ...(stop.address ? [stop.address] : []),
     ...(stop.deadline ? [t('trips.route.deadlineA11y', { time: format.time(stop.deadline), date: format.date(stop.deadline) })] : []),
     ...(stop.priority ? [t('trips.route.priorityA11y', { priority: t(`companyTrips.priority.${stop.priority}`) })] : []),
@@ -59,7 +57,6 @@ export function StopItem({ stop, total, state, eta, missingCoordinates }: {
       </View>
       <View style={styles.body}>
         <AppText variant="label">{stop.name}</AppText>
-        {pickup ? <Chip tone="azure" label={t('trips.route.pickupTag')} /> : null}
         {stop.address ? <AppText color={colors.text3}>{stop.address}</AppText> : null}
         <AppText color={stop.packageCount === 0 ? colors.text3 : colors.text2} style={styles.number}>
           {`${packages} · ${weight}`}

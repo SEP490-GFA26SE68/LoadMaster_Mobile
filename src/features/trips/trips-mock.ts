@@ -97,9 +97,9 @@ async function fetchTripRequirements(tripId: string): Promise<TripRequirementRow
     .sort((a, b) => (a.stopNumber ?? Infinity) - (b.stopNumber ?? Infinity) || Date.parse(a.requirement.deadline) - Date.parse(b.requirement.deadline))
 }
 
-/** Bước đối chiếu đang diễn ra theo pha của chuyến: kho đang soạn / xếp, hoặc xe đang giao (dỡ, nhận hàng dọc đường). */
+/** Bước đối chiếu đang diễn ra theo pha của chuyến: kho đang soạn / xếp, hoặc xe đang giao (dỡ). */
 function activeContexts(phase: Trip['phase']): readonly VerifyContext[] {
-  return phase === 'loading' ? ['STAGING', 'LOADING'] : phase === 'delivering' ? ['UNLOADING', 'PICKUP'] : []
+  return phase === 'loading' ? ['STAGING', 'LOADING'] : phase === 'delivering' ? ['UNLOADING'] : []
 }
 
 async function fetchManualConfirmations(tripId: string): Promise<ManualConfirmRow[]> {

@@ -1,5 +1,5 @@
 /**
- * Tab Giám sát và màn giám sát một chuyến đang chạy (vị trí xe, giờ đến, sự cố cấp chuyến, nhận hàng dọc đường) của điều phối viên và
+ * Tab Giám sát và màn giám sát một chuyến đang chạy (vị trí xe, giờ đến, sự cố cấp chuyến) của điều phối viên và
  * quản lý công ty. Câu chung với bản web lấy ở nhánh `monitoring` (chép từ web); ở đây chỉ câu mobile cần thêm.
  */
 export const liveTrip = {
@@ -8,7 +8,6 @@ export const liveTrip = {
   card: {
     openHint: 'Mở giám sát chuyến {id}',
     noPosition: 'Chưa có vị trí xe',
-    pendingPickups: { one: '{count} yêu cầu nhận hàng chờ duyệt', other: '{count} yêu cầu nhận hàng chờ duyệt' },
   },
   /** Băng đầu danh sách của điều phối viên: số chuyến lúc này có điểm sát hạn hoặc trễ hạn dự kiến (bản web báo bằng toast). */
   etaRisk: {

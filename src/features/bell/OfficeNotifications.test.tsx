@@ -96,7 +96,7 @@ test('việc chính mình làm không thành thông báo', async () => {
 test('nguồn dữ liệu của giám sát chưa có thông báo: không có chuông, màn nói không làm được', async () => {
   const capabilities = jest
     .spyOn(monitoringApi, 'monitoringCapabilities')
-    .mockReturnValue({ exceptions: true, reroute: true, escalation: true, pickups: true, notifications: false })
+    .mockReturnValue({ exceptions: true, reroute: true, escalation: true, notifications: false })
   try {
     await renderNotifications(DISPATCHER_EMAIL)
     expect(await screen.findByText('Máy chủ chưa làm được việc này.')).toBeOnTheScreen()

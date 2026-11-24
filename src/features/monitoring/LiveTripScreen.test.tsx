@@ -104,7 +104,7 @@ describe('điều phối viên xử lý sự cố của chuyến', () => {
 })
 
 describe('quản lý công ty chỉ xem', () => {
-  test('không báo sự cố, không xử lý, không duyệt nhận hàng — mỗi phần một câu nói ai làm', async () => {
+  test('không báo sự cố, không xử lý — một câu nói ai làm', async () => {
     await signInAs(DISPATCHER_EMAIL)
     await getMockDb().reportTripException(TRIP, TRAFFIC)
     await renderLive(MANAGER_EMAIL)
@@ -116,11 +116,6 @@ describe('quản lý công ty chỉ xem', () => {
     expect(screen.queryByRole('button', { name: 'Đã xử lý' })).toBeNull()
     // Sự cố chưa chuyển lên thì quản lý chưa có việc gia hạn
     expect(screen.queryByRole('button', { name: 'Nhập hạn mới' })).toBeNull()
-
-    expect(await screen.findByText('PKR-001')).toBeOnTheScreen()
-    expect(screen.getByText('Chỉ điều phối viên duyệt hoặc từ chối yêu cầu nhận hàng.')).toBeOnTheScreen()
-    expect(screen.queryByRole('button', { name: 'Duyệt yêu cầu PKR-001' })).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Nhận hàng dọc đường' })).toBeNull()
   })
 
   test('sự cố đã chuyển lên: quản lý mở tờ gia hạn ngay ở màn chuyến', async () => {
@@ -140,66 +135,4 @@ test('chuyến đã giao xong: màn nói chuyến thôi chạy, không có nút 
   await renderLive(DISPATCHER_EMAIL, 'TRIP-001')
   expect(await screen.findByText('Chuyến TRIP-001 không còn đang vận chuyển: vị trí xe và giờ đến thôi cập nhật.')).toBeOnTheScreen()
   expect(screen.queryByRole('button', { name: 'Báo sự cố' })).toBeNull()
-})
-
-describe('điều phối viên duyệt, từ chối yêu cầu nhận hàng dọc đường', () => {
-  test('còn luật không đạt: lý do vượt luật bắt buộc; duyệt xong tờ liệt kê kiện kèm mã QR', async () => {
-    await renderLive()
-    await fireEvent.press(await screen.findByRole('button', { name: 'Duyệt yêu cầu PKR-001' }))
-    expect(await screen.findByRole('header', { name: 'Duyệt yêu cầu PKR-001' })).toBeOnTheScreen()
-    expect(await screen.findByText('1 luật chưa đạt. Muốn duyệt vẫn phải ghi lý do vượt luật.')).toBeOnTheScreen()
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Duyệt yêu cầu' }))
-    expect(await screen.findByText('Cần ghi lý do để duyệt khi còn luật không đạt.')).toBeOnTheScreen()
-    await fireEvent.changeText(screen.getByLabelText('Lý do vượt luật'), 'Khách đồng ý nhận trễ, đã báo điểm 3')
-    await fireEvent.press(screen.getByRole('button', { name: 'Duyệt yêu cầu' }))
-
-    expect(await screen.findByRole('header', { name: 'Đã duyệt yêu cầu PKR-001' })).toBeOnTheScreen()
-    expect(screen.getByText(/^HG-0412 · mã QR LM-/)).toBeOnTheScreen()
-    expect(screen.getAllByText(/^HG-041\d · mã QR LM-/)).toHaveLength(4)
-    await fireEvent.press(screen.getByRole('button', { name: 'Đóng' }))
-
-    expect(await screen.findByText('Đã duyệt — chờ nhận hàng')).toBeOnTheScreen()
-    expect(screen.getByText('Lý do vượt luật: Khách đồng ý nhận trễ, đã báo điểm 3')).toBeOnTheScreen()
-    const request = await getMockDb().getPickupRequest(TRIP, 'PKR-001')
-    expect([request.status, request.overrideReason]).toStrictEqual(['APPROVED', 'Khách đồng ý nhận trễ, đã báo điểm 3'])
-  })
-
-  test('đạt cả mười luật: duyệt ngay, không hỏi lý do', async () => {
-    await signInAs(DISPATCHER_EMAIL)
-    const pkr001 = await getMockDb().getPickupRequest(TRIP, 'PKR-001')
-    const fresh = await getMockDb().createPickupRequest(TRIP, {
-      pickup: { name: 'Kho Minh Phát', address: 'KCN VSIP 1, Thuận An, Bình Dương', lat: 10.928, lng: 106.712 },
-      delivery: pkr001.delivery,
-      packages: [{ packageCode: 'MP-001', lengthCm: 60, widthCm: 40, heightCm: 40, weightKg: 12, handlingClass: 'STANDARD' }],
-    })
-    expect(fresh.status).toBe('VALIDATED')
-    await renderLive()
-
-    await fireEvent.press(await screen.findByRole('button', { name: `Duyệt yêu cầu ${fresh.id}` }))
-    expect(await screen.findByText('Đạt cả mười luật. Có thể duyệt ngay.')).toBeOnTheScreen()
-    expect(screen.queryByLabelText('Lý do vượt luật')).toBeNull()
-    await fireEvent.press(screen.getByRole('button', { name: 'Duyệt yêu cầu' }))
-
-    expect(await screen.findByRole('header', { name: `Đã duyệt yêu cầu ${fresh.id}` })).toBeOnTheScreen()
-    expect(screen.getByText(/^MP-001 · mã QR LM-/)).toBeOnTheScreen()
-    const request = await getMockDb().getPickupRequest(TRIP, fresh.id)
-    expect([request.status, request.overrideReason]).toStrictEqual(['APPROVED', undefined])
-  })
-
-  test('từ chối: lý do bắt buộc; từ chối xong thẻ nói đã từ chối và lý do', async () => {
-    await renderLive()
-    await fireEvent.press(await screen.findByRole('button', { name: 'Từ chối yêu cầu PKR-001' }))
-    expect(await screen.findByRole('header', { name: 'Từ chối yêu cầu PKR-001' })).toBeOnTheScreen()
-
-    await fireEvent.press(screen.getByRole('button', { name: 'Từ chối yêu cầu' }))
-    expect(await screen.findByText('Cần ghi lý do từ chối.')).toBeOnTheScreen()
-    await fireEvent.changeText(screen.getByLabelText('Lý do từ chối'), 'Xe đã đầy vùng sau, hẹn chuyến khác')
-    await fireEvent.press(screen.getByRole('button', { name: 'Từ chối yêu cầu' }))
-
-    expect(await screen.findByText('Đã từ chối yêu cầu PKR-001.')).toBeOnTheScreen()
-    expect(screen.getByText('Đã từ chối')).toBeOnTheScreen()
-    expect(screen.getByText('Lý do từ chối: Xe đã đầy vùng sau, hẹn chuyến khác')).toBeOnTheScreen()
-    expect(screen.queryByRole('button', { name: 'Duyệt yêu cầu PKR-001' })).toBeNull()
-  })
 })

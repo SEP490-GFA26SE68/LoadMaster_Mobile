@@ -19,7 +19,6 @@ const FILTERS: readonly FilterName[] = ['late', 'incidents']
 type MonitoringTripListProps = {
   trips: readonly MonitoringTrip[]
   fleet: readonly LiveMonitoring[]
-  pendingPickups: Readonly<Record<string, number>>
   /** Phần đầu danh sách của màn: tab của quản lý, dải cảnh báo. */
   header: ReactNode
   refresh: { readonly refreshing: boolean; readonly onRefresh: () => void }
@@ -31,7 +30,7 @@ type MonitoringTripListProps = {
  * cố" kèm số chuyến của từng loại, rồi một thẻ mỗi chuyến qua bộ lọc. Bộ lọc là state của màn (bản web giữ trên URL); không chuyến nào
  * khớp thì nói vậy kèm nút "Bỏ lọc". Không chuyến nào đang chạy thì chỉ còn câu rỗng như web, vẫn kéo xuống để đọc lại được.
  */
-export function MonitoringTripList({ trips, fleet, pendingPickups, header, refresh, onOpen }: MonitoringTripListProps) {
+export function MonitoringTripList({ trips, fleet, header, refresh, onOpen }: MonitoringTripListProps) {
   const t = useT()
   const format = useFormat()
   const [active, setActive] = useState<readonly FilterName[]>([])
@@ -50,7 +49,7 @@ export function MonitoringTripList({ trips, fleet, pendingPickups, header, refre
       data={visible}
       keyExtractor={(trip) => trip.tripId}
       renderItem={({ item }) => (
-        <MonitoringTripCard trip={item} live={byId.get(item.tripId)} pendingPickups={pendingPickups[item.tripId] ?? 0} onOpen={onOpen} />
+        <MonitoringTripCard trip={item} live={byId.get(item.tripId)} onOpen={onOpen} />
       )}
       ListHeaderComponent={
         <View style={styles.header}>

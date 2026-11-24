@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import type { PickupRequestInput } from '@/lib/mock-db'
 import { pollInterval } from '@/lib/polling'
 
 import {
@@ -10,7 +9,6 @@ import {
   completeStop,
   confirmUnload,
   confirmUnloadManually,
-  createPickupRequest,
   driverCapabilities,
   fetchMyTrips,
   fetchOpenTrips,
@@ -32,10 +30,8 @@ const NO_CAPABILITIES: DriverCapabilities = {
   departFromList: false,
   arrive: false,
   manualConfirm: false,
-  pickupManualConfirm: false,
   deliveryIssues: false,
   tripExceptions: false,
-  pickups: false,
   gps: false,
   notifications: false,
   gpsLocalOnly: false,
@@ -167,11 +163,6 @@ export function useCompleteStopMutation(tripId: string) {
 
 export function useReportTripExceptionMutation(tripId: string) {
   return useDriverMutation((input: TripExceptionRequest) => reportTripException(tripId, input))
-}
-
-/** Tài xế gửi yêu cầu nhận hàng dọc đường; kho trả yêu cầu đã kiểm mười luật kèm các điểm của chuyến (câu của luật 2 gọi tên điểm). */
-export function useCreatePickupRequestMutation(tripId: string) {
-  return useDriverMutation((input: PickupRequestInput) => createPickupRequest(tripId, input))
 }
 
 /** Danh sách chuyến đang mở (chưa có tài xế) của công ty. */

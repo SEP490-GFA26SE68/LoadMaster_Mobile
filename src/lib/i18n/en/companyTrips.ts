@@ -22,7 +22,6 @@ export const companyTrips = {
     STAGING: 'Staging',
     LOADING: 'Loading',
     UNLOADING: 'Unloading',
-    PICKUP: 'En-route pickup',
   },
   requirements: {
     title: 'Delivery requirements of this trip',

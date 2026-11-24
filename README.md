@@ -22,14 +22,12 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
   chuông và màn thông báo. Chưa có: khung 3D (bước xếp dùng sơ đồ 2D).
 - Điều phối viên và quản lý công ty, trên kho mẫu: tab **Chuyến hàng** (danh sách theo ngày, tab trạng thái, tìm bỏ dấu; chi tiết
   chuyến chỉ đọc, điều phối viên duyệt xác nhận tay và quyết kiện báo thiếu); tab **Giám sát** (chuyến đang chạy, vị trí và giờ đến
-  bằng chữ, sự cố cấp chuyến, tìm tuyến khác, duyệt / từ chối nhận hàng dọc đường; quản lý gia hạn sự cố đã chuyển lên); tab **Tổng
-  quan** của quản lý (số liệu theo kỳ, đội xe, chuyến gần đây); chuông của hai vai trò. Tài xế tạo được yêu cầu nhận hàng dọc đường
-  (tờ "Thêm" ở màn điểm giao). Chưa có: bản đồ, khung 3D.
+  bằng chữ, sự cố cấp chuyến, tìm tuyến khác; quản lý gia hạn sự cố đã chuyển lên); tab **Tổng
+  quan** của quản lý (số liệu theo kỳ, đội xe, chuyến gần đây); chuông của hai vai trò. Chưa có: bản đồ, khung 3D.
 - Nối backend: đăng nhập (Keycloak + `GET /api/users/me`); tài xế chạy trọn trên máy chủ như bản web — "Chuyến của tôi" đủ bốn
   nhóm, "Xuất phát" ngay ở thẻ chuyến (kho chưa xếp xong thì nút mờ kèm lý do), "Đã đến điểm n", dỡ bằng quét QR hoặc gõ mã (mã QR, mã
-  vạch, mã kho, mã bên gửi khi duy nhất), xác nhận tay chờ điều phối viên duyệt, báo sự cố theo kiện, sự cố trên đường, nhận kiện ở điểm
-  nhận dọc đường, hoàn tất điểm, vị trí GPS. Giờ đến và tiến độ từng kiện đọc lại từ máy chủ, nên mở lại app vẫn đúng. Máy chủ chưa có:
-  thông báo, yêu cầu nhận hàng của tài xế, xác nhận tay ở điểm nhận, số liệu tổng kết chuyến — app ẩn phần đó.
+  vạch, mã kho, mã bên gửi khi duy nhất), xác nhận tay chờ điều phối viên duyệt, báo sự cố theo kiện, sự cố trên đường, hoàn tất điểm, vị trí GPS. Giờ đến và tiến độ từng kiện đọc lại từ máy chủ, nên mở lại app vẫn đúng. Máy chủ chưa có:
+  thông báo, số liệu tổng kết chuyến — app ẩn phần đó.
 - Nối backend cho nhân viên kho: tab **Kho** đọc `GET /api/warehouse/tasks` (đang xếp, chờ xếp, xếp xong — chờ xuất phát, chờ điều
   phối tối ưu lại kèm lý do); phiên đọc lại từ máy chủ ở máy nào cũng được — soạn hàng (đối chiếu không cần thứ tự, xác nhận tay chờ
   duyệt, báo thiếu), xếp theo thứ tự (sơ đồ lòng thùng 2D, đối chiếu, xác nhận tay, ghi sai lệch vị trí, kiện hỏng: bỏ lại kho hoặc
@@ -40,7 +38,7 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
   trí kiện 3D (bước xếp dùng sơ đồ 2D).
 - Nối backend cho điều phối viên và quản lý công ty: danh sách và chi tiết chuyến (duyệt xác nhận tay, quyết kiện báo thiếu), Giám sát
   (sự cố cấp chuyến, tìm tuyến khác, chuyển quản lý, gia hạn), Tổng quan theo kỳ. Ẩn khi dùng máy chủ: yêu cầu giao và dòng phụ phương
-  án của chuyến, nhận hàng dọc đường ở Giám sát, chuông của hai vai trò.
+  án của chuyến, chuông của hai vai trò.
 - Ngày 16/10 đã chạy bản debug trên máy ảo Android 16: với kho mẫu — đăng nhập tài xế, xuất phát, đã đến điểm, dỡ kiện bằng gõ mã; với
   backend — bản đăng nhập qua trình duyệt cũ (đã thay bằng form trong app ngày 04/11, chưa chạy lại trên máy). **Chưa** chạy với backend
   thật (đăng nhập trọn vòng, các endpoint của tài xế), chưa kiểm camera QR, GPS thật, điện thoại thật và iOS; hai màn lỗi và toàn bộ

@@ -42,13 +42,12 @@ const DETAIL: ServerTripDetail = {
       number: 1,
       name: 'Siêu thị Thủ Đức',
       address: '12 Võ Văn Ngân, Thủ Đức',
-      kind: 'DELIVERY',
       status: 'COMPLETED',
       plannedArrival: '2026-09-24T02:30:00.000Z',
       actualArrival: '2026-09-24T02:40:00.000Z',
       deadline: '2026-09-24T04:00:00.000Z',
     },
-    { id: '8', number: 2, name: 'Cửa hàng Dĩ An', address: '', kind: 'PICKUP', status: 'PENDING' },
+    { id: '8', number: 2, name: 'Cửa hàng Dĩ An', address: '', status: 'PENDING' },
   ],
 }
 
@@ -75,7 +74,7 @@ test('đầu chuyến, lý do huỷ, câu nói màn chỉ có phần máy chủ 
   expect(
     screen.getByLabelText('Điểm 1 / 2: Siêu thị Thủ Đức, 12 Võ Văn Ngân, Thủ Đức, Đã giao xong, Đã đến 09:40 24/09, Dự kiến đến 09:30 24/09, Hạn 11:00 24/09'),
   ).toBeTruthy()
-  expect(screen.getByLabelText('Điểm 2 / 2: Cửa hàng Dĩ An, Nhận hàng, Chưa đến')).toBeTruthy()
+  expect(screen.getByLabelText('Điểm 2 / 2: Cửa hàng Dĩ An, Chưa đến')).toBeTruthy()
   // Thẻ chỉ kho mẫu có số không được vẽ
   expect(screen.queryByText('Tiến trình')).toBeNull()
   expect(screen.queryByText('Phương tiện')).toBeNull()

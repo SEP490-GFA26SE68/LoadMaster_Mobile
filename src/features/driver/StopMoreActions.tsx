@@ -1,20 +1,19 @@
-import { ClipboardList, Ellipsis, PackagePlus, TrafficCone } from 'lucide-react-native'
+import { ClipboardList, Ellipsis, TrafficCone } from 'lucide-react-native'
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 
 import { Button } from '@/components/Button'
 import { Sheet } from '@/components/Sheet'
 import { useCan } from '@/features/auth/AuthProvider'
-import { usePickupFormView } from '@/features/pickups/usePickupFormView'
 import { useT } from '@/lib/i18n'
 import { space } from '@/theme/tokens'
 
 import type { DriverTripException, TripHead } from './driver-model'
 import { useTripExceptionHistoryView } from './TripExceptionHistorySheet'
 import { useTripExceptionForm } from './TripExceptionSheet'
-import { useCreatePickupRequestMutation, useDriverCapabilities, useReportTripExceptionMutation } from './useDriverQueries'
+import { useDriverCapabilities, useReportTripExceptionMutation } from './useDriverQueries'
 
-type Panel = 'menu' | 'exception' | 'exceptionHistory' | 'pickup'
+type Panel = 'menu' | 'exception' | 'exceptionHistory'
 
 type StopMoreActionsProps = {
   trip: TripHead
@@ -31,7 +30,7 @@ type StopMoreActionsProps = {
 
 /**
  * Nút phụ "Thêm" ở màn điểm giao của tài xế (như `StopMoreActions` của web): gom các việc trên đường vào **một** tờ trượt từ đáy —
- * "Sự cố trên đường" (tạo mới), "Xem sự cố đã báo" (xem lại lịch sử + trạng thái xử lý) và "Nhận hàng dọc đường".
+ * "Sự cố trên đường" (tạo mới) và "Xem sự cố đã báo" (xem lại lịch sử + trạng thái xử lý).
  */
 export function StopMoreActions({
   trip,
@@ -60,7 +59,6 @@ export function StopMoreActions({
   }
 
   const report = useReportTripExceptionMutation(trip.id)
-  const create = useCreatePickupRequestMutation(trip.id)
   const exception = useTripExceptionForm({
     tripCode: trip.code,
     report,
@@ -71,7 +69,6 @@ export function StopMoreActions({
     },
   })
   const canException = delivering && capabilities.tripExceptions && can('exceptions.report')
-  const canPickup = delivering && capabilities.pickups && can('pickups.create')
   const exceptionHistory = useTripExceptionHistoryView({
     tripCode: trip.code,
     exceptions,
@@ -83,8 +80,7 @@ export function StopMoreActions({
       setPanel('exception')
     },
   })
-  const pickup = usePickupFormView({ tripCode: trip.code, create, onClose: close })
-  if (!canException && !canPickup) return null
+  if (!canException) return null
 
   const historyLabel =
     exceptions.length > 0
@@ -96,57 +92,34 @@ export function StopMoreActions({
       ? exception
       : panel === 'exceptionHistory'
         ? exceptionHistory
-        : panel === 'pickup'
-          ? pickup
-          : {
-              title: t('driver.more.title'),
-              description: t('driver.more.description'),
-              busy: false,
-              footer: (
-                <Button variant="secondary" style={styles.flex} onPress={close}>
-                  {t('driver.more.close')}
+        : {
+            title: t('driver.more.title'),
+            description: t('driver.more.description'),
+            busy: false,
+            footer: (
+              <Button variant="secondary" style={styles.flex} onPress={close}>
+                {t('driver.more.close')}
+              </Button>
+            ),
+            body: (
+              <View style={styles.rows}>
+                <Button
+                  write
+                  variant="secondary"
+                  icon={TrafficCone}
+                  style={styles.row}
+                  onPress={() => {
+                    exception.reset()
+                    setPanel('exception')
+                  }}>
+                  {t('monitoring.reportDialog.driverOpen')}
                 </Button>
-              ),
-              body: (
-                <View style={styles.rows}>
-                  {canException ? (
-                    <>
-                      <Button
-                        write
-                        variant="secondary"
-                        icon={TrafficCone}
-                        style={styles.row}
-                        onPress={() => {
-                          exception.reset()
-                          setPanel('exception')
-                        }}>
-                        {t('monitoring.reportDialog.driverOpen')}
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        icon={ClipboardList}
-                        style={styles.row}
-                        onPress={() => setPanel('exceptionHistory')}>
-                        {historyLabel}
-                      </Button>
-                    </>
-                  ) : null}
-                  {canPickup ? (
-                    <Button
-                      write
-                      variant="secondary"
-                      icon={PackagePlus}
-                      style={styles.row}
-                      onPress={() => {
-                        pickup.reset()
-                        setPanel('pickup')
-                      }}>
-                      {t('pickups.open')}
-                    </Button>
-                  ) : null}
-                </View>
-              ),
-            }
+                <Button variant="secondary" icon={ClipboardList} style={styles.row} onPress={() => setPanel('exceptionHistory')}>
+                  {historyLabel}
+                </Button>
+              </View>
+            ),
+          }
 
   return (
     <>

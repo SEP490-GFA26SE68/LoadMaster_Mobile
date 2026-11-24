@@ -75,7 +75,6 @@ describe('chuông máy chủ của tài xế', () => {
     expect(notes.map(({ id, kind, details }) => [id, kind, details])).toEqual([
       ['10', 'cancelled', { reason: 'Khách hoãn', returned: 4 }],
       ['9', 'loadingCompleted', { loaded: 12 }],
-      ['8', 'pickupApproved', { count: 3 }],
       ['7', 'loadingStarted', {}],
       ['5', 'replanDamaged', {}],
       ['4', 'replanShortage', {}],

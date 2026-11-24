@@ -27,11 +27,11 @@ const MIRRORED_FILES = [
   // Hồ sơ `GET /api/users/me` của backend → vai trò và người dùng của app (đăng nhập bằng Keycloak)
   'features/auth/backend-user.ts',
   // Màn điểm giao của tài xế: tiến độ giao, kiện của từng điểm, giờ đến, hoàn tất điểm, form báo sự cố
-  ...['delivery-progress', 'driver-pickups', 'driver-plan', 'issue-form.schema', 'my-trips', 'stop-completion', 'stop-timing'].map(
+  ...['delivery-progress', 'driver-plan', 'issue-form.schema', 'my-trips', 'stop-completion', 'stop-timing'].map(
     (name) => `features/driver/${name}.ts`,
   ),
   // Phương án đã duyệt → kiện theo điểm giao và thứ tự dỡ (phần thuần của viewer 3D, không có Three.js)
-  ...['scene-input', 'scene-pickups', 'scene-types', 'viewer-types', 'operations/unloading'].map((name) => `features/viewer3d/${name}.ts`),
+  ...['scene-input', 'scene-types', 'viewer-types', 'operations/unloading'].map((name) => `features/viewer3d/${name}.ts`),
   // Chuông: sự kiện nào báo cho ai, câu riêng của tài xế
   'features/notifications/notifications.ts',
   // Màn kho: nhóm chuyến của danh sách kho, phiên soạn → xếp theo bản duyệt, số liệu hướng dẫn đặt từng kiện; tiến độ soạn, xếp của phiên
@@ -44,8 +44,6 @@ const MIRRORED_FILES = [
   ...['dashboard-summary', 'dashboard-period', 'trip-facts'].map((name) => `features/manager/${name}.ts`),
   // Giám sát: tóm tắt chuyến đang chạy (điểm kế tiếp, mức hạn xấu nhất, sự cố), bộ lọc, sự cố đã chuyển quản lý
   'features/monitoring/monitoring-view.ts',
-  // Nhận hàng dọc đường: câu của mười luật, tên điểm trong câu, màu trạng thái yêu cầu
-  ...['pickup-rule-text', 'pickup-stops', 'pickup-look'].map((name) => `features/pickups/${name}.ts`),
   // Tìm bỏ dấu, so chữ, khoảng ngày của danh sách
   'lib/list-filter.ts',
   // Nhịp đọc lại giãn dần khi máy chủ lỗi liên tiếp, dừng sau năm lần (`refetchInterval`)
@@ -60,7 +58,7 @@ const MIRRORED_FILES = [
   // Ngày lịch `YYYY-MM-DD` (ngày chạy) → giữa trưa giờ máy, để ngày hiện đúng ở mọi múi giờ
   'lib/calendar-date.ts',
   'lib/i18n/types.ts',
-  ...['dataErrors', 'issues', 'language', 'lookup', 'manager', 'monitoring', 'pickups', 'roles', 'serverWarehouse', 'status', 'trips', 'warehouse'].flatMap((branch) => [
+  ...['dataErrors', 'issues', 'language', 'lookup', 'manager', 'monitoring', 'roles', 'serverWarehouse', 'status', 'trips', 'warehouse'].flatMap((branch) => [
     `lib/i18n/vi/${branch}.ts`,
     `lib/i18n/en/${branch}.ts`,
   ]),

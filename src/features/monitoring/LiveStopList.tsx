@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
 import { Card } from '@/components/Card'
-import { Chip, MockResultTag } from '@/components/Chip'
+import { MockResultTag } from '@/components/Chip'
 import { StopDot } from '@/components/StopDot'
 import { useFormat, useT } from '@/lib/i18n'
 import type { TripLiveStop } from '@/lib/mock-db'
@@ -14,7 +14,7 @@ import { useMoment } from './useMoment'
 
 /**
  * "Giờ đến từng điểm" của màn giám sát một chuyến (bảng điểm của `MonitoringTripPanel` web, thành danh sách trên điện thoại): mọi điểm theo
- * thứ tự tuyến, số điểm trên màu của điểm kèm tên, nhãn "Nhận hàng" cho điểm nhận dọc đường; mỗi điểm một dòng giờ — đã giao xong, đã đến,
+ * thứ tự tuyến, số điểm trên màu của điểm kèm tên; mỗi điểm một dòng giờ — đã giao xong, đã đến,
  * dự kiến đến (tính từ vị trí xe, MOCK RESULT) — và với điểm chưa giao: hạn giao kèm mức hạn bằng chữ. Trình đọc màn hình đọc mỗi điểm một lần.
  */
 export function LiveStopList({ trip, live }: { trip: MonitoringTrip; live: LiveMonitoring }) {
@@ -43,7 +43,6 @@ function StopRow({ stop, eta, divider }: { stop: MonitoringStop; eta: TripLiveSt
   const moment = useMoment()
   const done = stop.completedAt !== undefined
   const name = `${t('common.stop', { number: stop.number })} · ${stop.name}`
-  const pickup = stop.kind === 'PICKUP' ? t('trips.route.pickupTag') : null
   const time =
     stop.completedAt !== undefined
       ? t('monitoring.panel.stops.completed', { time: format.time(stop.completedAt) })
@@ -60,18 +59,13 @@ function StopRow({ stop, eta, divider }: { stop: MonitoringStop; eta: TripLiveSt
         ? t('monitoring.panel.stops.noDeadline')
         : t('monitoring.escalations.deadline', { time: moment(eta.deadline) })
   const status = done ? undefined : eta?.deadlineStatus
-  const label = [name, pickup, time, deadline, status === undefined ? null : t(`common.deadlineStatuses.${status}`)].filter((part) => part !== null).join(', ')
+  const label = [name, time, deadline, status === undefined ? null : t(`common.deadlineStatuses.${status}`)].filter((part) => part !== null).join(', ')
 
   return (
     <View style={[styles.row, divider && styles.divider]} accessible accessibilityLabel={label}>
       <StopDot number={stop.number} />
       <View style={styles.body}>
         <AppText variant="label">{stop.name}</AppText>
-        {pickup === null ? null : (
-          <View style={styles.chips}>
-            <Chip tone="azure" label={pickup} />
-          </View>
-        )}
         <AppText color={done ? colors.success : colors.text}>{time}</AppText>
         {deadline === null ? null : <AppText color={colors.text2}>{deadline}</AppText>}
         {status === undefined ? null : (

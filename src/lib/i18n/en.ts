@@ -21,8 +21,6 @@ import { openTrips } from './en/openTrips'
 import { overview } from './en/overview'
 import { packageLookup } from './en/packageLookup'
 import { payroll } from './en/payroll'
-import { pickupRequest } from './en/pickupRequest'
-import { pickups } from './en/pickups'
 import { roles } from './en/roles'
 import { serverWarehouse } from './en/serverWarehouse'
 import { status } from './en/status'
@@ -64,8 +62,6 @@ export const en = {
   overview,
   packageLookup,
   payroll,
-  pickupRequest,
-  pickups,
   roles,
   serverWarehouse,
   status,

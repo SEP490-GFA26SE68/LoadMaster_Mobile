@@ -6,7 +6,6 @@ export const liveTrip = {
   card: {
     openHint: 'Open monitoring for trip {id}',
     noPosition: 'No vehicle position yet',
-    pendingPickups: { one: '{count} pickup request awaiting approval', other: '{count} pickup requests awaiting approval' },
   },
   etaRisk: {
     one: '{count} trip has a stop close to its deadline or expected late.',
