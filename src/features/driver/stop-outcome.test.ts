@@ -35,10 +35,10 @@ describe('còn điểm giao phía sau sau khi hoàn tất', () => {
 
 describe('ảnh chụp màn xen giữa', () => {
   const screen = {
-    stop: { number: 1, ref: 's1', name: 'Điểm 1', address: '', kind: 'DELIVERY' },
+    stop: { number: 1, ref: 's1', name: 'Điểm 1', address: '' },
     stopCount: 3,
     completion: completion(),
-  } as StopScreen
+  } as unknown as StopScreen
 
   test('còn điểm: tripCompleted false, giữ next', () => {
     const outcome = stopOutcomeOf(screen, { tripCompleted: false, hasNext: true })

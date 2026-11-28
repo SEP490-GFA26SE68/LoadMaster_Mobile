@@ -292,7 +292,30 @@ export const trips = {
 
   optimization: {
     run: 'Optimize route',
-    success: 'Route optimized successfully',
+    success: 'Three route plans are ready. Pick A, B or C and approve one.',
+  },
+  routePlans: {
+    title: 'Route plans',
+    empty: 'No route yet: run Optimize route to get plans A · B · C.',
+    run: 'Run {id}',
+    candidate: 'Plan {label}',
+    unlabeled: 'Route #{id}',
+    approved: 'Approved',
+    compare: 'Compare',
+    compareDescription: 'A and B share the same stop order (deadlines and priority). C may reorder by deadline; Urgent cargo is must-load in 3D packing.',
+    approve: 'Approve plan',
+    approvedToast: 'Approved route plan {label}',
+    sameOrder: 'Same stop order as A',
+    reordered: 'Stop order follows deadlines',
+    distance: 'Distance',
+    duration: 'Travel time',
+    missed: { one: '{count} late stop', other: '{count} late stops' },
+    stops: 'Stop order',
+    objectives: {
+      SHORTEST: 'Shortest path — stop order already respects deadlines and priority.',
+      AVOID_CONGESTION: 'Avoids rush-hour congestion — same stop order as A, different polyline.',
+      DEADLINE_FIRST: 'Earlier deadlines first; if two stops are equally tight, Urgent before High. Packing LIFO follows the new order.',
+    },
   },
   loadingOptimization: {
     run: 'Optimize loading',
