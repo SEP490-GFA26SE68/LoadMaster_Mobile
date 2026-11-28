@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router'
 import { ArrowLeft } from 'lucide-react-native'
+import { useState } from 'react'
 
 import { Banner } from '@/components/Banner'
 import { Button } from '@/components/Button'
@@ -8,7 +9,8 @@ import { Screen } from '@/components/Screen'
 import { ErrorState, LoadingState } from '@/components/StateView'
 import { dataErrorMessage, useT } from '@/lib/i18n'
 
-import type { DriverTripScreen } from './driver-model'
+import type { DriverTripScreen, StopOutcome } from './driver-model'
+import { StopOutcomeView } from './StopOutcomeView'
 import { StopView } from './StopView'
 import { TripSummaryView } from './TripSummaryView'
 import { useTripScreenQuery } from './useDriverQueries'
@@ -16,15 +18,28 @@ import { useTripScreenQuery } from './useDriverQueries'
 /**
  * Màn một chuyến của tài xế (như `DriverStopPage` của web): đọc chuyến từ nguồn dữ liệu rồi chọn màn — điểm đang giao (`StopView`), tổng
  * kết khi đã giao xong, hoặc một thông báo khi chuyến không giao được (đã huỷ, chưa có phương án đã duyệt, quay về lập kế hoạch, không có
- * điểm giao). Mọi màn đều có lối về danh sách chuyến.
+ * điểm giao). Sau khi hoàn tất một điểm, màn xen giữa nói còn điểm hay hết chuyến. Mọi màn đều có lối về danh sách chuyến.
  */
 export function TripScreen({ tripId }: { tripId: string }) {
   const t = useT()
   const router = useRouter()
   const query = useTripScreenQuery(tripId)
+  const [outcome, setOutcome] = useState<StopOutcome | null>(null)
   const toTrips = () => router.dismissTo('/trips')
+  const trip = query.data?.trip
 
-  if (query.isSuccess) return <TripContent data={query.data} />
+  if (outcome !== null && trip !== undefined) {
+    return (
+      <StopOutcomeView
+        trip={trip}
+        outcome={outcome}
+        onBackToTrip={() => setOutcome(null)}
+        onToTrips={toTrips}
+      />
+    )
+  }
+
+  if (query.isSuccess) return <TripContent data={query.data} onCompleted={setOutcome} />
 
   return (
     <Screen
@@ -35,12 +50,12 @@ export function TripScreen({ tripId }: { tripId: string }) {
   )
 }
 
-function TripContent({ data }: { data: DriverTripScreen }) {
+function TripContent({ data, onCompleted }: { data: DriverTripScreen; onCompleted: (outcome: StopOutcome) => void }) {
   const t = useT()
   const code = data.trip.code
   switch (data.kind) {
     case 'stop':
-      return <StopView trip={data.trip} screen={data.screen} />
+      return <StopView trip={data.trip} screen={data.screen} onCompleted={onCompleted} />
     case 'completed':
       return <TripSummaryView trip={data.trip} summary={data.summary} />
     case 'cancelled':

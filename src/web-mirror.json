@@ -1,6 +1,6 @@
 {
-  "syncedOn": "2026-11-24",
-  "digest": "197ac89927aaa81898a257c6c6d7a97f782018732bf4869b539b3c26dd53f4c4",
+  "syncedOn": "2026-11-28",
+  "digest": "bc6c28d8cf8e346ec23b574570c55e83f935ceebeb6a5de4bf8488bee311a5f5",
   "files": [
     "components/map/coordinates.ts",
     "components/map/place-search.ts",
@@ -43,6 +43,9 @@
     "domain/geometry/orientation.ts",
     "domain/geometry/rect.ts",
     "domain/geometry/spatial-grid.ts",
+    "domain/handling/handling-pass.ts",
+    "domain/handling/handling-time.ts",
+    "domain/handling/index.ts",
     "domain/metrics/axle-balance.ts",
     "domain/metrics/axle-load.ts",
     "domain/metrics/center-of-gravity.ts",
@@ -235,6 +238,7 @@
     "test/mock-db-samples.ts",
     "test/trip-flow.ts",
     "types/trip.ts",
-    "types/user.ts"
+    "types/user.ts",
+    "types/vehicle-body-style.ts"
   ]
 }

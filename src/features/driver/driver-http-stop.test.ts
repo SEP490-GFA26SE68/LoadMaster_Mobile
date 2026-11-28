@@ -166,8 +166,18 @@ describe('httpDriverApi: hoàn tất điểm', () => {
       },
     })
     await driver.fetchTripScreen('41')
-    await driver.completeStop('41', STOP_KEY)
+    expect(await driver.completeStop('41', STOP_KEY)).toEqual({ tripCompleted: true, hasNext: false })
     expect(calls.at(-1)).toMatchObject({ method: 'POST', path: '/api/driver/stops/902/complete', query: { driverId: '15' } })
     expect(await driver.fetchTripScreen('41')).toEqual({ kind: 'completed', trip: { id: '41', code: 'TRIP-0041', name: undefined }, summary: undefined })
+  })
+
+  test('hoàn tất điểm giữa chuyến: máy chủ trả nextStopId thì còn điểm sau', async () => {
+    const { driver } = backend({
+      'GET /api/driver/trips': () => ok([TRIP]),
+      'GET /api/driver/trips/41/current-stop': () => ok(STOP),
+      'POST /api/driver/stops/902/complete': () => ok({ tripCompleted: false, nextStopId: 903 }),
+    })
+    await driver.fetchTripScreen('41')
+    expect(await driver.completeStop('41', STOP_KEY)).toEqual({ tripCompleted: false, hasNext: true })
   })
 })

@@ -37,7 +37,7 @@ function screenOf(planVersion: number): StopScreen {
     remaining: 0,
     verifiable: 0,
     pendingConfirms: 0,
-    completion: { delivered: 0, returned: [], issues: 0, next: undefined, nextKnown: true },
+    completion: { delivered: 0, returned: [], picked: 0, issues: 0, next: undefined, nextKnown: true },
     names: {},
     refreshMs: null,
     routeMap: {

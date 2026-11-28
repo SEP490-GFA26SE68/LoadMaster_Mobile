@@ -28,10 +28,10 @@ describe('việc phụ ở điểm giao', () => {
 
     await fireEvent.press(screen.getByRole('radio', { name: 'Khách từ chối' }))
     await fireEvent.press(screen.getByRole('button', { name: 'Ghi sự cố' }))
-    expect(await screen.findByText(/^Khách từ chối .+: kiện ở lại xe và thành Hoàn trả khi hoàn tất điểm giao\.$/)).toBeOnTheScreen()
+    expect(await screen.findByText(/^Đã ghi sự cố cho .+\. Vẫn dỡ và giao cho bên nhận\.$/)).toBeOnTheScreen()
     expect(screen.queryByRole('header', { name: 'Báo sự cố tại điểm 1' })).toBeNull()
     expect(screen.getByText('Sự cố: Khách từ chối')).toBeOnTheScreen()
-    expect(screen.getByText('Hoàn trả — kiện ở lại xe')).toBeOnTheScreen()
+    expect(screen.queryByText('Hoàn trả — kiện ở lại xe')).toBeNull()
   })
 
   test('chọn Khác mà không ghi chú: tờ báo lỗi ngay tại ô, chưa ghi gì', async () => {

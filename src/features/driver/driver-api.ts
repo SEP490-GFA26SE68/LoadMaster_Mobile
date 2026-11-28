@@ -27,6 +27,7 @@ import type {
   DriverTripDetail,
   DriverTripException,
   DriverTrips,
+  CompleteStopResult,
   DriverTripScreen,
   LocationRequest,
   ManualConfirmRequest,
@@ -53,7 +54,7 @@ export type DriverApi = {
   confirmUnload(tripId: string, input: VerifyCodeInput): Promise<RecordedItem>
   confirmUnloadManually(tripId: string, input: ManualConfirmRequest): Promise<RecordedItem>
   reportDeliveryIssue(tripId: string, input: DeliveryIssueRequest): Promise<void>
-  completeStop(tripId: string, stop: StopKey): Promise<void>
+  completeStop(tripId: string, stop: StopKey): Promise<CompleteStopResult>
   fetchTripExceptions(tripId: string): Promise<DriverTripException[]>
   reportTripException(tripId: string, input: TripExceptionRequest): Promise<{ readonly id: string }>
   setDriverGps(tripId: string, enabled: boolean): Promise<void>
@@ -119,7 +120,7 @@ export function reportDeliveryIssue(tripId: string, input: DeliveryIssueRequest)
 }
 
 // POST /api/driver/stops/{id}/complete
-export function completeStop(tripId: string, stop: StopKey): Promise<void> {
+export function completeStop(tripId: string, stop: StopKey): Promise<CompleteStopResult> {
   return adapter().completeStop(tripId, stop)
 }
 

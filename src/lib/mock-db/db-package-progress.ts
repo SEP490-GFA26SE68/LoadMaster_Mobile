@@ -13,7 +13,7 @@ import type { Trip } from './types'
  *   (`db-staging.ts`, `db-manual-confirm.ts`). Kiện bị bỏ lúc soạn (thiếu) hoặc lúc xếp (hỏng) về `IMPORTED` kèm cờ (D-92) ở đó;
  * - kho xếp xong → kiện đã lên xe `LOADED` — ghi ở **mốc chốt**, vì kết quả xếp của một kiện còn bị gỡ khi xác nhận tay bị từ chối;
  * - xe xuất phát → `IN_TRANSIT`;
- * - hoàn tất một điểm giao → kiện đã dỡ `DELIVERED`, kiện của điểm đó ở lại xe (khách từ chối, sự cố khác) `RETURNED` — cũng ở mốc
+ * - hoàn tất một điểm giao → kiện đã dỡ `DELIVERED`; kiện của điểm chưa dỡ (không được hoàn tất) `RETURNED` — cũng ở mốc
  *   chốt, cùng lý do;
  * - huỷ chuyến trước khi xe chạy → về `IMPORTED` (yêu cầu giao của chuyến về `PENDING`, `db-requirement-trips.ts`);
  * - huỷ chuyến Đang vận chuyển → kiện chưa giao `RETURNED`, yêu cầu giao của chúng đọc là giao thiếu (D-91, D-92).

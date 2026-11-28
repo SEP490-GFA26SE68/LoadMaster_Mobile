@@ -114,6 +114,7 @@ function stopScreen(trip: Trip, view: DeliveryView, stops: readonly StopDelivery
     completion: {
       delivered: completion.delivered,
       returned: completion.returned.map((item) => ({ id: item.id, label: item.label ?? item.id, name: item.name })),
+      picked: 0,
       issues: completion.issues,
       next: completion.next === undefined ? undefined : { number: completion.next.number, name: completion.next.name },
       nextKnown: true,

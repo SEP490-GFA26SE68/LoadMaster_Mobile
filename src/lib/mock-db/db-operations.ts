@@ -6,7 +6,7 @@ import { MockDbError } from './errors'
 import { driverParam, latestApproved, leftOutIds, loadingRemaining, plannedStops, stagingRemaining, stopItemIds } from './operations'
 import { isStale } from './revisions'
 import type { DeliveryProgress, LoadingProgress, MockDb, Revision, StopProgress, Trip, TripPhase } from './types'
-import { pendingManualConfirms, withoutPendingConfirm, type VerifyContext } from './verify-model'
+import { pendingManualConfirms, type VerifyContext } from './verify-model'
 
 type OperationMethods = Pick<
   MockDb,
@@ -141,21 +141,12 @@ export function operationMethods(ctx: DbContext): OperationMethods {
         const trimmed = note.trim()
         // "Khác" không tự nói lên chuyện gì: phải có ghi chú
         if (kind === 'other' && trimmed === '') throw new MockDbError('REASON_REQUIRED', {})
-        // Khách từ chối: kiện ở lại xe (D-84) — bỏ dấu đã dỡ và xác nhận tay còn chờ của nó, hoàn tất điểm thì kiện thành Hoàn trả
-        const refused = kind === 'refused' && packageInstanceId !== undefined ? packageInstanceId : undefined
-        const base = refused === undefined || trip.verifications === undefined
-          ? trip
-          : { ...trip, verifications: withoutPendingConfirm(trip.verifications, 'UNLOADING', refused) }
-        return withDelivery(base, (delivery) => {
+        // Sự cố chỉ ghi nhận: kiện vẫn dỡ / giao cho bên nhận, không bỏ dấu đã dỡ
+        return withDelivery(trip, (delivery) => {
           const id = nextId('ISS', delivery.issues.map((issue) => issue.id))
           const issue = { id, stopNumber, kind, note: trimmed, at: ctx.nowIso(), reportedBy: ctx.state.session.userId, ...(packageInstanceId === undefined ? {} : { packageInstanceId }) }
           ctx.log('delivery.issue', { type: 'trip', id: tripId }, { kind, stopNumber, ...(packageInstanceId === undefined ? {} : { packageInstanceId }) })
-          const stops = refused === undefined ? delivery.stops : delivery.stops.map((stop) => stop.number !== stopNumber ? stop : {
-            ...stop,
-            unloadedIds: stop.unloadedIds.filter((item) => item !== refused),
-            ...(stop.qrConfirmedIds === undefined ? {} : { qrConfirmedIds: stop.qrConfirmedIds.filter((item) => item !== refused) }),
-          })
-          return { ...delivery, stops, issues: [...delivery.issues, issue] }
+          return { ...delivery, issues: [...delivery.issues, issue] }
         })
       }),
     completeStop: (tripId, stopNumber) =>
@@ -164,8 +155,7 @@ export function operationMethods(ctx: DbContext): OperationMethods {
         assertPhase(trip, 'delivering')
         const stop = arrivedStop(trip, stopNumber)
         const delivery = deliveryOf(trip)
-        const withIssue = new Set(delivery.issues.filter((issue) => issue.stopNumber === stopNumber).map((issue) => issue.packageInstanceId))
-        const remaining = stopItemIds(trip, planOf(trip), stopNumber).filter((id) => !stop.unloadedIds.includes(id) && !withIssue.has(id)).length
+        const remaining = stopItemIds(trip, planOf(trip), stopNumber).filter((id) => !stop.unloadedIds.includes(id)).length
         if (remaining > 0) throw new MockDbError('STOP_INCOMPLETE', { tripId, stopNumber, remaining })
         assertNoPendingConfirm(trip, ['UNLOADING'], stopNumber)
         const at = ctx.nowIso()

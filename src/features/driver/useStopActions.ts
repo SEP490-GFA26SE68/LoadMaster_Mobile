@@ -1,10 +1,12 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { dataErrorMessage, useT } from '@/lib/i18n'
 
-import type { StopScreen } from './driver-model'
+import type { StopOutcome, StopScreen } from './driver-model'
 import type { IssueFormValues } from './issue-form.schema'
-import { useArriveMutation, useCompleteStopMutation, useReportIssueMutation, useStartDeliveryMutation } from './useDriverQueries'
+import { stopOutcomeOf } from './stop-outcome'
+import { driverKeys, useArriveMutation, useCompleteStopMutation, useReportIssueMutation, useStartDeliveryMutation } from './useDriverQueries'
 
 /**
  * Câu báo ngay trên nút chính ở chân màn: lỗi của lần ghi vừa rồi, cảnh báo (khách từ chối), hoặc việc đã ghi mà màn không tự cho thấy
@@ -14,10 +16,11 @@ export type Flash = { readonly tone: 'danger' | 'warning' | 'success'; readonly 
 
 /**
  * Thao tác của tài xế ở điểm giao (như `useDeliveryStop` của web): xuất phát, "Đã đến", báo sự cố, hoàn tất điểm. Dỡ hàng đi qua tờ đối
- * chiếu (`useUnloadVerify`). Ghi xong mà màn đã cho thấy kết quả (dòng kiện, bước kế tiếp) thì không có câu thành công.
+ * chiếu (`useUnloadVerify`). Hoàn tất điểm trả ảnh chụp màn xen giữa; ghi khác mà màn đã cho thấy kết quả thì không có câu thành công.
  */
 export function useStopActions(tripId: string, screen: StopScreen) {
   const t = useT()
+  const queryClient = useQueryClient()
   const start = useStartDeliveryMutation(tripId)
   const arrival = useArriveMutation(tripId)
   const report = useReportIssueMutation(tripId)
@@ -42,23 +45,22 @@ export function useStopActions(tripId: string, screen: StopScreen) {
   async function reportIssue({ packageInstanceId, kind, note }: IssueFormValues): Promise<string | null> {
     try {
       await report.mutateAsync({ stop: screen.stop, itemId: packageInstanceId, kind, note: note === '' ? undefined : note })
-      if (kind === 'refused') {
-        const label = screen.items.find((item) => item.id === packageInstanceId)?.label ?? packageInstanceId
-        show({ tone: 'warning', message: t('driver.issue.refusedRecorded', { id: label }) })
-      }
+      const label = screen.items.find((item) => item.id === packageInstanceId)?.label ?? packageInstanceId
+      show({ tone: 'warning', message: t('driver.issue.recorded', { id: label }) })
       return null
     } catch (error) {
       return dataErrorMessage(error, t)
     }
   }
 
-  /** `null` khi nguồn đã hoàn tất điểm — màn sang điểm kế tiếp hoặc tổng kết; lỗi thì trả câu để tờ hỏi lại hiện. */
-  async function completeStop(): Promise<string | null> {
+  /** `error` khi ghi lỗi — tờ hỏi lại hiện câu; thành công thì ảnh chụp màn xen giữa (còn điểm / hết chuyến). */
+  async function completeStop(): Promise<{ error: string } | { outcome: StopOutcome }> {
     try {
-      await complete.mutateAsync(screen.stop)
-      return null
+      const ack = await complete.mutateAsync(screen.stop)
+      await queryClient.invalidateQueries({ queryKey: driverKeys.all })
+      return { outcome: stopOutcomeOf(screen, ack) }
     } catch (error) {
-      return dataErrorMessage(error, t)
+      return { error: dataErrorMessage(error, t) }
     }
   }
 

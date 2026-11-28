@@ -318,7 +318,31 @@ export const trips = {
 
   optimization: {
     run: 'Tối ưu tuyến đường',
-    success: 'Tối ưu tuyến đường thành công',
+    success: 'Đã có ba phương án tuyến. Chọn A · B hoặc C rồi duyệt.',
+  },
+  /** Ba phương án tuyến A · B · C (`GET /api/trips/{id}/route-plans`, duyệt `POST /api/route-plans/{id}/approve`). */
+  routePlans: {
+    title: 'Phương án tuyến',
+    empty: 'Chưa tối ưu tuyến: bấm Tối ưu tuyến đường để có A · B · C.',
+    run: 'Lần tối ưu {id}',
+    candidate: 'Phương án {label}',
+    unlabeled: 'Tuyến #{id}',
+    approved: 'Đã duyệt',
+    compare: 'So sánh',
+    compareDescription: 'A và B cùng thứ tự điểm (hạn và ưu tiên). C được đổi thứ tự theo hạn; kiện Khẩn bắt buộc xếp khi tối ưu 3D.',
+    approve: 'Duyệt phương án',
+    approvedToast: 'Đã duyệt phương án tuyến {label}',
+    sameOrder: 'Cùng thứ tự điểm với A',
+    reordered: 'Đổi thứ tự điểm theo hạn',
+    distance: 'Quãng đường',
+    duration: 'Thời gian chạy',
+    missed: { one: '{count} điểm trễ hạn', other: '{count} điểm trễ hạn' },
+    stops: 'Thứ tự điểm',
+    objectives: {
+      SHORTEST: 'Đường ngắn nhất — cùng thứ tự điểm đã tôn trọng hạn và ưu tiên.',
+      AVOID_CONGESTION: 'Tránh kẹt giờ cao điểm — cùng thứ tự điểm với A, polyline khác.',
+      DEADLINE_FIRST: 'Hạn sớm hơn trước; hai điểm cùng gấp thì Khẩn trước Cao. LIFO packing theo thứ tự mới.',
+    },
   },
   loadingOptimization: {
     run: 'Tối ưu xếp hàng',

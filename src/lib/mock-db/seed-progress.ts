@@ -91,7 +91,7 @@ export function seedLoading(spec: TripSpec, today: string, approved: Revision, e
 /**
  * Tiến độ giao (FE-6-06): xuất phát 20 phút sau khi kho xếp xong (nhật ký giữ đúng thứ tự xếp xong → xuất phát), mỗi điểm hoàn tất sau
  * 70 phút, tài xế bấm "Đã đến" 25 phút trước đó. Điểm đang giao: đã đến, dỡ được nửa số kiện. Mọi kiện dỡ đều quét QR.
- * Hàng hỏng vẫn tính đã dỡ; khách từ chối thì kiện ở lại xe.
+ * Hàng hỏng vẫn tính đã dỡ; sự cố giao vẫn dỡ cho bên nhận.
  */
 export function seedDelivery(spec: TripSpec, trip: Trip, approved: Revision, events: SeedEvent[]): { delivery: DeliveryProgress; verifications: PackageVerification[] } {
   const loadedAt = trip.loading?.completedAt

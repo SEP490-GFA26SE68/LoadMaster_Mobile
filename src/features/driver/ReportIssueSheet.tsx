@@ -64,6 +64,7 @@ export function ReportIssueSheet({ open, onClose, stopNumber, items, pending, on
           </Button>
         </>
       }>
+      <Banner tone="info">{t('driver.issue.whatNext')}</Banner>
       <Controller
         control={form.control}
         name="packageInstanceId"

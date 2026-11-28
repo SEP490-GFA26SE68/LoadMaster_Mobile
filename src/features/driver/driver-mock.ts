@@ -255,7 +255,9 @@ export function mockDriverApi(): DriverApi {
       await db().reportDeliveryIssue(tripId, { stopNumber: stop.number, packageInstanceId: itemId, kind, note: note ?? '' })
     },
     async completeStop(tripId, stop) {
-      await db().completeStop(tripId, stop.number)
+      const trip = await db().completeStop(tripId, stop.number)
+      const pending = trip.delivery?.stops.some((item) => item.completedAt === undefined) ?? false
+      return { tripCompleted: trip.phase === 'completed', hasNext: trip.phase !== 'completed' && pending }
     },
     async fetchTripExceptions(tripId) {
       const list = await db().listTripExceptions(tripId)

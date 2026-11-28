@@ -119,8 +119,6 @@ export function serverTripStops(trip: ServerTripStops): DriverTripStop[] {
   return trip.stops.map((stop) => ({
     number: stop.number,
     name: stop.name,
-    // Máy chủ không trả loại điểm: màn điểm giao đặt loại của điểm hiện tại theo `current-stop`
-    kind: 'DELIVERY',
     packageCount: stop.packageCount,
     done: stop.done,
     timing: listTiming(stop, trip.location),

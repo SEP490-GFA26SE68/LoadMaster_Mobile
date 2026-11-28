@@ -24,6 +24,16 @@ export async function departLoadedTrip({ arrive }: { arrive: boolean }) {
   if (arrive) await getMockDb().arriveAtStop(LOADED_TRIP, 1)
 }
 
+/** Xuất phát rồi hoàn tất các điểm 1…`through` trong kho (đã đến, dỡ hết kiện, hoàn tất). */
+export async function completeStopsThrough(through: number) {
+  await getMockDb().startDelivery(LOADED_TRIP)
+  for (let number = 1; number <= through; number++) {
+    await getMockDb().arriveAtStop(LOADED_TRIP, number)
+    for (const label of await labelsAt(number)) await getMockDb().confirmUnloadByQr(LOADED_TRIP, number, label.qrToken, 'QR')
+    await getMockDb().completeStop(LOADED_TRIP, number)
+  }
+}
+
 /** Dỡ thẳng trong kho mọi kiện của điểm 1 trừ kiện cuối, để test chỉ đối chiếu kiện còn lại trên màn. */
 export async function unloadAllButLast() {
   const labels = await labelsAt(1)

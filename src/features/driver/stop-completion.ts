@@ -3,7 +3,8 @@ import type { DeliveryItem, StopDelivery } from './driver-plan'
 
 /**
  * Hoàn tất điểm đang giao sẽ ghi gì vào kho (FE-6-06) — hộp hỏi lại đọc từ đây, mọi số lấy từ tiến độ của điểm trên màn. Kho
- * làm đúng như vậy khi hoàn tất: kiện đã dỡ thành Đã giao, kiện của điểm chưa dỡ (khách từ chối, sự cố khác) ở lại xe và thành Hoàn trả.
+ * làm đúng như vậy khi hoàn tất: kiện đã dỡ thành Đã giao (kể cả kiện đã báo sự cố — nền tảng chỉ ghi nhận, bên gửi và bên nhận tự bàn).
+ * Còn kiện chưa dỡ thì chưa hoàn tất được điểm.
  */
 export type StopCompletion = {
   /** Kiện đã dỡ ở điểm. */
