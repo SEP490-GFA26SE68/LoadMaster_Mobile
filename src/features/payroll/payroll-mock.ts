@@ -5,6 +5,7 @@ import { MockDbError } from '@/lib/mock-db'
 import type { PayrollApi } from './payroll-api'
 import type { PayrollStatement, PayrollTripLine } from './payroll-model'
 import { currentPayrollPeriod, shiftPayrollPeriod, type PayrollPeriodKey } from './payroll-period'
+import { mockWarehousePayroll } from './warehouse-payroll-mock'
 
 const BASE_SALARY_VND = 8_000_000
 const RATE_VND_PER_KG = 600
@@ -93,6 +94,7 @@ function summarize(
  */
 export function mockPayrollApi(): PayrollApi {
   return {
+    fetchMyWarehousePayroll: mockWarehousePayroll,
     async fetchMyPayroll(period: PayrollPeriodKey): Promise<PayrollStatement> {
       const db = getMockDb()
       const viewer = db.sessionUser()

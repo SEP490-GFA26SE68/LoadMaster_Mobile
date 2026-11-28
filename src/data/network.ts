@@ -15,7 +15,10 @@ type NetInfoApi = {
 function loadNetInfo(): NetInfoApi | null {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports -- nạp lúc chạy để bắt được native module null
-    return require('@react-native-community/netinfo').default as NetInfoApi
+    const mod = require('@react-native-community/netinfo') as { default?: NetInfoApi } & Partial<NetInfoApi>
+    // Gói thật xuất qua `default`; bản giả của gói cho Jest xuất thẳng đối tượng API
+    const api = mod.default ?? mod
+    return typeof api.addEventListener === 'function' ? (api as NetInfoApi) : null
   } catch {
     return null
   }

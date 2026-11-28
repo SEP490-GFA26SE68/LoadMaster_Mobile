@@ -7,7 +7,7 @@ import { Chip } from '@/components/Chip'
 import { useFormat, useT } from '@/lib/i18n'
 import { badgeTones, colors, palette, radius, space } from '@/theme/tokens'
 
-import type { StopItem, StopPickupItem } from './driver-model'
+import type { StopItem } from './driver-model'
 
 function handlingChipInfo(handlingClass: string | undefined, fragile: boolean | undefined, t: ReturnType<typeof useT>) {
   const effective = handlingClass === 'STANDARD' && fragile ? 'FRAGILE' : handlingClass || (fragile ? 'FRAGILE' : 'STANDARD')
@@ -133,38 +133,6 @@ export const DeliveryItemRow = memo(function DeliveryItemRow({
           {t('driver.item.returned')}
         </Line>
       ) : null}
-    </View>
-  )
-})
-
-/**
- * Một dòng kiện nhận dọc đường (như `PickupItemRow` của web): không có thứ tự dỡ, vùng hay lớp. Điểm nhận: "Chưa nhận" / "Đã nhận"; điểm
- * giao: "Chưa dỡ" / "Đã dỡ", kèm cách đối chiếu gần nhất. Xác nhận tay bị từ chối thì kiện quay về chưa xong kèm lý do.
- */
-export const PickupItemRow = memo(function PickupItemRow({ item, last }: { item: StopPickupItem; last: boolean }) {
-  const t = useT()
-  const format = useFormat()
-  return (
-    <View style={[styles.row, last && styles.last, item.done && styles.done]}>
-      <AppText variant="label" style={styles.code}>
-        {item.label}
-      </AppText>
-      <AppText color={colors.text2}>{item.weightKg === undefined ? item.name : `${item.name} · ${format.weight(item.weightKg)}`}</AppText>
-      {item.requestId === '' ? null : (
-        <Line icon={Package} color={colors.text3}>
-          {t('driver.pickup.request', { id: item.requestId })}
-        </Line>
-      )}
-      {item.done ? (
-        <Line icon={CircleCheck} color={badgeTones.success.fg} strong>
-          {item.via === undefined ? t(`driver.pickup.${item.role}.done`) : `${t(`driver.pickup.${item.role}.done`)} · ${t(`driver.pickup.via.${item.via}`)}`}
-        </Line>
-      ) : (
-        <AppText variant="label" color={colors.text2}>
-          {t(`driver.pickup.${item.role}.waiting`)}
-        </AppText>
-      )}
-      {item.rejectedReason === undefined ? null : <Rejected reason={item.rejectedReason} />}
     </View>
   )
 })

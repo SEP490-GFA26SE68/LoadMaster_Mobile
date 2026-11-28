@@ -1,4 +1,4 @@
-import { ArrowRight, CircleCheck, Flag, PackageCheck, PackageOpen, TriangleAlert, Undo2, type LucideIcon } from 'lucide-react-native'
+import { ArrowRight, CircleCheck, Flag, PackageOpen, TriangleAlert, Undo2, type LucideIcon } from 'lucide-react-native'
 import type { ReactNode } from 'react'
 import { StyleSheet, View } from 'react-native'
 
@@ -22,15 +22,15 @@ type CompleteStopSheetProps = {
 }
 
 /**
- * Hỏi lại trước khi hoàn tất điểm giao hoặc điểm nhận (như `CompleteStopDialog` của web): hoàn tất là ghi thật và không mở lại được. Tờ
- * nói điều sẽ xảy ra với từng nhóm kiện — đã dỡ thành Đã giao (kể cả kiện đã báo sự cố), kiện nhận lên
- * xe thành Đang vận chuyển —, số sự cố đã báo, và điểm kế tiếp hay đây là điểm cuối (nguồn không biết thì nói màn sẽ tự chuyển). Đang ghi
- * thì không đóng được; lỗi thì tờ giữ nguyên và nói lỗi; ghi xong màn xen giữa: còn điểm thì quay lại chuyến, hết thì hoàn thành chuyến.
+ * Hỏi lại trước khi hoàn tất điểm giao (như `CompleteStopDialog` của web): hoàn tất là ghi thật và không mở lại được. Tờ
+ * nói điều sẽ xảy ra với từng nhóm kiện — đã dỡ thành Đã giao (kể cả kiện đã báo sự cố) —, số sự cố đã báo, và điểm kế tiếp hay đây là
+ * điểm cuối (nguồn không biết thì nói màn sẽ tự chuyển). Đang ghi thì không đóng được; lỗi thì tờ giữ nguyên và nói lỗi; ghi xong màn xen
+ * giữa: còn điểm thì quay lại chuyến, hết thì hoàn thành chuyến.
  */
 export function CompleteStopSheet({ open, onClose, screen, pending, failure, onConfirm }: CompleteStopSheetProps) {
   const t = useT()
-  const { delivered, returned, picked, issues, next, nextKnown } = screen.completion
-  const nothing = delivered + returned.length + picked === 0
+  const { delivered, returned, issues, next, nextKnown } = screen.completion
+  const nothing = delivered + returned.length === 0
   return (
     <Sheet
       open={open}
@@ -53,11 +53,6 @@ export function CompleteStopSheet({ open, onClose, screen, pending, failure, onC
         {delivered > 0 ? (
           <Line icon={CircleCheck} done>
             {t('driver.completeConfirm.delivered', { count: delivered })}
-          </Line>
-        ) : null}
-        {picked > 0 ? (
-          <Line icon={PackageCheck} done>
-            {t('driver.completeConfirm.picked', { count: picked })}
           </Line>
         ) : null}
         {returned.length > 0 ? (

@@ -7,8 +7,7 @@ export const SERVER_REFRESH_MS = 30_000
 
 /**
  * Việc tài xế làm được khi nguồn là máy chủ: xuất phát ở thẻ chuyến (máy chủ không mở màn điểm giao trước khi xe chạy), "Đã đến", dỡ và
- * xác nhận tay ở điểm giao, nhận kiện ở điểm nhận (không xác nhận tay — máy chủ chưa có), sự cố theo kiện và sự cố trên đường, vị trí điện
- * thoại, chuông. Chưa có ở máy chủ: yêu cầu nhận hàng của tài xế.
+ * xác nhận tay ở điểm giao, sự cố theo kiện và sự cố trên đường, vị trí điện thoại, chuông.
  */
 export const HTTP_DRIVER_CAPABILITIES: DriverCapabilities = {
   payroll: true,
@@ -16,10 +15,8 @@ export const HTTP_DRIVER_CAPABILITIES: DriverCapabilities = {
   departFromList: true,
   arrive: true,
   manualConfirm: true,
-  pickupManualConfirm: false,
   deliveryIssues: true,
   tripExceptions: true,
-  pickups: false,
   gps: true,
   notifications: true,
   gpsLocalOnly: false,
@@ -35,8 +32,3 @@ export const refused = (error: unknown, status: number, code?: string): error is
 
 /** Backend báo mã nghiệp vụ `code` (`AppException`). */
 export const coded = (error: unknown, code: string): error is ApiError => isApiError(error) && error.code === code
-
-/** Việc máy chủ chưa có: không âm thầm bỏ qua. */
-export const unsupported = async (): Promise<never> => {
-  throw new ApiError('NOT_SUPPORTED')
-}

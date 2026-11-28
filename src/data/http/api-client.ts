@@ -24,6 +24,10 @@ export type QueryValue = string | number | boolean | null | undefined
 export type RequestOptions = {
   readonly query?: Readonly<Record<string, QueryValue>>
   readonly body?: unknown
+  /** Header riêng của lượt gọi (`Idempotency-Key` của lệnh ghi gửi lại được). Không đè được `Accept`, `Content-Type`, `Authorization`. */
+  readonly headers?: Readonly<Record<string, string>>
+  /** Giới hạn thời gian riêng của lượt gọi (trợ lý AI trả lời lâu hơn mức chung); vắng thì dùng giới hạn của client. */
+  readonly timeoutMs?: number
 }
 
 export type ApiClient = {
@@ -83,13 +87,13 @@ export function createApiClient({
     }
   }
 
-  async function send(method: string, url: string, body: unknown, token: string | null): Promise<Response> {
-    const headers: Record<string, string> = { Accept: 'application/json' }
+  async function send(method: string, url: string, body: unknown, token: string | null, extra: RequestOptions['headers'], limitMs: number): Promise<Response> {
+    const headers: Record<string, string> = { ...extra, Accept: 'application/json' }
     if (body !== undefined) headers['Content-Type'] = 'application/json'
     if (token !== null) headers.Authorization = `Bearer ${token}`
 
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), timeoutMs)
+    const timer = setTimeout(() => controller.abort(), limitMs)
     try {
       return await fetchImpl(url, {
         method,
@@ -104,15 +108,15 @@ export function createApiClient({
     }
   }
 
-  async function request<T>(method: string, path: string, { query, body }: RequestOptions = {}): Promise<T> {
+  async function request<T>(method: string, path: string, { query, body, headers, timeoutMs: limitMs = timeoutMs }: RequestOptions = {}): Promise<T> {
     const url = urlOf(baseUrl, path, query)
     const token = await tokenFrom(accessToken)
-    let response = await send(method, url, body, token)
+    let response = await send(method, url, body, token, headers, limitMs)
     // Backend không nhận token (vừa hết hạn, hoặc phiên vừa được làm mới ở nơi khác): làm mới một lần rồi gọi lại; lần sau vẫn 401 mới
     // là phiên đã hết
     if (response.status === 401 && token !== null && renewAccessToken !== undefined) {
       const renewed = await tokenFrom(() => renewAccessToken(token))
-      if (renewed !== null && renewed !== token) response = await send(method, url, body, renewed)
+      if (renewed !== null && renewed !== token) response = await send(method, url, body, renewed, headers, limitMs)
     }
 
     const payload = await readJson(response)

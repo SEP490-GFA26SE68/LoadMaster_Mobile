@@ -9,20 +9,19 @@ import type { StopScreen } from './driver-model'
 /**
  * Dòng "Cần dỡ N kiện · Đã dỡ … · Sự cố …" kèm thước tiến độ dày 12 px (như `StopProgress` của web): xanh lá khi đủ 100 % — màu chỉ nhấn
  * thêm, con số và phần trăm luôn đi kèm. Dòng số là vùng đọc được: dỡ kiện, báo sự cố đổi số thì trình đọc màn hình đọc — thay cho toast
- * thành công. Điểm nhận dọc đường dùng câu "Cần nhận N kiện · Đã nhận …".
+ * thành công.
  */
 export function StopProgress({ screen }: { screen: StopScreen }) {
   const t = useT()
   const format = useFormat()
-  const { stop, total, remaining, doneCount, issueCount } = screen
-  const pickupStop = stop.kind === 'PICKUP'
+  const { total, remaining, doneCount, issueCount } = screen
   const handled = total - remaining
   const percent = total === 0 ? 100 : Math.round((handled / total) * 100)
   return (
     <View style={styles.root}>
       <View style={styles.row}>
         <AppText variant="label" accessibilityLiveRegion="polite" style={styles.flex}>
-          {pickupStop ? t('driver.pickup.summary', { total, done: doneCount }) : t('driver.summary', { total, done: doneCount, issues: issueCount })}
+          {t('driver.summary', { total, done: doneCount, issues: issueCount })}
         </AppText>
         <AppText variant="label" color={colors.text2} style={styles.number}>
           {`${format.integer(percent)}%`}
@@ -30,7 +29,7 @@ export function StopProgress({ screen }: { screen: StopScreen }) {
       </View>
       <View
         accessibilityRole="progressbar"
-        accessibilityLabel={t(pickupStop ? 'driver.pickup.progress' : 'driver.progress')}
+        accessibilityLabel={t('driver.progress')}
         accessibilityValue={{ min: 0, max: 100, now: percent }}
         style={styles.track}>
         <View style={[styles.fill, { width: `${percent}%`, backgroundColor: percent === 100 ? colors.success : colors.primaryFill }]} />

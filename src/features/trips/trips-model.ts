@@ -66,7 +66,6 @@ export type ServerTripStop = {
   readonly address: string
   readonly lat?: number
   readonly lng?: number
-  readonly kind: 'DELIVERY' | 'PICKUP'
   readonly status: 'PENDING' | 'ARRIVED' | 'COMPLETED'
   readonly requirementId?: string
   readonly plannedArrival?: string
@@ -114,7 +113,7 @@ export type TripRequirementRow = {
 export type ManualConfirmRow = {
   readonly id: string
   readonly context: VerifyContext
-  /** Điểm giao khi xác nhận lúc dỡ hoặc lúc nhận hàng dọc đường. */
+  /** Điểm giao khi xác nhận lúc dỡ. */
   readonly stopNumber?: number
   readonly packageInstanceId: string
   readonly packageName: string

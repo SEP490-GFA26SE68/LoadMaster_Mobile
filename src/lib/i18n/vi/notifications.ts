@@ -37,8 +37,6 @@ export const notifications = {
     cancelled: 'Chuyến đã huỷ',
     assigned: 'Chuyến mới: bạn được giao chuyến này',
     unassigned: 'Bạn không còn chạy chuyến này',
-    pickupApproved: 'Điều phối đã duyệt nhận hàng dọc đường — tuyến có thêm điểm nhận',
-    pickupRejected: 'Yêu cầu nhận hàng dọc đường bị từ chối',
     stopsReordered: 'Điều phối đã đổi thứ tự điểm giao — xem lại tuyến',
   },
   /**
@@ -114,9 +112,6 @@ export const notifications = {
         escalated: 'Chuyển sự cố cho quản lý',
         deadlineRenegotiated: 'Liên hệ khách, nhập hạn mới',
       },
-      pickup: {
-        requested: 'Gửi yêu cầu nhận hàng dọc đường',
-      },
     },
     params: {
       actor: 'Người làm',
@@ -149,12 +144,11 @@ export const notifications = {
       exceptionType: 'Loại sự cố',
       delayMinutes: 'Dự kiến chậm (phút)',
       escalation: 'Lý do chuyển',
-      pickupId: 'Yêu cầu nhận',
       failedRules: 'Luật không đạt',
       driverId: 'Tài xế',
     },
     escalations: { NO_ROUTE: 'Không có tuyến khả thi', TIMEOUT: 'Quá 30 phút chưa xử lý' },
-    verifyContexts: { STAGING: 'Soạn hàng', LOADING: 'Xếp hàng', UNLOADING: 'Dỡ hàng', PICKUP: 'Nhận hàng dọc đường' },
+    verifyContexts: { STAGING: 'Soạn hàng', LOADING: 'Xếp hàng', UNLOADING: 'Dỡ hàng' },
     system: 'Hệ thống',
     deletedUser: 'Tài khoản đã xoá ({id})',
     package: 'Kiện {id}',

@@ -15,7 +15,7 @@ import { serverStopText } from './ServerPackageSummary'
 /**
  * Thẻ kiện cần xếp của phiên máy chủ (như `ServerPlacementCard` của web), một cột ở 360 dp: tên, mã vạch, mã kho kiện, điểm giao, kích thước
  * khi đặt (cm), khối lượng (kg, khi máy chủ trả) và vị trí đặt bằng số kèm cách đo. Việc phụ của bước (ghi sai lệch vị trí, lý do bị từ
- * chối xác nhận tay) truyền làm `children`. App không có khung 3D vị trí kiện ở bản máy chủ: vị trí là số.
+ * chối xác nhận tay) truyền làm `children`. App không có khung 3D: hình chỗ đặt là sơ đồ 2D `ServerHoldSketch` ngay dưới thẻ.
  */
 export function ServerPlacementCard({ placement, step, total, children }: { placement: ServerPlacement; step: number; total: number; children: ReactNode }) {
   const t = useT()

@@ -11,8 +11,8 @@ import { useStageServerPackage, useStageServerPackageManually } from './useServe
 
 /**
  * Bộ điều khiển tờ đối chiếu khi soạn hàng ở phiên máy chủ (như `handleVerify` / `handleManual` của `ServerStagingStep` web, cách của
- * `useStagingVerify` bản kho mẫu): không cần thứ tự. Máy chủ không kiểm mã khi ghi, nên app tìm kiện khớp mã (mã QR, mã vạch, mã của bên
- * gửi, mã kho kiện) trong phiên trước khi gửi — không khớp kiện nào thì nói và không gửi gì. Quét lại kiện đã soạn: máy chủ không ghi, tờ
+ * `useStagingVerify` bản kho mẫu): không cần thứ tự. App tìm kiện khớp mã theo cách đối chiếu (gõ: mã kiện; quét: mã QR, mã vạch) trong phiên
+ * trước khi gửi — không khớp kiện nào thì nói và không gửi gì; khớp thì gửi cả mã, máy chủ kiểm lại. Quét lại kiện đã soạn: máy chủ không ghi, tờ
  * nhắc "đã soạn rồi". Tờ ở lại cho kiện kế tiếp; soạn đủ thì màn sang bước xếp và tờ rời đi cùng màn. Xác nhận tay: kiện chỉ tính là đã soạn
  * khi điều phối viên duyệt — câu kết quả nói vậy (web: toast); kiện đang chờ duyệt không chọn lại được.
  */
@@ -38,13 +38,13 @@ export function useServerStagingVerify(tripId: string, session: ServerLoadingSes
 
   async function verify(method: LabelVerifyMethod, code: string): Promise<boolean> {
     setResult(null)
-    const placement = session.placements.find((item) => item.packageId !== null && codeMatches(item, code))
+    const placement = session.placements.find((item) => item.packageId !== null && codeMatches(item, code, method))
     if (placement?.packageId == null) {
       setResult({ tone: 'error', message: t('serverWarehouse.staging.codeUnknown', { code: code.trim() }) })
       return false
     }
     try {
-      const { alreadyStaged } = await stage.mutateAsync({ packageId: placement.packageId, method })
+      const { alreadyStaged } = await stage.mutateAsync({ packageId: placement.packageId, label: { method, code } })
       const params = { id: placementLabel(placement), name: placement.name }
       // Kiện đã soạn từ trước: máy chủ không ghi gì — nhắc bằng cảnh báo để người soạn biết lần này không có gì mới
       setResult(

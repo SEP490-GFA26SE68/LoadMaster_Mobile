@@ -20,7 +20,7 @@ import {
   type MonitoringCapabilities,
 } from './monitoring-api'
 
-const NO_CAPABILITIES: MonitoringCapabilities = { exceptions: false, reroute: false, escalation: false, pickups: false, notifications: false }
+const NO_CAPABILITIES: MonitoringCapabilities = { exceptions: false, reroute: false, escalation: false, notifications: false }
 
 /**
  * Việc của màn giám sát làm được với nguồn đang dùng: màn chỉ vẽ nút của việc nguồn làm được. Nguồn chưa nối (`HTTP_NOT_WIRED`) thì không
@@ -34,14 +34,13 @@ export function useMonitoringCapabilities(): MonitoringCapabilities {
   }
 }
 
-/** Khoá truy vấn của giám sát, sự cố, nhận hàng dọc đường và chuông của điều phối viên, quản lý — mọi khoá nằm dưới `['monitoring']`. */
+/** Khoá truy vấn của giám sát, sự cố và chuông của điều phối viên, quản lý — mọi khoá nằm dưới `['monitoring']`. */
 export const monitoringKeys = {
   all: ['monitoring'] as const,
   board: ['monitoring', 'board'] as const,
   fleet: ['monitoring', 'fleet'] as const,
   live: (tripId: string) => ['monitoring', 'live', tripId] as const,
   requirements: (tripId: string) => ['monitoring', 'requirements', tripId] as const,
-  pickups: (tripId: string) => ['monitoring', 'pickups', tripId] as const,
   notifications: ['monitoring', 'notifications'] as const,
 }
 

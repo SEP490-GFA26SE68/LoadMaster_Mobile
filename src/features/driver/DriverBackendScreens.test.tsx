@@ -180,36 +180,26 @@ describe('điểm giao trên máy chủ', () => {
     expect(screen.getByRole('button', { name: 'Hoàn tất điểm giao' })).toBeDisabled()
   })
 
-  test('điểm nhận dọc đường: gõ mã của bên gửi đưa kiện lên xe; không có xác nhận tay (máy chủ chưa có)', async () => {
-    let picked = false
-    const pickupStop = {
+  test('điểm nhận dọc đường cũ (máy chủ còn trả stopType PICKUP): điểm không có kiện phải dỡ, hoàn tất được', async () => {
+    const oldPickupStop = {
       ...STOP,
       stopId: 905,
       stopSequence: 3,
       stopName: 'Xưởng may Thuận An',
       stopType: 'PICKUP',
       packages: [],
-      pickupPackages: [{ packageId: 8101, packageName: 'Áo khoác', packageCode: 'HG-1', trackingBarcode: null, weight: 8, unloadOrder: null }],
+      pickupPackages: [{ packageId: 8101, packageName: 'Áo khoác', packageCode: 'HG-1', trackingBarcode: null, weight: 8, unloadOrder: null, picked: false }],
     }
     serve({
       'GET /api/driver/trips': () => ok([TRIP]),
-      'GET /api/driver/trips/41/current-stop': () => ok({ ...pickupStop, pickupPackages: pickupStop.pickupPackages.map((pkg) => ({ ...pkg, picked })) }),
-      'POST /api/driver/pickup-packages/8101/pick': () => {
-        picked = true
-        return ok({ packageId: 8101 })
-      },
+      'GET /api/driver/trips/41/current-stop': () => ok(oldPickupStop),
+      'POST /api/driver/stops/905/complete': () => ok({ tripCompleted: false }),
     })
     await renderApp(<TripScreen tripId="41" />, { auth: createMockAuth() })
 
-    await fireEvent.press(await screen.findByRole('button', { name: 'Đối chiếu kiện nhận' }))
-    expect(await screen.findByRole('header', { name: 'Đối chiếu kiện nhận tại điểm 3' })).toBeOnTheScreen()
-    expect(screen.queryByRole('tab', { name: 'Xác nhận tay' })).toBeNull()
-    await fireEvent.press(screen.getByRole('tab', { name: 'Gõ mã' }))
-    await fireEvent.changeText(screen.getByLabelText('Mã QR hoặc mã bên gửi'), 'hg-1')
-    await fireEvent.press(screen.getByRole('button', { name: 'Đối chiếu mã' }))
-
-    expect(await screen.findByRole('button', { name: 'Hoàn tất điểm nhận' })).toBeEnabled()
-    expect(posted('/api/driver/pickup-packages/8101/pick')).toBe(true)
+    expect(await screen.findByText('Không có kiện nào của điểm giao này trên xe.')).toBeOnTheScreen()
+    expect(screen.queryByText('Áo khoác')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Hoàn tất điểm giao' })).toBeEnabled()
   })
 })
 

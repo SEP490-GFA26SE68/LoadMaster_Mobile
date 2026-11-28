@@ -1,6 +1,8 @@
+import type { ReactNode } from 'react'
+
 import type { GeoPoint } from '@/domain/routing'
 import type { DriverNotice } from '@/features/notifications/notifications'
-import type { DeliveryIssueKind, LabelVerifyMethod, ManualConfirmReason, StopKind, TripExceptionType } from '@/lib/mock-db'
+import type { DeliveryIssueKind, LabelVerifyMethod, ManualConfirmReason, TripExceptionType } from '@/lib/mock-db'
 import type { TripStatus, TripSubStatus } from '@/types/trip'
 
 import type { DeliveryMode } from './delivery-progress'
@@ -32,14 +34,10 @@ export type DriverCapabilities = {
   readonly arrive: boolean
   /** Xác nhận tay một kiện khi nhãn không đọc được (chờ điều phối viên duyệt). */
   readonly manualConfirm: boolean
-  /** Xác nhận tay cả kiện nhận dọc đường ở điểm nhận. */
-  readonly pickupManualConfirm: boolean
   /** Báo sự cố cho một kiện (hỏng, thiếu, khách từ chối, khác). */
   readonly deliveryIssues: boolean
   /** Báo sự cố trên đường (tắc đường, hỏng xe…) cho cả chuyến. */
   readonly tripExceptions: boolean
-  /** Gửi yêu cầu nhận hàng dọc đường; kho kiểm mười luật ngay khi lưu. */
-  readonly pickups: boolean
   /** Gửi vị trí điện thoại làm vị trí xe. */
   readonly gps: boolean
   /** Chuông thông báo. */
@@ -124,11 +122,10 @@ export type DriverPayrollStatement =
       readonly trips: readonly DriverPayrollTripLine[]
     }
 
-/** Một điểm của chuyến trong danh sách điểm: số, tên, loại, số kiện của phương án ở điểm, đã xong chưa, giờ đến / hạn. */
+/** Một điểm của chuyến trong danh sách điểm: số, tên, số kiện của phương án ở điểm, đã xong chưa, giờ đến / hạn. */
 export type DriverTripStop = {
   readonly number: number
   readonly name: string
-  readonly kind: StopKind
   /** Vắng khi nguồn không biết số kiện của điểm. */
   readonly packageCount: number | undefined
   readonly done: boolean
@@ -208,22 +205,6 @@ export type StopItem = {
   readonly returned: boolean
 }
 
-/** Một kiện nhận dọc đường của điểm: nhận lên xe (`pick`) hoặc dỡ ở điểm giao (`deliver`). */
-export type StopPickupItem = {
-  readonly id: string
-  /** Mã in trên nhãn, hiện trên màn. */
-  readonly label: string
-  readonly name: string
-  /** Vắng khi nguồn không trả khối lượng. */
-  readonly weightKg: number | undefined
-  /** Mã yêu cầu nhận; rỗng khi nguồn không trả. */
-  readonly requestId: string
-  readonly role: 'pick' | 'deliver'
-  readonly done: boolean
-  readonly via: VerifyVia | undefined
-  readonly rejectedReason: string | undefined
-}
-
 /** Khoá của một điểm cho lệnh ghi: số điểm (kho mẫu) và mã điểm của nguồn (backend). */
 export type StopKey = { readonly number: number; readonly ref: string }
 
@@ -232,7 +213,6 @@ export type StopInfo = StopKey & {
   readonly address: string
   readonly phone: string | undefined
   readonly contactName: string | undefined
-  readonly kind: StopKind
   readonly lat: number | undefined
   readonly lng: number | undefined
 }
@@ -252,6 +232,7 @@ export type DriverRouteMap = {
 export type StopCompletionInfo = {
   readonly delivered: number
   readonly returned: readonly { readonly id: string; readonly label: string; readonly name: string }[]
+  /** Nhận dọc đường đã bỏ: luôn 0. */
   readonly picked: number
   readonly issues: number
   /** Điểm kế tiếp; vắng là điểm cuối. Vắng cả khi nguồn không biết điểm kế tiếp: `nextKnown` nói rõ. */
@@ -297,23 +278,20 @@ export type StopScreen = {
   /** Giờ đến do máy chủ tính: dòng nguồn không kèm MOCK RESULT. */
   readonly etaFromServer?: true
   readonly items: readonly StopItem[]
-  readonly pickupItems: readonly StopPickupItem[]
   /** Kiện của điểm hỏng lúc xếp, bị bỏ lại kho. */
   readonly leftAtWarehouse: number
   readonly total: number
   readonly doneCount: number
   readonly issueCount: number
-  /** Chưa dỡ và chưa báo sự cố: còn thì chưa hoàn tất được điểm. */
+  /** Chưa dỡ: còn thì chưa hoàn tất được điểm. Sự cố chỉ ghi nhận, kiện vẫn phải dỡ. */
   readonly remaining: number
-  /** Còn đối chiếu được: chưa dỡ và khách không từ chối. */
+  /** Còn đối chiếu được: chưa dỡ. */
   readonly verifiable: number
   /** Xác nhận tay của điểm còn chờ điều phối viên duyệt. */
   readonly pendingConfirms: number
   readonly completion: StopCompletionInfo
   /** Tên kiện theo mã nguồn, cho câu "kiện này thuộc điểm khác". */
   readonly names: Readonly<Record<string, string>>
-  /** Chuyến có điểm nhận dọc đường: màn hiện danh sách điểm. */
-  readonly hasPickupStops: boolean
   /** Bao lâu nữa nên đọc lại (vị trí xe, giờ đến); `null` khi không cần. */
   readonly refreshMs: number | null
   /** Kho + điểm có toạ độ để vẽ chỉ đường trong app; vắng khi nguồn không biết. */
@@ -334,7 +312,7 @@ export type TripSummaryModel = {
   readonly startedAt: string | undefined
   readonly completedAt: string | undefined
   readonly issues: readonly SummaryIssue[]
-  readonly stops: readonly { readonly number: number; readonly name: string; readonly kind: StopKind; readonly completedAt: string | undefined; readonly delivered: number; readonly issues: number }[]
+  readonly stops: readonly { readonly number: number; readonly name: string; readonly completedAt: string | undefined; readonly delivered: number; readonly issues: number }[]
 }
 
 export type TripHead = { readonly id: string; readonly code: string; readonly name: string | undefined }
@@ -426,7 +404,6 @@ export type DriverTripDetailStop = {
   readonly lat?: number
   readonly lng?: number
   readonly status: 'PENDING' | 'ARRIVED' | 'COMPLETED'
-  readonly kind: 'DELIVERY' | 'PICKUP'
   readonly plannedArrival?: string
   readonly actualArrival?: string
   readonly deadline?: string
@@ -475,4 +452,17 @@ export type DriverTripDetail = {
   readonly totalDurationSeconds?: number
   readonly path?: readonly GeoPoint[]
   readonly stops: readonly DriverTripDetailStop[]
+}
+
+/**
+ * Nội dung của một tờ trượt dưới dạng dữ liệu: tiêu đề, mô tả, đang ghi, hàng nút chân tờ, thân tờ. Nhờ vậy một `Sheet` duy nhất hiện
+ * được nhiều việc nối nhau (tờ "Thêm" của tài xế) mà không phải đóng tờ này rồi mở tờ khác — trên iOS, mở một Modal trong lúc Modal
+ * khác đang đóng không chắc hiện được.
+ */
+export type SheetView = {
+  readonly title: string
+  readonly description?: string
+  readonly busy: boolean
+  readonly footer: ReactNode
+  readonly body: ReactNode
 }

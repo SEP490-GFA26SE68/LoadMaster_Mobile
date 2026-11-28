@@ -2,17 +2,15 @@ import type { DeliveryView } from './delivery-progress'
 import type { DeliveryItem, StopDelivery } from './driver-plan'
 
 /**
- * Hoàn tất điểm đang giao sẽ ghi gì vào kho (FE-6-06, FE-7-05) — hộp hỏi lại đọc từ đây, mọi số lấy từ tiến độ của điểm trên màn. Kho
- * làm đúng như vậy khi hoàn tất: kiện đã dỡ thành Đã giao (kể cả kiện đã báo sự cố),
- * kiện nhận dọc đường đã đối chiếu lên xe thành Đang vận chuyển.
+ * Hoàn tất điểm đang giao sẽ ghi gì vào kho (FE-6-06) — hộp hỏi lại đọc từ đây, mọi số lấy từ tiến độ của điểm trên màn. Kho
+ * làm đúng như vậy khi hoàn tất: kiện đã dỡ thành Đã giao (kể cả kiện đã báo sự cố — nền tảng chỉ ghi nhận, bên gửi và bên nhận tự bàn).
+ * Còn kiện chưa dỡ thì chưa hoàn tất được điểm.
  */
 export type StopCompletion = {
-  /** Kiện đã dỡ ở điểm, kể cả kiện nhận dọc đường giao ở đây. */
+  /** Kiện đã dỡ ở điểm. */
   readonly delivered: number
   /** Kiện của phương án chưa dỡ: ở lại xe. */
   readonly returned: readonly DeliveryItem[]
-  /** Kiện nhận dọc đường đã đối chiếu lên xe ở điểm này. */
-  readonly picked: number
   /** Kiện đã báo sự cố ở điểm này. */
   readonly issues: number
   /** Điểm kế tiếp sau khi hoàn tất; vắng là điểm cuối — hoàn tất là giao xong chuyến. */
@@ -20,11 +18,9 @@ export type StopCompletion = {
 }
 
 export function stopCompletion(view: DeliveryView, stops: readonly StopDelivery[]): StopCompletion {
-  const done = (role: 'pick' | 'deliver') => view.pickupItems.filter((entry) => entry.done && entry.item.role === role).length
   return {
-    delivered: view.items.filter((entry) => entry.unloaded).length + done('deliver'),
+    delivered: view.items.filter((entry) => entry.unloaded).length,
     returned: view.items.filter((entry) => !entry.unloaded).map((entry) => entry.item),
-    picked: done('pick'),
     issues: view.issueCount,
     next: stops.find((stop) => stop.number > view.stop.number && !view.completedStops.has(stop.number)),
   }

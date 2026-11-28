@@ -4,6 +4,8 @@ import type { PayrollApi } from './payroll-api'
 import { toNumber, toOptionalNumber, type PayrollStatementDto, type PayrollTripLineDto } from './payroll-http-dto'
 import type { PayrollStatement, PayrollTripLine } from './payroll-model'
 import { isPayrollPeriodKey, type PayrollPeriodKey } from './payroll-period'
+import { mapWarehousePayroll, type WarehousePayrollStatementDto } from './warehouse-payroll-mapping'
+import type { WarehousePayrollStatement } from './warehouse-payroll-model'
 
 type HttpPayrollDeps = {
   readonly client?: () => ApiClient
@@ -41,6 +43,7 @@ export function mapPayrollStatement(dto: PayrollStatementDto, requestedPeriod: P
       driverName: dto.driverName ?? null,
     }
   }
+  const kpiTargetKg = toOptionalNumber(dto.kpiTargetKg)
   const kpiBonusVnd = toOptionalNumber(dto.kpiBonusVnd)
   const handlingAmountVnd = toOptionalNumber(dto.handlingAmountVnd)
   const commissionAmountVnd = toOptionalNumber(dto.commissionAmountVnd)
@@ -58,6 +61,8 @@ export function mapPayrollStatement(dto: PayrollStatementDto, requestedPeriod: P
     totalKm: toNumber(dto.totalKm),
     rateVndPerKm: toNumber(dto.rateVndPerKm),
     kmAmountVnd: toNumber(dto.kmAmountVnd),
+    ...(kpiTargetKg === undefined ? {} : { kpiTargetKg }),
+    ...(dto.kpiAchieved === null || dto.kpiAchieved === undefined ? {} : { kpiAchieved: dto.kpiAchieved }),
     ...(kpiBonusVnd === undefined ? {} : { kpiBonusVnd }),
     ...(handlingAmountVnd === undefined ? {} : { handlingAmountVnd }),
     ...(commissionAmountVnd === undefined ? {} : { commissionAmountVnd }),
@@ -75,6 +80,10 @@ export function httpPayrollApi({ client = api }: HttpPayrollDeps = {}): PayrollA
     async fetchMyPayroll(period: PayrollPeriodKey): Promise<PayrollStatement> {
       const dto = await client().get<PayrollStatementDto>(`/api/driver/payroll?period=${encodeURIComponent(period)}`)
       return mapPayrollStatement(dto, period)
+    },
+    async fetchMyWarehousePayroll(period: PayrollPeriodKey): Promise<WarehousePayrollStatement> {
+      const dto = await client().get<WarehousePayrollStatementDto>(`/api/warehouse/payroll?period=${encodeURIComponent(period)}`)
+      return mapWarehousePayroll(dto, period)
     },
   }
 }

@@ -29,7 +29,7 @@ function errorMessage(error: unknown, screen: StopScreen, t: TFunction): string 
 }
 
 /**
- * Bộ điều khiển tờ đối chiếu (`PackageVerifySheet`) khi dỡ hoặc nhận (như `useUnloadScan` của web) — cách duy nhất ghi một kiện "đã
+ * Bộ điều khiển tờ đối chiếu (`PackageVerifySheet`) khi dỡ (như `useUnloadScan` của web) — cách duy nhất ghi một kiện "đã
  * dỡ": quét hoặc gõ đúng mã thì nguồn ghi kèm cách đối chiếu và tờ ở lại cho kiện kế tiếp; xong kiện cuối còn chờ của điểm thì hook đóng
  * tờ. Kiện của điểm khác: nói kiện đó thuộc điểm nào, không ghi gì. Nhãn không đọc được: xác nhận tay một kiện kèm lý do, chờ điều phối
  * viên duyệt — còn chờ thì chưa hoàn tất điểm.
@@ -41,19 +41,9 @@ export function useUnloadVerify(tripId: string, screen: StopScreen): VerifyContr
   const [open, setOpen] = useState(false)
   const [result, setResult] = useState<VerifyOutcome | null>(null)
 
-  const candidates: VerifyCandidate[] = [
-    ...screen.items
-      .filter((item) => !item.unloaded && !item.returned)
-      .map((item) => ({ id: item.id, label: item.label, name: item.name, description: t('driver.item.order', { order: item.unloadingOrder }) })),
-    ...screen.pickupItems
-      .filter((item) => !item.done)
-      .map((item) => ({
-        id: item.id,
-        label: item.label,
-        name: item.name,
-        description: item.requestId === '' ? t('driver.pickup.listTitle') : t('driver.pickup.candidate', { request: item.requestId }),
-      })),
-  ]
+  const candidates: VerifyCandidate[] = screen.items
+    .filter((item) => !item.unloaded && !item.returned)
+    .map((item) => ({ id: item.id, label: item.label, name: item.name, description: t('driver.item.order', { order: item.unloadingOrder }) }))
 
   function setOpenState(next: boolean) {
     setResult(null)
@@ -67,14 +57,10 @@ export function useUnloadVerify(tripId: string, screen: StopScreen): VerifyContr
   }
 
   function recordedOutcome(id: string): VerifyOutcome {
-    const pickup = screen.pickupItems.find((item) => item.id === id)
     const item = screen.items.find((entry) => entry.id === id)
-    const label = item?.label ?? pickup?.label ?? id
-    const name = item?.name ?? pickup?.name ?? screen.names[id] ?? ''
-    return {
-      tone: 'success',
-      message: pickup?.role === 'pick' ? t('driver.pickup.lastPicked', { id: label, name }) : t('driver.scan.lastUnloaded', { id: label, name }),
-    }
+    const label = item?.label ?? id
+    const name = item?.name ?? screen.names[id] ?? ''
+    return { tone: 'success', message: t('driver.scan.lastUnloaded', { id: label, name }) }
   }
 
   /** `true` khi nguồn đã ghi kiện — ô gõ mã trống lại cho kiện kế tiếp; lỗi thì giữ mã đã gõ để sửa. */

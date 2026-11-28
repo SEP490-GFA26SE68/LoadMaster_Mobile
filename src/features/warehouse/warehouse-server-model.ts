@@ -1,5 +1,7 @@
 import type { ManualConfirmReason } from '@/lib/mock-db'
 
+import type { PresenceStatus } from './presence/presence-model'
+
 /*
  * Dữ liệu màn kho khi nguồn là máy chủ (như `warehouse-dto.ts` của web, phần kiểu của màn): máy chủ giữ phiên xếp, nên màn không dựng phiên
  * từ chuyến và revision như kho mẫu (`loading-session.ts`) mà đọc thẳng phiên đó. Toạ độ, kích thước kiện và lòng thùng là cm, gốc ở góc
@@ -18,6 +20,19 @@ export const SERVER_WAREHOUSE_STAGES: readonly ServerWarehouseStage[] = ['loadin
 /** Vì sao chuyến chờ điều phối tối ưu lại: kiện thiếu bị bỏ lúc soạn, hoặc kiện hỏng có kiện tựa lên. */
 export type ServerReplanReason = 'shortage' | 'damaged'
 
+/**
+ * Xe của chuyến và nơi xe đang ở theo kho ghi nhận, máy chủ trả cùng nhiệm vụ và phiên (`vehicleId`, `originWarehouseId`,
+ * `vehiclePresence`). Máy chủ cũ không trả, hoặc chuyến chưa gắn xe / chưa có kho xuất phát: `null` — khối xe ở kho tìm xe theo biển số.
+ */
+export type ServerVehiclePresence = {
+  readonly vehicleId: string
+  /** Kho xuất phát của chuyến: kho phải xác nhận xe có mặt ở đây trước khi tài xế xuất phát. */
+  readonly originWarehouseId: string
+  readonly status: PresenceStatus
+  /** Kho xe đang được ghi là có mặt (chỉ khi `AT_WAREHOUSE`). */
+  readonly warehouseId: string | null
+}
+
 export type ServerWarehouseTrip = {
   /** Mã số của máy chủ — mã của phiên trên đường dẫn `/loading/[tripId]`. */
   readonly id: string
@@ -31,6 +46,7 @@ export type ServerWarehouseTrip = {
   readonly status: 'DRAFT' | 'PLANNED' | 'LOADING'
   /** Chỉ với `stale`; `null` khi máy chủ trả lý do lạ. */
   readonly replanReason: ServerReplanReason | null
+  readonly vehiclePresence: ServerVehiclePresence | null
 }
 
 /** Một kiện của phiên xếp, theo thứ tự xếp của phương án đã duyệt. */
@@ -83,6 +99,9 @@ export type ServerLoadingSession = {
   readonly tripId: string
   readonly code: string
   readonly vehicle: string
+  /** Biển số xe của chuyến (`licensePlate` của phiên); `null` khi máy chủ không trả — khi đó màn không có khối xe ở kho. */
+  readonly licensePlate: string | null
+  readonly vehiclePresence: ServerVehiclePresence | null
   readonly box: ServerCargoBox | null
   readonly placements: readonly ServerPlacement[]
   /** Kết quả từng kiện theo máy chủ; kiện chưa xử lý không có mục. */
@@ -114,11 +133,16 @@ export type DamageResult =
 
 const normalized = (value: string | null | undefined) => value?.trim().toLocaleUpperCase('vi') ?? ''
 
+/** Nhãn đã đối chiếu gửi lên máy chủ: cách đối chiếu và đúng mã đã quét / gõ. */
+export type LabelInput = { readonly method: 'QR' | 'CODE'; readonly code: string }
+
 /**
- * Mã quét hoặc gõ có khớp kiện không: mã QR, mã vạch, mã của bên gửi hoặc mã kho kiện, không phân biệt hoa thường (mã QR của máy chủ là chữ
- * thường, máy quét hay người gõ có thể đưa chữ hoa). Máy chủ không kiểm mã khi ghi, nên app kiểm trước khi gửi.
+ * Mã quét hoặc gõ có khớp kiện không, theo cùng luật máy chủ kiểm (`WarehouseLabelVerifier`, như `codeMatches` của web): gõ mã (`CODE`)
+ * chỉ so mã kiện in trên nhãn (Package Code); quét (`QR`) so mã QR hoặc mã vạch. Mã nội bộ không bao giờ tính là bằng chứng nhãn. Không phân
+ * biệt hoa thường (mã QR của máy chủ là chữ thường, máy quét hay người gõ có thể đưa chữ hoa). App kiểm trước cho người dùng biết ngay; máy
+ * chủ vẫn kiểm lại mã gửi lên (`PACKAGE_CODE_MISMATCH`).
  */
-export function codeMatches(placement: ServerPlacement, code: string): boolean {
+export function codeMatches(placement: ServerPlacement, code: string, method: 'QR' | 'CODE' = 'CODE'): boolean {
   const typed = normalized(code)
-  return typed !== '' && [placement.qrToken, placement.barcode, placement.packageCode, placement.packageId].some((value) => typed === normalized(value))
+  return typed !== '' && (method === 'CODE' ? [placement.packageCode] : [placement.qrToken, placement.barcode]).some((value) => typed === normalized(value))
 }

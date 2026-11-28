@@ -20,8 +20,7 @@ import { GpsToggle } from './GpsToggle'
 import { ReportIssueSheet } from './ReportIssueSheet'
 import { StopContactCard } from './StopContactCard'
 import { footerStep, StopFooter } from './StopFooter'
-import { DeliveryItemRow, PickupItemRow } from './StopItemRows'
-import { StopList } from './StopList'
+import { DeliveryItemRow } from './StopItemRows'
 import { StopMoreActions } from './StopMoreActions'
 import { StopNotices } from './StopNotices'
 import { StopProgress } from './StopProgress'
@@ -50,8 +49,7 @@ export function StopView({ trip, screen, onCompleted }: { trip: TripHead; screen
   const verify = useUnloadVerify(trip.id, screen)
   const [issue, setIssue] = useState(CLOSED)
   const [historySignal, setHistorySignal] = useState(0)
-  const { stop, mode, arrived, items, pickupItems } = screen
-  const pickupStop = stop.kind === 'PICKUP'
+  const { stop, mode, arrived, items } = screen
   const delivering = mode === 'delivering'
   useStartGpsWhenDelivering(delivering, capabilities.gps, gps)
   const exceptionsQuery = useTripExceptionsQuery(trip.id, delivering && capabilities.tripExceptions)
@@ -90,7 +88,6 @@ export function StopView({ trip, screen, onCompleted }: { trip: TripHead; screen
       {delivering && capabilities.gps ? (
         <GpsToggle localOnly={capabilities.gpsLocalOnly} enabled={gps.enabled} state={gps.state} toggle={gps.toggle} />
       ) : null}
-      {screen.hasPickupStops ? <StopList screen={screen} /> : null}
       <DriverNavigation screen={screen} vehicle={gps.enabled ? gps.latest ?? undefined : undefined} />
       <StopContactCard screen={screen} />
       <StopProgress screen={screen} />
@@ -98,7 +95,7 @@ export function StopView({ trip, screen, onCompleted }: { trip: TripHead; screen
       <View style={styles.actions}>
         {arrived && screen.verifiable > 0 ? (
           <Button write variant="secondary" icon={ScanLine} onPress={() => verify.setOpen(true)}>
-            {t(pickupStop ? 'driver.pickup.scanOpen' : 'driver.scan.open')}
+            {t('driver.scan.open')}
           </Button>
         ) : null}
         {arrived && capabilities.deliveryIssues && items.length > 0 ? (
@@ -125,44 +122,24 @@ export function StopView({ trip, screen, onCompleted }: { trip: TripHead; screen
             ))}
           </View>
         </View>
-      ) : pickupItems.length === 0 ? (
+      ) : (
         <View style={[styles.list, styles.empty]}>
           <AppText color={colors.text2}>{t('driver.noItems')}</AppText>
         </View>
-      ) : null}
-
-      {pickupItems.length > 0 ? (
-        <View style={styles.section}>
-          <AppText variant="heading" accessibilityRole="header">
-            {t('driver.pickup.listTitle')}
-          </AppText>
-          <AppText color={colors.text2}>{t('driver.pickup.listHint')}</AppText>
-          <View style={styles.list}>
-            {pickupItems.map((item, index) => (
-              <PickupItemRow key={item.id} item={item} last={index === pickupItems.length - 1} />
-            ))}
-          </View>
-        </View>
-      ) : null}
+      )}
 
       {arrived ? (
         <AppText color={colors.text3} style={styles.center}>
-          {screen.remaining > 0
-            ? t(pickupStop ? 'driver.pickup.remaining' : 'driver.remaining', { count: screen.remaining })
-            : t(pickupStop ? 'driver.pickup.allHandled' : 'driver.allHandled')}
+          {screen.remaining > 0 ? t('driver.remaining', { count: screen.remaining }) : t('driver.allHandled')}
         </AppText>
       ) : null}
 
       {arrived ? (
         <PackageVerifySheet
           verify={verify}
-          title={t(pickupStop ? 'driver.pickup.scanTitle' : 'driver.scan.title', { number: stop.number })}
-          description={t(pickupStop ? 'driver.pickup.scanDescription' : 'driver.scan.description', {
-            number: stop.number,
-            done: screen.doneCount,
-            total: screen.total,
-          })}
-          manualAllowed={capabilities.manualConfirm && (!pickupStop || capabilities.pickupManualConfirm)}
+          title={t('driver.scan.title', { number: stop.number })}
+          description={t('driver.scan.description', { number: stop.number, done: screen.doneCount, total: screen.total })}
+          manualAllowed={capabilities.manualConfirm}
         />
       ) : null}
       <ReportIssueSheet

@@ -7,7 +7,7 @@ import type { CompleteStopDto, CurrentStopDto, DriverTripDetailDto, DriverTripDt
 import { deliveredHistoryOf, myTripsOf, shownStatusOf, tripDetailOf, tripRowOf, vnInstant } from './driver-http-mapping'
 import { deliveryPackageOf, isUnloaded, packageOfCode, stopScreenOf, withUnloaded } from './driver-http-stop'
 import { serverEtaSources, serverTripStops, tripStopsOf, type DriverTripStopsDto, type ServerTripStops } from './driver-http-stop-times'
-import { coded, HTTP_DRIVER_CAPABILITIES, refused, SERVER_REFRESH_MS, unsupported } from './driver-http-support'
+import { coded, HTTP_DRIVER_CAPABILITIES, refused, SERVER_REFRESH_MS } from './driver-http-support'
 import { completeResultOf } from './stop-outcome'
 import type { CompleteStopResult, DriverPayrollStatement, DriverTripClaim, DriverTripDetail, DriverTripException, DriverTripRow, DriverTripScreen, OpenTrip, StopKey, TripClaimStatus, TripHead } from './driver-model'
 
@@ -79,10 +79,9 @@ function payrollStatementOf(dto: DriverPayrollStatementDto): DriverPayrollStatem
 
 /*
  * Nguồn backend của màn tài xế (như `driver-backend-api.ts` của web): "Chuyến của tôi", xuất phát ở thẻ chuyến, "Đã đến", dỡ (quét / gõ mã
- * hoặc xác nhận tay), nhận kiện ở điểm nhận dọc đường, sự cố theo kiện, sự cố trên đường, hoàn tất điểm, vị trí điện thoại. Giờ đến và tiến
+ * hoặc xác nhận tay), sự cố theo kiện, sự cố trên đường, hoàn tất điểm, vị trí điện thoại. Giờ đến và tiến
  * độ từng kiện đọc lại từ `current-stop` sau mỗi lệnh ghi; adapter chỉ giữ lần đọc gần nhất (để đổi mã quét được thành mã kiện), theo người
- * đang đăng nhập. Thông báo đọc chuông của máy chủ (máy chủ giữ "đã đọc"). Chưa có ở backend: yêu cầu nhận hàng của tài xế, xác nhận tay
- * ở điểm nhận — `capabilities` tắt, gọi tới là `NOT_SUPPORTED`.
+ * đang đăng nhập. Thông báo đọc chuông của máy chủ (máy chủ giữ "đã đọc").
  *
  * Lỗi ném bằng `AppException` mang tên `ErrorCode` trong phong bì: mã có câu ở `backendErrors` thì giữ nguyên; vài mã đổi sang câu nêu mã
  * kiện hay tên điểm. Backend cũ trả lỗi không kèm mã: mỗi lệnh đọc theo mã HTTP.
@@ -316,26 +315,21 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       }
     },
 
-    // POST /api/driver/packages/{id}/unload — điểm nhận: POST /api/driver/pickup-packages/{id}/pick
+    // POST /api/driver/packages/{id}/unload
     async confirmUnload(tripId, { stop, method, code }) {
       const dto = await stopOf(tripId, stop)
       const pkg = packageOfCode(dto, code)
       if (pkg.kind === 'unknown') throw new ApiError('PACKAGE_CODE_UNKNOWN', { params: { code: code.trim() } })
       if (pkg.kind === 'ambiguous') throw new ApiError('UNLOAD_CODE_AMBIGUOUS', { params: { code: code.trim(), count: pkg.count } })
       const { packageId, label } = pkg
-      if (pkg.pickup) {
-        if (isUnloaded(dto, packageId)) throw new ApiError('PICKUP_PACKAGE_ALREADY_PICKED', { status: 409 })
-        await client().post(`/api/driver/pickup-packages/${packageId}/pick`, { body: { method } })
-      } else {
-        if (isUnloaded(dto, packageId)) throw new ApiError('PACKAGE_ALREADY_UNLOADED', { params: { code: label } })
-        try {
-          await client().post(`/api/driver/packages/${packageId}/unload`, { query: { driverId: driverId() }, body: { method } })
-        } catch (error) {
-          // Đã dỡ ở máy khác sau lần đọc gần nhất: lần đọc lại (sau mỗi lệnh ghi) cho thấy kiện đã dỡ
-          if (refused(error, 409, 'DUPLICATE_UNLOAD')) throw new ApiError('PACKAGE_ALREADY_UNLOADED', { status: 409, params: { code: label } })
-          if (refused(error, 400, 'WRONG_DELIVERY_STOP')) throw new ApiError('PACKAGE_NOT_AT_STOP', { status: 400, params: { code: label } })
-          throw error
-        }
+      if (isUnloaded(dto, packageId)) throw new ApiError('PACKAGE_ALREADY_UNLOADED', { params: { code: label } })
+      try {
+        await client().post(`/api/driver/packages/${packageId}/unload`, { query: { driverId: driverId() }, body: { method } })
+      } catch (error) {
+        // Đã dỡ ở máy khác sau lần đọc gần nhất: lần đọc lại (sau mỗi lệnh ghi) cho thấy kiện đã dỡ
+        if (refused(error, 409, 'DUPLICATE_UNLOAD')) throw new ApiError('PACKAGE_ALREADY_UNLOADED', { status: 409, params: { code: label } })
+        if (refused(error, 400, 'WRONG_DELIVERY_STOP')) throw new ApiError('PACKAGE_NOT_AT_STOP', { status: 400, params: { code: label } })
+        throw error
       }
       // Lần gõ kế tiếp trước khi màn đọc lại điểm cũng thấy kiện này đã xong
       mine().stops.set(tripId, withUnloaded(dto, packageId))
@@ -433,7 +427,6 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
       })
       return { id: result.id ?? 'EXC-0' }
     },
-    createPickupRequest: unsupported,
 
     // GET /api/notifications
     async fetchNotifications() {

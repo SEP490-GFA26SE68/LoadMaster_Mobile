@@ -32,15 +32,18 @@ type PackageVerifySheetProps = {
   description?: string
   /** Nguồn dữ liệu nhận được xác nhận tay: thêm mức 3. */
   manualAllowed: boolean
+  /** Nhãn và gợi ý của ô gõ mã, nơi gọi dịch sẵn, khi mã gõ được khác mặc định (phiên kho máy chủ chỉ nhận mã kiện in trên nhãn). */
+  codeLabel?: string
+  codeHint?: string
 }
 
 /**
- * Tờ đối chiếu kiện ba mức (như `PackageVerify` của web) cho mọi bước có đối chiếu — tài xế dỡ, nhận dọc đường; kho soạn, xếp: (1) quét
+ * Tờ đối chiếu kiện ba mức (như `PackageVerify` của web) cho mọi bước có đối chiếu — tài xế dỡ; kho soạn, xếp: (1) quét
  * nhãn QR bằng camera, (2) gõ mã in dưới hình QR hoặc mã của bên gửi, (3) xác nhận tay kèm lý do — chỉ khi `manualAllowed`. Ba mức là ba
  * tab; kết quả lần đối chiếu gần nhất là một vùng đọc được (thành công, cảnh báo, lỗi) thay cho toast. Tờ không biết kiện nào đúng: mã đi
  * thẳng tới `verify` của nơi gọi, và nơi gọi quyết khi nào tờ đóng (`VerifyController`).
  */
-export function PackageVerifySheet({ verify, title, description, manualAllowed }: PackageVerifySheetProps) {
+export function PackageVerifySheet({ verify, title, description, manualAllowed, codeLabel, codeHint }: PackageVerifySheetProps) {
   const t = useT()
   const [level, setLevel] = useState<VerifyMethod>('QR')
   // Mỗi lần tờ mở là một lượt đối chiếu mới, như web (nội dung hộp thoại dựng lại mỗi lần mở): về mức quét QR — kể cả khi chính nơi gọi
@@ -109,7 +112,7 @@ export function PackageVerifySheet({ verify, title, description, manualAllowed }
       </View>
       <VerifyResult result={verify.result} />
       {current === 'QR' ? <QrScanner onDetected={handleScan} /> : null}
-      {current === 'CODE' ? <CodeForm pending={verify.pending} onSubmit={(code) => verify.verify('CODE', code)} /> : null}
+      {current === 'CODE' ? <CodeForm pending={verify.pending} label={codeLabel} hint={codeHint} onSubmit={(code) => verify.verify('CODE', code)} /> : null}
       {current === 'MANUAL' ? (
         <ManualConfirmForm
           key={verify.candidates.map((candidate) => candidate.id).join(',')}
@@ -134,7 +137,17 @@ function VerifyResult({ result }: { result: VerifyOutcome | null }) {
 }
 
 /** Mức 2: gõ mã in dưới hình QR, hoặc mã của bên gửi khi nó duy nhất trong chuyến. Ghi được thì ô trống lại cho kiện kế tiếp. */
-function CodeForm({ pending, onSubmit }: { pending: boolean; onSubmit: (code: string) => Promise<boolean> }) {
+function CodeForm({
+  pending,
+  label,
+  hint,
+  onSubmit,
+}: {
+  pending: boolean
+  label?: string
+  hint?: string
+  onSubmit: (code: string) => Promise<boolean>
+}) {
   const t = useT()
   const form = useForm<CodeInput, unknown, CodeValues>({ resolver: zodResolver(codeSchema), defaultValues: { code: '' } })
   const submit = form.handleSubmit(async ({ code }) => {
@@ -151,8 +164,8 @@ function CodeForm({ pending, onSubmit }: { pending: boolean; onSubmit: (code: st
         name="code"
         render={({ field, fieldState }) => (
           <TextField
-            label={t('verify.codeLabel')}
-            hint={t('verify.codeHint')}
+            label={label ?? t('verify.codeLabel')}
+            hint={hint ?? t('verify.codeHint')}
             error={fieldState.error === undefined ? undefined : t('verify.codeRequired')}
             code
             autoCapitalize="characters"

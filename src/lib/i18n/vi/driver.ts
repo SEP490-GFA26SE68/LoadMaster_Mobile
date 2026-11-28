@@ -133,10 +133,6 @@ export const driver = {
       ARRIVED: 'Đã đến',
       COMPLETED: 'Hoàn tất',
     },
-    stopKind: {
-      DELIVERY: 'Giao hàng',
-      PICKUP: 'Nhận hàng',
-    },
     minutes: '{mins} phút',
     hoursAndMinutes: '{hours} giờ {mins} phút',
   },
@@ -235,7 +231,6 @@ export const driver = {
     delivered: { one: '{count} kiện đã dỡ được ghi Đã giao.', other: '{count} kiện đã dỡ được ghi Đã giao.' },
     returned: { one: '{count} kiện chưa dỡ ở lại xe, được ghi Hoàn trả:', other: '{count} kiện chưa dỡ ở lại xe, được ghi Hoàn trả:' },
     issues: { one: 'Đã ghi sự cố cho {count} kiện — vẫn giao cho bên nhận; bên gửi và bên nhận tự bàn.', other: 'Đã ghi sự cố cho {count} kiện — vẫn giao cho bên nhận; bên gửi và bên nhận tự bàn.' },
-    picked: { one: '{count} kiện đã nhận lên xe, được ghi Đang vận chuyển.', other: '{count} kiện đã nhận lên xe, được ghi Đang vận chuyển.' },
     next: 'Tiếp theo: điểm {number} · {name}.',
     last: 'Đây là điểm cuối: hoàn tất là giao xong chuyến.',
     /** Nguồn dữ liệu không cho biết điểm kế tiếp trước khi hoàn tất. */
@@ -333,40 +328,8 @@ export const driver = {
       noteTooLong: 'Ghi chú tối đa {max} ký tự.',
     },
   },
-  stopKinds: { PICKUP: 'Điểm nhận hàng', DELIVERY: 'Điểm giao hàng' },
   stopList: {
-    summary: 'Các điểm của chuyến ({count})',
-    label: 'Các điểm của chuyến',
-    state: { done: 'Đã xong', current: 'Đang ở điểm này', waiting: 'Chưa tới' },
-  },
-  /** Kiện nhận dọc đường: nhận ở điểm nhận, giao ở điểm giao như kiện thường. */
-  pickup: {
-    banner: 'Điểm nhận hàng dọc đường: nhận {count} kiện từ {name}. Đối chiếu từng kiện lên xe rồi mới hoàn tất điểm nhận.',
-    listTitle: 'Kiện nhận dọc đường',
-    listHint: 'Kiện nhận không nằm trong phương án xếp hàng. Đối chiếu bằng nhãn QR như kiện thường.',
-    request: 'Yêu cầu {id}',
-    pick: { waiting: 'Chưa nhận', done: 'Đã nhận' },
-    deliver: { waiting: 'Chưa dỡ', done: 'Đã dỡ' },
-    via: {
-      QR: 'quét QR',
-      CODE: 'gõ mã',
-      MANUAL_PENDING: 'xác nhận tay, chờ duyệt',
-      MANUAL_APPROVED: 'xác nhận tay đã duyệt',
-    },
-    summary: 'Cần nhận {total} kiện · Đã nhận {done}',
-    progress: 'Tiến độ nhận hàng',
-    remaining: { one: 'Còn {count} kiện chưa đối chiếu', other: 'Còn {count} kiện chưa đối chiếu' },
-    allHandled: 'Mọi kiện của điểm nhận này đã đối chiếu.',
-    scanOpen: 'Đối chiếu kiện nhận',
-    scanTitle: 'Đối chiếu kiện nhận tại điểm {number}',
-    scanDescription: 'Quét nhãn QR của từng kiện khi đưa lên xe, hoặc gõ mã in trên nhãn. Điểm {number}: đã nhận {done} / {total} kiện.',
-    lastPicked: 'Vừa nhận {id} · {name}.',
-    candidate: 'Kiện nhận · yêu cầu {request}',
-    complete: 'Hoàn tất điểm nhận',
-    blocked: {
-      one: 'Còn {count} xác nhận tay của điểm này chờ điều phối viên duyệt — chưa hoàn tất điểm nhận được.',
-      other: 'Còn {count} xác nhận tay của điểm này chờ điều phối viên duyệt — chưa hoàn tất điểm nhận được.',
-    },
+    state: { done: 'Đã xong', waiting: 'Chưa tới' },
   },
   /** Công tắc "Dùng GPS thật" khi chuyến Đang vận chuyển. */
   gps: {

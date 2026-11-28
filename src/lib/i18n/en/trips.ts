@@ -2,6 +2,7 @@ import type { Dictionary } from '../types'
 import type { trips as source } from '../vi/trips'
 
 export const trips = {
+  presence: {"chooseWarehouse": "Choose a departure warehouse before selecting a vehicle.", "loading": "Loading eligible vehicles at this warehouse…", "retry": "Retry", "empty": "No eligible vehicles have been checked in at this warehouse.", "invalid": "The vehicle is no longer eligible at this warehouse. Refresh and select a vehicle."},
 
   assign: {
     title: 'Assign delivery requirement',
@@ -352,7 +353,6 @@ export const trips = {
     stateA11y: { done: 'delivered at {time}', current: 'being delivered now', pending: 'not delivered yet' },
     unloaded: 'Unloaded {done} / {total}',
     issueTag: { one: '{count} issue', other: '{count} issues' },
-    pickupTag: 'Pickup',
     summary: {
       stops: 'Delivered',
       stopsUnit: 'stops',

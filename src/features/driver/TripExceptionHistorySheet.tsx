@@ -4,11 +4,10 @@ import { Pressable, StyleSheet, View } from 'react-native'
 import { AppText } from '@/components/AppText'
 import { Button } from '@/components/Button'
 import { Chip } from '@/components/Chip'
-import type { SheetView } from '@/features/pickups/pickup-model'
 import { useFormat, useT } from '@/lib/i18n'
 import { badgeTones, colors, palette, radius, space } from '@/theme/tokens'
 
-import type { DriverTripException } from './driver-model'
+import type { DriverTripException, SheetView } from './driver-model'
 
 function statusTone(status: DriverTripException['status']) {
   if (status === 'RESOLVED') return 'success' as const

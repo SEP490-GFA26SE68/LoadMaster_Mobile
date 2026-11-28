@@ -27,6 +27,26 @@ describe('httpWarehouseApi: danh sách chuyến', () => {
     expect(trips[0]).toMatchObject({ id: '54', replanReason: 'damaged', status: 'PLANNED', packageCount: 3 })
   })
 
+  test('xe, kho xuất phát và nơi xe đang ở: đọc khi máy chủ trả đủ, `null` khi máy chủ cũ không trả', async () => {
+    const tasks = [
+      { ...TASKS[0], vehicleId: 9, originWarehouseId: 3, vehiclePresence: { status: 'IN_TRANSIT', warehouseId: null } },
+      { ...TASKS[1], vehicleId: 10, originWarehouseId: 3, vehiclePresence: { status: 'AT_WAREHOUSE', warehouseId: 4 } },
+      { ...TASKS[2], vehicleId: 11, originWarehouseId: 3, vehiclePresence: { status: 'PARKED' } },
+      // Chuyến chưa có kho xuất phát: không đoán
+      { ...TASKS[3], vehicleId: 12, originWarehouseId: null, vehiclePresence: { status: 'UNKNOWN', warehouseId: null } },
+    ]
+    const { warehouse } = warehouseBackend({ 'GET /api/warehouse/tasks': () => ok(tasks) })
+    const byCode = new Map((await warehouse.fetchTasks()).map((trip) => [trip.code, trip.vehiclePresence]))
+
+    expect(byCode.get('TRIP-0052')).toEqual({ vehicleId: '9', originWarehouseId: '3', status: 'IN_TRANSIT', warehouseId: null })
+    expect(byCode.get('TRIP-0051')).toEqual({ vehicleId: '10', originWarehouseId: '3', status: 'AT_WAREHOUSE', warehouseId: '4' })
+    expect(byCode.get('TRIP-0053')).toEqual({ vehicleId: '11', originWarehouseId: '3', status: 'OTHER', warehouseId: null })
+    expect(byCode.get('TRIP-0054')).toBeNull()
+
+    const old = warehouseBackend({ 'GET /api/warehouse/tasks': () => ok(TASKS) })
+    expect((await old.warehouse.fetchTasks()).every((trip) => trip.vehiclePresence === null)).toBe(true)
+  })
+
   test('máy chủ trả rỗng: danh sách rỗng', async () => {
     const { warehouse } = warehouseBackend({ 'GET /api/warehouse/tasks': () => ok(null) })
     await expect(warehouse.fetchTasks()).resolves.toEqual([])
@@ -51,12 +71,42 @@ describe('httpWarehouseApi: bắt đầu và soạn hàng', () => {
     expect(reads(calls)).toBe(1)
   })
 
-  test('soạn một kiện gửi cách đối chiếu rồi đọc lại phiên; kiện đã soạn từ trước báo `alreadyStaged`', async () => {
+  test('soạn một kiện gửi cách đối chiếu và đúng mã đã gõ rồi đọc lại phiên; kiện đã soạn từ trước báo `alreadyStaged`', async () => {
     const path = '/api/warehouse/tasks/51/staging/packages/7001/confirm'
-    const { warehouse, calls } = warehouseBackend(onSession(sessionDto(), { [`POST ${path}`]: () => ok({ alreadyStaged: true }) }))
-    await expect(warehouse.stage('51', '7001', 'CODE')).resolves.toMatchObject({ alreadyStaged: true, session: { tripId: '51' } })
-    expect(calls.find((call) => call.path === path)?.body).toEqual({ method: 'CODE' })
+    const staged = sessionDto({ placements: [step(901, 1, { staged: true }), step(902, 2)] })
+    const { warehouse, calls } = warehouseBackend(onSession(staged, { [`POST ${path}`]: () => ok({ alreadyStaged: true }) }))
+    await expect(warehouse.stage('51', '7001', { method: 'CODE', code: 'DMX-01' })).resolves.toMatchObject({
+      alreadyStaged: true,
+      session: { tripId: '51' },
+    })
+    const call = calls.find((entry) => entry.path === path)
+    expect(call).toMatchObject({ method: 'POST', body: { method: 'CODE', code: 'DMX-01' } })
+    expect(call?.query).toEqual({})
     expect(reads(calls)).toBe(1)
+  })
+
+  test('quét QR khi soạn gửi QR kèm mã quét được', async () => {
+    const path = '/api/warehouse/tasks/51/staging/packages/7002/confirm'
+    const staged = sessionDto({ placements: [step(901, 1), step(902, 2, { staged: true })] })
+    const { warehouse, calls } = warehouseBackend(onSession(staged, { [`POST ${path}`]: () => ok({ alreadyStaged: false }) }))
+    await warehouse.stage('51', '7002', { method: 'QR', code: 'lm-qr-0002' })
+    expect(calls.find((call) => call.path === path)?.body).toEqual({ method: 'QR', code: 'lm-qr-0002' })
+  })
+
+  test('mã không khớp kiện (PACKAGE_CODE_MISMATCH) đi thẳng tới màn, không đọc lại phiên', async () => {
+    const path = '/api/warehouse/tasks/51/staging/packages/7001/confirm'
+    const { warehouse, calls } = warehouseBackend(onSession(sessionDto(), { [`POST ${path}`]: () => fail(400, 'PACKAGE_CODE_MISMATCH') }))
+    expect(await failure(() => warehouse.stage('51', '7001', { method: 'CODE', code: 'DMX-09' }))).toMatchObject({
+      code: 'PACKAGE_CODE_MISMATCH',
+      status: 400,
+    })
+    expect(reads(calls)).toBe(0)
+  })
+
+  test('máy chủ nhận lệnh soạn mà phiên đọc lại không có kiện đã soạn: CONFLICT, không báo thành công', async () => {
+    const path = '/api/warehouse/tasks/51/staging/packages/7001/confirm'
+    const { warehouse } = warehouseBackend(onSession(sessionDto(), { [`POST ${path}`]: () => ok({ alreadyStaged: false }) }))
+    expect(await failure(() => warehouse.stage('51', '7001', { method: 'CODE', code: 'DMX-01' }))).toMatchObject({ code: 'CONFLICT', status: 409 })
   })
 
   test('xác nhận tay gửi lý do, bỏ ghi chú rỗng; báo thiếu không thân lệnh — cả hai đọc lại phiên', async () => {
@@ -78,7 +128,10 @@ describe('httpWarehouseApi: xếp', () => {
     const { warehouse, calls } = warehouseBackend(
       onSession(sessionDto(), { 'POST /api/warehouse/placements/901/confirm': () => fail(400, 'STAGING_INCOMPLETE') }),
     )
-    expect(await failure(() => warehouse.confirm('51', '901', 'QR'))).toMatchObject({ code: 'STAGING_NOT_READY', status: 400 })
+    expect(await failure(() => warehouse.confirm('51', '901', { method: 'QR', code: 'lm-qr-0001' }))).toMatchObject({
+      code: 'STAGING_NOT_READY',
+      status: 400,
+    })
     expect(reads(calls)).toBe(0)
   })
 
@@ -88,13 +141,36 @@ describe('httpWarehouseApi: xếp', () => {
         'POST /api/warehouse/placements/901/confirm': () => fail(409, 'PLACEMENT_ALREADY_CONFIRMED'),
       }),
     )
-    await expect(warehouse.confirm('51', '901', 'QR')).resolves.toMatchObject({ outcomes: { '901': 'confirmed' } })
+    await expect(warehouse.confirm('51', '901', { method: 'QR', code: 'lm-qr-0001' })).resolves.toMatchObject({ outcomes: { '901': 'confirmed' } })
   })
 
-  test('xác nhận đã xếp gửi cách đối chiếu: gõ mã là CODE', async () => {
-    const { warehouse, calls } = warehouseBackend(onSession(loadingDto(['PENDING', 'PENDING']), { 'POST /api/warehouse/placements/901/confirm': () => ok(null) }))
-    await warehouse.confirm('51', '901', 'CODE')
-    expect(calls.find((call) => call.path === '/api/warehouse/placements/901/confirm')?.body).toEqual({ method: 'CODE' })
+  test('xác nhận đã xếp gửi mã số chuyến, cách đối chiếu và đúng mã đã gõ', async () => {
+    const { warehouse, calls } = warehouseBackend(
+      onSession(loadingDto(['CONFIRMED', 'PENDING']), { 'POST /api/warehouse/placements/901/confirm': () => ok(null) }),
+    )
+    await warehouse.confirm('51', '901', { method: 'CODE', code: 'DMX-01' })
+    expect(calls.find((call) => call.path === '/api/warehouse/placements/901/confirm')?.body).toEqual({ tripId: 51, method: 'CODE', code: 'DMX-01' })
+  })
+
+  test('mã không khớp kiện của bước (PACKAGE_CODE_MISMATCH) đi thẳng tới màn', async () => {
+    const { warehouse } = warehouseBackend(
+      onSession(loadingDto(), { 'POST /api/warehouse/placements/901/confirm': () => fail(400, 'PACKAGE_CODE_MISMATCH') }),
+    )
+    expect(await failure(() => warehouse.confirm('51', '901', { method: 'QR', code: 'lm-qr-0002' }))).toMatchObject({ code: 'PACKAGE_CODE_MISMATCH' })
+  })
+
+  test('máy chủ nhận lệnh xếp mà phiên đọc lại chưa ghi kiện là đã xếp: CONFLICT', async () => {
+    const { warehouse } = warehouseBackend(
+      onSession(loadingDto(['PENDING', 'PENDING']), { 'POST /api/warehouse/placements/901/confirm': () => ok(null) }),
+    )
+    expect(await failure(() => warehouse.confirm('51', '901', { method: 'CODE', code: 'DMX-01' }))).toMatchObject({ code: 'CONFLICT', status: 409 })
+  })
+
+  test('xác nhận tay khi xếp gửi mã chuyến ở tham số truy vấn, lý do ở thân', async () => {
+    const path = '/api/warehouse/placements/901/manual'
+    const { warehouse, calls } = warehouseBackend(onSession(loadingDto(), { [`POST ${path}`]: () => ok(null) }))
+    await warehouse.confirmManually('51', '901', { reason: 'OTHER', note: ' Nhãn rách ' })
+    expect(calls.find((call) => call.path === path)).toMatchObject({ query: { tripId: '51' }, body: { reason: 'OTHER', note: 'Nhãn rách' } })
   })
 
   test('sai lệch vị trí gửi cm nguyên và lý do đã cắt khoảng trắng', async () => {
@@ -102,8 +178,20 @@ describe('httpWarehouseApi: xếp', () => {
     const { warehouse, calls } = warehouseBackend(onSession(loadingDto(['CONFIRMED', 'DEVIATION']), { [`POST ${path}`]: () => ok(null) }))
     const session = await warehouse.deviation('51', '902', { x: 205.4, y: 10.6, z: 0, reason: '  Vướng vách  ' })
 
-    expect(calls.find((call) => call.path === path)?.body).toEqual({ actualPosX: 205, actualPosY: 11, actualPosZ: 0, reason: 'Vướng vách' })
+    expect(calls.find((call) => call.path === path)?.body).toEqual({
+      tripId: 51,
+      actualPosX: 205,
+      actualPosY: 11,
+      actualPosZ: 0,
+      reason: 'Vướng vách',
+    })
     expect(session.outcomes).toEqual({ '901': 'confirmed', '902': 'deviation' })
+  })
+
+  test('sai lệch mà phiên đọc lại không ghi sai lệch: CONFLICT', async () => {
+    const path = '/api/warehouse/placements/902/deviation'
+    const { warehouse } = warehouseBackend(onSession(loadingDto(['CONFIRMED', 'PENDING']), { [`POST ${path}`]: () => ok(null) }))
+    expect(await failure(() => warehouse.deviation('51', '902', { x: 1, y: 1, z: 0, reason: 'Vướng vách' }))).toMatchObject({ code: 'CONFLICT' })
   })
 
   test('kiện hỏng có kiện tựa lên: chuyến về lập kế hoạch, không còn phiên để đọc', async () => {
@@ -111,6 +199,7 @@ describe('httpWarehouseApi: xếp', () => {
       'POST /api/warehouse/placements/901/damaged': () => ok({ outcome: 'REPLANNED', restingCount: 2 }),
     })
     await expect(warehouse.damaged('51', '901')).resolves.toEqual({ outcome: 'replanned', resting: 2 })
+    expect(calls[0]).toMatchObject({ path: '/api/warehouse/placements/901/damaged', query: { tripId: '51' } })
     expect(reads(calls)).toBe(0)
   })
 
@@ -155,6 +244,20 @@ describe('httpWarehouseApi: phiên của máy chủ', () => {
   test('phiên bắt đầu không kèm bước soạn (app khác): coi như đã soạn đủ', async () => {
     const { warehouse } = warehouseBackend(onSession(sessionDto({ stagingRequired: undefined, stagingComplete: undefined })))
     await expect(warehouse.fetchSession('51')).resolves.toMatchObject({ stagingRequired: false, stagingComplete: true })
+  })
+
+  test('phiên mang xe, kho xuất phát và nơi xe đang ở; máy chủ cũ, hay chuyến chưa gắn xe, thì `null`', async () => {
+    const dto = sessionDto({ licensePlate: '51C-555.55', vehicleId: 9, originWarehouseId: 3, vehiclePresence: { status: 'UNKNOWN', warehouseId: null } })
+    const { warehouse } = warehouseBackend(onSession(dto))
+    await expect(warehouse.fetchSession('51')).resolves.toMatchObject({
+      licensePlate: '51C-555.55',
+      vehiclePresence: { vehicleId: '9', originWarehouseId: '3', status: 'UNKNOWN', warehouseId: null },
+    })
+
+    const old = warehouseBackend(onSession(sessionDto()))
+    await expect(old.warehouse.fetchSession('51')).resolves.toMatchObject({ vehiclePresence: null })
+    const noVehicle = warehouseBackend(onSession(sessionDto({ vehicleId: null, originWarehouseId: 3, vehiclePresence: null })))
+    await expect(noVehicle.warehouse.fetchSession('51')).resolves.toMatchObject({ vehiclePresence: null })
   })
 
   test('chỗ xếp thiếu vị trí là lỗi của máy chủ, không điền 0', async () => {

@@ -31,6 +31,10 @@ export const payroll = {
     kgFormula: '{kg} × {rate}/kg',
     kmAmount: 'Distance pay',
     kmFormula: '{km} km × {rate}/km',
+    kpiMonth: 'Monthly KPI',
+    kpiProgress: 'Carried {totalKg} of target {targetKg}',
+    kpiAchieved: 'Target achieved',
+    kpiNotAchieved: 'Target not achieved',
     kpiBonus: 'KPI bonus',
     handlingAmount: 'Self-handling allowance',
     commissionAmount: 'Revenue commission',
@@ -58,5 +62,27 @@ export const payroll = {
     title: 'No payslip for {period}',
     description: 'Your manager has not calculated payroll for this period yet, or you have no payroll record for this month.',
     viewPrevious: 'View previous month',
+  },
+  warehouse: {
+    summary: {
+      trips: 'Trips',
+      packages: 'Packages',
+      loadedKg: 'Weight',
+    },
+    breakdown: {
+      loadedAmount: 'Pay by loaded weight',
+      kpiProgress: 'Loaded {totalKg} of the {targetKg} target',
+    },
+    trips: {
+      empty: 'You loaded no trips in this period.',
+      loadedOn: 'Loaded on {date}',
+      packages: '{count} packages',
+    },
+    uncalculated: {
+      DRAFT: 'Payroll for this period is being calculated. Loaded weight, pay by weight and KPI appear once your manager locks the period.',
+      LOCKED: 'This period is locked, but you have no payroll record for this month.',
+      none: 'Your manager has not calculated warehouse payroll for this period yet.',
+      baseSalary: 'Monthly base salary: {amount}',
+    },
   },
 } satisfies Dictionary<typeof source>

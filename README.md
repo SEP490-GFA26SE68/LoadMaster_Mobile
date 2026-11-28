@@ -22,28 +22,33 @@ React Native + Expo SDK 57 · TypeScript · Expo Router · TanStack Query.
   chuông và màn thông báo. Chưa có: khung 3D (bước xếp dùng sơ đồ 2D).
 - Điều phối viên và quản lý công ty, trên kho mẫu: tab **Chuyến hàng** (danh sách theo ngày, tab trạng thái, tìm bỏ dấu; chi tiết
   chuyến chỉ đọc, điều phối viên duyệt xác nhận tay và quyết kiện báo thiếu); tab **Giám sát** (chuyến đang chạy, vị trí và giờ đến
-  bằng chữ, sự cố cấp chuyến, tìm tuyến khác, duyệt / từ chối nhận hàng dọc đường; quản lý gia hạn sự cố đã chuyển lên); tab **Tổng
-  quan** của quản lý (số liệu theo kỳ, đội xe, chuyến gần đây); chuông của hai vai trò. Tài xế tạo được yêu cầu nhận hàng dọc đường
-  (tờ "Thêm" ở màn điểm giao). Chưa có: bản đồ, khung 3D.
+  bằng chữ, sự cố cấp chuyến, tìm tuyến khác; quản lý gia hạn sự cố đã chuyển lên); tab **Tổng
+  quan** của quản lý (số liệu theo kỳ, đội xe, chuyến gần đây); chuông của hai vai trò. Chưa có: bản đồ, khung 3D.
 - Nối backend: đăng nhập (Keycloak + `GET /api/users/me`); tài xế chạy trọn trên máy chủ như bản web — "Chuyến của tôi" đủ bốn
   nhóm, "Xuất phát" ngay ở thẻ chuyến (kho chưa xếp xong thì nút mờ kèm lý do), "Đã đến điểm n", dỡ bằng quét QR hoặc gõ mã (mã QR, mã
-  vạch, mã kho, mã bên gửi khi duy nhất), xác nhận tay chờ điều phối viên duyệt, báo sự cố theo kiện, sự cố trên đường, nhận kiện ở điểm
-  nhận dọc đường, hoàn tất điểm, vị trí GPS. Giờ đến và tiến độ từng kiện đọc lại từ máy chủ, nên mở lại app vẫn đúng. Máy chủ chưa có:
-  thông báo, yêu cầu nhận hàng của tài xế, xác nhận tay ở điểm nhận, số liệu tổng kết chuyến — app ẩn phần đó.
+  vạch, mã kho, mã bên gửi khi duy nhất), xác nhận tay chờ điều phối viên duyệt, báo sự cố theo kiện, sự cố trên đường, hoàn tất điểm, vị trí GPS. Giờ đến và tiến độ từng kiện đọc lại từ máy chủ, nên mở lại app vẫn đúng. Máy chủ chưa có:
+  thông báo, số liệu tổng kết chuyến — app ẩn phần đó.
 - Nối backend cho nhân viên kho: tab **Kho** đọc `GET /api/warehouse/tasks` (đang xếp, chờ xếp, xếp xong — chờ xuất phát, chờ điều
   phối tối ưu lại kèm lý do); phiên đọc lại từ máy chủ ở máy nào cũng được — soạn hàng (đối chiếu không cần thứ tự, xác nhận tay chờ
-  duyệt, báo thiếu), xếp theo thứ tự (đối chiếu, xác nhận tay, ghi sai lệch vị trí, kiện hỏng: bỏ lại kho hoặc chuyến về lập kế hoạch),
-  hoàn tất xếp (mờ khi còn xác nhận tay chờ). Tab **Tra cứu kiện** đọc máy chủ khi nguồn `packages` là `http` (quét QR, gõ mã QR / mã của kho / mã của bên gửi / mã vạch, báo đã tìm thấy kiện mang cờ "Không tìm thấy"). Chưa có trên máy chủ ở app: chuông của kho, khung vị
-  trí kiện (vị trí ghi bằng số).
+  duyệt, báo thiếu), xếp theo thứ tự (sơ đồ lòng thùng 2D, đối chiếu, xác nhận tay, ghi sai lệch vị trí, kiện hỏng: bỏ lại kho hoặc
+  chuyến về lập kế hoạch), hoàn tất xếp (mờ khi còn xác nhận tay chờ), xác nhận xe có ở kho xuất phát (kể cả xe đang ghi trên đường hay ở kho khác), chuông ở danh sách chuyến. Màn
+  **Xe ở kho** (`/api/warehouse/vehicle-presence`: xe của kho được phân công, ghi nhận có ở kho, lịch sử) và tab **Lương** (phiếu lương
+  kho `GET /api/warehouse/payroll`; kỳ chưa chốt máy chủ chỉ trả lương cứng). Gõ mã ở phiên máy chủ là Package Code in trên nhãn (máy chủ chỉ
+  khớp gõ mã với mã đó). Tab **Tra cứu kiện** đọc máy chủ khi nguồn `packages` là `http` (quét QR, gõ mã QR / mã của kho / mã của bên gửi / mã vạch, báo đã tìm thấy kiện mang cờ "Không tìm thấy"). Chưa có trên máy chủ ở app: khung vị
+  trí kiện 3D (bước xếp dùng sơ đồ 2D).
+- Trợ lý AI **Lumo** cho tài xế và nhân viên kho khi đăng nhập bằng backend (`POST /api/assistant/messages`): nút trên dải trời
+  của "Chuyến của tôi", danh sách chuyến của kho và hai bước soạn / xếp; màn trò chuyện toàn màn hình kèm câu hỏi gợi ý theo vai trò,
+  liên kết mở màn tương ứng của app, mã yêu cầu hỗ trợ khi Lumo chuyển cho đội hỗ trợ. Kho mẫu, tài khoản bị khoá hay công ty hết gói
+  thì không có nút. Chưa chạy trên máy thật.
 - Nối backend cho điều phối viên và quản lý công ty: danh sách và chi tiết chuyến (duyệt xác nhận tay, quyết kiện báo thiếu), Giám sát
   (sự cố cấp chuyến, tìm tuyến khác, chuyển quản lý, gia hạn), Tổng quan theo kỳ. Ẩn khi dùng máy chủ: yêu cầu giao và dòng phụ phương
-  án của chuyến, nhận hàng dọc đường ở Giám sát, chuông của hai vai trò.
+  án của chuyến, chuông của hai vai trò.
 - Ngày 16/10 đã chạy bản debug trên máy ảo Android 16: với kho mẫu — đăng nhập tài xế, xuất phát, đã đến điểm, dỡ kiện bằng gõ mã; với
   backend — bản đăng nhập qua trình duyệt cũ (đã thay bằng form trong app ngày 04/11, chưa chạy lại trên máy). **Chưa** chạy với backend
   thật (đăng nhập trọn vòng, các endpoint của tài xế), chưa kiểm camera QR, GPS thật, điện thoại thật và iOS; hai màn lỗi và toàn bộ
   màn kho thêm sau ngày đó chưa chạy trên máy.
 
-Kiểm thử: 462 test (Jest, 62 suite), lint và kiểm kiểu sạch; đóng gói Android (`expo export`) chạy được.
+Kiểm thử: 707 test (Jest, 97 suite), lint và kiểm kiểu sạch; đóng gói Android (`expo export`) chạy được.
 
 ## Chạy
 
@@ -70,7 +75,7 @@ Chép `.env.example` thành `.env` khi cần đổi. Mặc định mọi chức 
 | Biến | Nghĩa |
 |---|---|
 | `EXPO_PUBLIC_DATA_SOURCE` | `mock` (mặc định) hoặc `http` cho mọi chức năng |
-| `EXPO_PUBLIC_HTTP_FEATURES` | Các chức năng dùng backend khi mặc định là `mock`: `auth`, `driver`, `warehouse`, `packages` (Tra cứu kiện), `trips`, `monitoring`, `dashboard` |
+| `EXPO_PUBLIC_HTTP_FEATURES` | Các chức năng dùng backend khi mặc định là `mock`: `auth`, `driver`, `warehouse`, `packages` (Tra cứu kiện), `trips`, `monitoring`, `dashboard`, `assistant` (trợ lý AI). `auth` dùng backend thì `driver`, `payroll`, `warehouse`, `packages`, `assistant` luôn dùng backend |
 | `EXPO_PUBLIC_API_URL` | Địa chỉ backend |
 | `EXPO_PUBLIC_KEYCLOAK_URL`, `_REALM`, `_CLIENT_ID` | Keycloak của backend; bắt buộc khi `auth` dùng backend |
 | `EXPO_PUBLIC_GOONG_MAPTILES_KEY` | Khoá map tiles Goong (cùng loại với web). Trống: bản đồ nền trống, vẫn vẽ tuyến |

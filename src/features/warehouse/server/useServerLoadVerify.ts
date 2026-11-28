@@ -14,8 +14,8 @@ export type LoadFlash = VerifyOutcome
 
 /**
  * Bộ điều khiển tờ đối chiếu khi xếp ở phiên máy chủ (như `handleVerify` / `handleManual` của `ServerLoadingSession` web): chỉ kiện của bước
- * hiện tại — máy chủ từ chối xác nhận sai thứ tự. Máy chủ không kiểm mã khi ghi, nên app đối chiếu mã với kiện của bước trước khi gửi: mã của
- * kiện khác thì tờ ở lại, nói kiện bước này cần, không gửi gì. Đúng kiện thì máy chủ ghi đã xếp, tờ đóng và màn sang kiện kế tiếp; câu kết
+ * hiện tại — máy chủ từ chối xác nhận sai thứ tự. App đối chiếu mã với kiện của bước trước khi gửi (gõ: mã kiện; quét: mã QR, mã vạch): mã
+ * của kiện khác thì tờ ở lại, nói kiện bước này cần, không gửi gì; khớp thì gửi cả mã, máy chủ kiểm lại. Đúng kiện thì máy chủ ghi đã xếp, tờ đóng và màn sang kiện kế tiếp; câu kết
  * quả đưa ra chân màn (`onRecorded`). Nhãn không đọc được: xác nhận tay kiện của bước, tính là đã xếp và chờ điều phối viên duyệt.
  */
 export function useServerLoadVerify(
@@ -49,12 +49,12 @@ export function useServerLoadVerify(
   async function verify(method: LabelVerifyMethod, code: string): Promise<boolean> {
     setResult(null)
     if (current === undefined) return false
-    if (!codeMatches(current, code)) {
+    if (!codeMatches(current, code, method)) {
       setResult({ tone: 'error', message: t('serverWarehouse.session.codeUnmatched', { code: code.trim(), name: current.name }) })
       return false
     }
     try {
-      await confirm.mutateAsync({ placementId: current.id, method })
+      await confirm.mutateAsync({ placementId: current.id, label: { method, code } })
       setOpenState(false)
       onRecorded({ tone: 'success', message: t('serverWarehouse.session.confirmed', { name: current.name }) })
       return true

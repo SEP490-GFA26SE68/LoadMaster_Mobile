@@ -117,8 +117,9 @@ describe('httpDriverApi: xác nhận tay và sự cố theo kiện', () => {
   })
 })
 
-describe('httpDriverApi: điểm nhận dọc đường và hoàn tất điểm', () => {
-  const PICKUP_STOP = {
+describe('httpDriverApi: hoàn tất điểm', () => {
+  // Máy chủ còn trả điểm nhận dọc đường của chuyến cũ (`stopType: PICKUP`, kèm `pickupPackages`); app đã bỏ tính năng đó
+  const OLD_PICKUP_STOP = {
     stopId: 905,
     stopSequence: 3,
     stopName: 'Xưởng may Thuận An',
@@ -126,46 +127,32 @@ describe('httpDriverApi: điểm nhận dọc đường và hoàn tất điểm'
     actualArrival: '2026-10-16T10:00:00',
     stopType: 'PICKUP',
     packages: [],
-    pickupPackages: [
-      { packageId: 8101, packageName: null, packageCode: 'HG-1', qrToken: 'lm-qr-8101', trackingBarcode: null, weight: 8, unloadOrder: null, pickupRequestId: 12, picked: false },
-      { packageId: 8102, packageName: 'Áo khoác', packageCode: 'HG-2', trackingBarcode: null, weight: null, unloadOrder: null, picked: true },
-    ],
+    pickupPackages: [{ packageId: 8101, packageName: null, packageCode: 'HG-1', qrToken: 'lm-qr-8101', trackingBarcode: null, weight: 8, unloadOrder: null, picked: false }],
   }
-  const PICKUP_KEY = { number: 3, ref: '905' }
 
-  test('điểm nhận: kiện nhận lên xe theo máy chủ, đối chiếu bằng mã gọi pick, quét lại báo đã nhận', async () => {
+  test('điểm nhận dọc đường cũ: không có kiện phải dỡ, mã của kiện nhận không khớp gì, hoàn tất được', async () => {
     const { driver, calls } = backend(
       onTrip({
-        'GET /api/driver/trips/41/current-stop': () => ok(PICKUP_STOP),
-        'POST /api/driver/pickup-packages/8101/pick': () => ok({ packageId: 8101 }),
+        'GET /api/driver/trips/41/current-stop': () => ok(OLD_PICKUP_STOP),
+        'POST /api/driver/stops/905/complete': () => ok({ tripCompleted: false }),
       }),
     )
     const stop = stopOf(await driver.fetchTripScreen('41'))
-    expect(stop).toMatchObject({ stop: { kind: 'PICKUP', number: 3 }, items: [], total: 2, doneCount: 1, remaining: 1, verifiable: 1 })
-    expect(stop.pickupItems.map(({ id, label, name, weightKg, requestId, role, done }) => [id, label, name, weightKg, requestId, role, done])).toEqual([
-      ['8101', 'HG-1', 'HG-1', 8, '12', 'pick', false],
-      ['8102', 'HG-2', 'Áo khoác', undefined, '', 'pick', true],
-    ])
-    await expect(driver.confirmUnload('41', { stop: PICKUP_KEY, method: 'QR', code: 'LM-QR-8101' })).resolves.toEqual({ id: '8101' })
-    expect(calls.at(-1)).toMatchObject({ method: 'POST', path: '/api/driver/pickup-packages/8101/pick', body: { method: 'QR' } })
-    expect(await failure(() => driver.confirmUnload('41', { stop: PICKUP_KEY, method: 'CODE', code: 'hg-1' }))).toMatchObject({
-      code: 'PICKUP_PACKAGE_ALREADY_PICKED',
+    expect(stop).toMatchObject({ stop: { number: 3, name: 'Xưởng may Thuận An' }, items: [], total: 0, doneCount: 0, remaining: 0, verifiable: 0 })
+    expect(await failure(() => driver.confirmUnload('41', { stop: { number: 3, ref: '905' }, method: 'CODE', code: 'hg-1' }))).toMatchObject({
+      code: 'PACKAGE_CODE_UNKNOWN',
     })
-    // Xác nhận tay ở điểm nhận: máy chủ chưa có
-    expect(await failure(() => driver.confirmUnloadManually('41', { stop: PICKUP_KEY, itemId: '8101', reason: 'QR_UNREADABLE', note: undefined }))).toMatchObject({
-      code: 'NOT_SUPPORTED',
-    })
+    await driver.completeStop('41', { number: 3, ref: '905' })
+    expect(calls.filter((call) => call.method === 'POST').map(({ path }) => path)).toEqual(['/api/driver/stops/905/complete'])
   })
 
-  test('hoàn tất điểm: còn kiện chưa dỡ (400) nói tên điểm; còn xác nhận tay chờ, còn kiện nhận chưa lên xe: câu riêng', async () => {
+  test('hoàn tất điểm: còn kiện chưa dỡ (400) nói tên điểm; còn xác nhận tay chờ: câu riêng', async () => {
     let reply = fail(400, 'INCOMPLETE_STOP_UNLOAD')
     const { driver } = backend(onTrip({ 'POST /api/driver/stops/902/complete': () => reply }))
     await driver.fetchTripScreen('41')
     expect(await failure(() => driver.completeStop('41', STOP_KEY))).toMatchObject({ code: 'STOP_NOT_COMPLETABLE', params: { name: 'Điện máy Xanh Biên Hoà' } })
     reply = fail(400, 'MANUAL_CONFIRM_PENDING')
     expect(await failure(() => driver.completeStop('41', STOP_KEY))).toMatchObject({ code: 'STOP_MANUAL_CONFIRM_PENDING' })
-    reply = fail(400, 'PICKUP_STOP_INCOMPLETE')
-    expect(await failure(() => driver.completeStop('41', STOP_KEY))).toMatchObject({ code: 'PICKUP_STOP_INCOMPLETE' })
   })
 
   test('hoàn tất điểm cuối: gửi mã tài xế; chuyến rời danh sách đang vận chuyển thì mở màn tổng kết', async () => {

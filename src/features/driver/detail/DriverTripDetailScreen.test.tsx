@@ -58,7 +58,6 @@ describe('màn hình Chi tiết chuyến đi của tài xế', () => {
 
     // Trạng thái điểm dừng đã Việt hóa và có nhãn Thông tin khách nhận sau khi mở dropdown
     expect(screen.getAllByText('Chờ giao').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Giao hàng').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Thông tin khách nhận').length).toBeGreaterThan(0)
 
     // Kiện hàng tại điểm mặc định đóng dạng dropdown, bấm để mở xem danh sách kiện

@@ -1,7 +1,6 @@
 import { found, nextId, put, type DbContext } from './db-context'
 import { departTripPackages, settleLoadedPackages, settleStopPackages } from './db-package-progress'
 import { departTripRequirements } from './db-requirement-trips'
-import { pickupDone, pickupDutiesAt, settlePickupStop } from './db-pickup-progress'
 import { labelsOf } from './db-scans'
 import { MockDbError } from './errors'
 import { driverParam, latestApproved, leftOutIds, loadingRemaining, plannedStops, stagingRemaining, stopItemIds } from './operations'
@@ -156,17 +155,13 @@ export function operationMethods(ctx: DbContext): OperationMethods {
         assertPhase(trip, 'delivering')
         const stop = arrivedStop(trip, stopNumber)
         const delivery = deliveryOf(trip)
-        const planRemaining = stopItemIds(trip, planOf(trip), stopNumber).filter((id) => !stop.unloadedIds.includes(id)).length
-        // Kiện nhận dọc đường (FE-7-05): điểm nhận còn kiện chưa đối chiếu lên xe, điểm giao còn kiện chưa dỡ
-        const duties = pickupDutiesAt(ctx, trip, trip.stops[stopNumber - 1]?.id ?? '')
-        const remaining = planRemaining + duties.filter(({ pkg, role }) => !pickupDone(stop, role, pkg.id)).length
+        const remaining = stopItemIds(trip, planOf(trip), stopNumber).filter((id) => !stop.unloadedIds.includes(id)).length
         if (remaining > 0) throw new MockDbError('STOP_INCOMPLETE', { tripId, stopNumber, remaining })
-        assertNoPendingConfirm(trip, ['UNLOADING', 'PICKUP'], stopNumber)
+        assertNoPendingConfirm(trip, ['UNLOADING'], stopNumber)
         const at = ctx.nowIso()
         const stops = delivery.stops.map((item) => (item.number === stopNumber ? { ...item, completedAt: at } : item))
         ctx.log('delivery.stopCompleted', { type: 'trip', id: tripId }, { stopNumber })
         settleStopPackages(ctx, trip, stopNumber)
-        settlePickupStop(ctx, trip, stopNumber, duties)
         const done = stops.every((item) => item.completedAt !== undefined)
         if (!done) return put(trips, { ...trip, delivery: { ...delivery, stops } })
         ctx.log('delivery.completed', { type: 'trip', id: tripId }, { stops: stops.length, issues: delivery.issues.length })

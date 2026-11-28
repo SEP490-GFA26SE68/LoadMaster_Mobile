@@ -3,19 +3,60 @@ import { fireEvent, screen } from '@testing-library/react-native'
 import { getMockDb, resetMockDb } from '@/data/mock-db'
 import { createMockAuth } from '@/features/auth/auth-mock'
 import { driverTripDetailPath } from '@/features/driver/TripCard'
+import { createFormatter } from '@/lib/format'
+import { createTranslator } from '@/lib/i18n'
 import { DEMO_ACCOUNTS, SEED_PASSWORD } from '@/lib/mock-db'
 import { resetNativeMocks, router } from '@/test/native-mocks'
 import { clearStored, renderApp } from '@/test/render'
 
 import { PayrollScreen } from './PayrollScreen'
+import type { CalculatedPayrollStatement } from './payroll-model'
+import { currentPayrollPeriod } from './payroll-period'
+import * as payrollQueries from './usePayrollQueries'
 
 const driver = DEMO_ACCOUNTS.find((account) => account.role === 'driver')
+const t = createTranslator('vi')
+const format = createFormatter('vi-VN')
+
+function makeCalculatedStatement(overrides: Partial<CalculatedPayrollStatement> = {}): CalculatedPayrollStatement {
+  return {
+    calculated: true,
+    period: currentPayrollPeriod(),
+    status: 'LOCKED',
+    driverId: '42',
+    driverName: 'Tài xế A',
+    baseSalaryVnd: 8_000_000,
+    totalKg: 6_250,
+    rateVndPerKg: 600,
+    kgAmountVnd: 3_750_000,
+    totalKm: 0,
+    rateVndPerKm: 0,
+    kmAmountVnd: 0,
+    totalSalaryVnd: 12_250_000,
+    trips: [],
+    ...overrides,
+  }
+}
+
+function mockPayrollStatement(statement: CalculatedPayrollStatement) {
+  jest.spyOn(payrollQueries, 'useMyPayroll').mockReturnValue({
+    data: statement,
+    isPending: false,
+    isError: false,
+    isRefetching: false,
+    refetch: jest.fn(),
+  } as unknown as ReturnType<typeof payrollQueries.useMyPayroll>)
+}
 
 describe('màn Phiếu lương', () => {
   beforeEach(() => {
     resetMockDb()
     clearStored()
     resetNativeMocks()
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
   })
 
   test('tháng hiện tại hiển thị trạng thái Bản nháp, cảnh báo tạm tính và chuyến chia ghép 50%', async () => {
@@ -82,5 +123,66 @@ describe('màn Phiếu lương', () => {
     await renderApp(<PayrollScreen />, { auth: createMockAuth() })
     expect(await screen.findByText('Phiên đăng nhập đã hết, hãy đăng nhập lại.')).toBeOnTheScreen()
     expect(screen.getByRole('button', { name: 'Thử lại' })).toBeOnTheScreen()
+  })
+
+  test('phiếu đã chốt đạt KPI hiện chỉ tiêu, khối lượng đã chở, kết quả và tiền thưởng', async () => {
+    mockPayrollStatement(
+      makeCalculatedStatement({
+        kpiTargetKg: 5_000,
+        kpiAchieved: true,
+        kpiBonusVnd: 500_000,
+      }),
+    )
+
+    await renderApp(<PayrollScreen />, { auth: createMockAuth() })
+
+    expect(await screen.findByText(t('payroll.breakdown.kpiMonth'))).toBeOnTheScreen()
+    expect(
+      screen.getByText(
+        t('payroll.breakdown.kpiProgress', {
+          targetKg: format.weight(5_000),
+          totalKg: format.weight(6_250),
+        }),
+      ),
+    ).toBeOnTheScreen()
+    expect(screen.getByText(t('payroll.breakdown.kpiAchieved'))).toBeOnTheScreen()
+    expect(screen.getByText(t('payroll.breakdown.kpiBonus'))).toBeOnTheScreen()
+    expect(screen.getByText(format.currency(500_000))).toBeOnTheScreen()
+  })
+
+  test('phiếu chưa đạt KPI hiện kết quả trung tính và không hiện dòng thưởng', async () => {
+    mockPayrollStatement(
+      makeCalculatedStatement({
+        totalKg: 3_750,
+        kpiTargetKg: 5_000,
+        kpiAchieved: false,
+        kpiBonusVnd: 0,
+      }),
+    )
+
+    await renderApp(<PayrollScreen />, { auth: createMockAuth() })
+
+    expect(await screen.findByText(t('payroll.breakdown.kpiNotAchieved'))).toBeOnTheScreen()
+    expect(screen.queryByText(t('payroll.breakdown.kpiBonus'))).toBeNull()
+  })
+
+  test('phiếu không có chỉ tiêu KPI không hiện nội dung nào về KPI', async () => {
+    mockPayrollStatement(makeCalculatedStatement())
+
+    await renderApp(<PayrollScreen />, { auth: createMockAuth() })
+
+    expect(await screen.findByText(t('payroll.breakdown.title'))).toBeOnTheScreen()
+    expect(screen.queryByText(t('payroll.breakdown.kpiMonth'))).toBeNull()
+    expect(
+      screen.queryByText(
+        t('payroll.breakdown.kpiProgress', {
+          targetKg: format.weight(5_000),
+          totalKg: format.weight(6_250),
+        }),
+      ),
+    ).toBeNull()
+    expect(screen.queryByText(t('payroll.breakdown.kpiAchieved'))).toBeNull()
+    expect(screen.queryByText(t('payroll.breakdown.kpiNotAchieved'))).toBeNull()
+    expect(screen.queryByText(t('payroll.breakdown.kpiBonus'))).toBeNull()
   })
 })

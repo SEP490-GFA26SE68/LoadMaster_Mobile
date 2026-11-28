@@ -5,7 +5,9 @@ import { Pressable, RefreshControl, SectionList, StyleSheet, View } from 'react-
 import { AppText } from '@/components/AppText'
 import { Button } from '@/components/Button'
 import { Screen } from '@/components/Screen'
+import { SkyActions } from '@/components/SkyActions'
 import { EmptyState, ErrorState, LoadingState } from '@/components/StateView'
+import { AssistantButton } from '@/features/assistant/AssistantButton'
 import { NotificationBell } from '@/features/bell/NotificationBell'
 import { dataErrorMessage, useFormat, useT } from '@/lib/i18n'
 import { colors, CONTENT_MAX_WIDTH, radius, space } from '@/theme/tokens'
@@ -43,7 +45,12 @@ export function MyTripsScreen() {
   return (
     <Screen
       title={t('driver.myTrips.title')}
-      actions={<NotificationBell />}
+      actions={
+        <SkyActions>
+          <AssistantButton page="/tai-xe" title={t('driver.myTrips.title')} />
+          <NotificationBell />
+        </SkyActions>
+      }
       below={
         <View style={styles.belowRow}>
           <AppText color={colors.skyText2}>{format.date(new Date())}</AppText>

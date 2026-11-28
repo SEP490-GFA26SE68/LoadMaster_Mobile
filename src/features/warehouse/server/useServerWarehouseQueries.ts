@@ -15,7 +15,7 @@ import {
   stageServerPackageManually,
   startServerLoading,
 } from '../warehouse-server-api'
-import type { DeviationInput, ServerLoadingSession, ServerManualInput } from '../warehouse-server-model'
+import type { DeviationInput, LabelInput, ServerLoadingSession, ServerManualInput } from '../warehouse-server-model'
 
 /** Khoá truy vấn của màn kho bản máy chủ, dưới `['warehouse']` như bản kho mẫu (cache xoá sạch lúc đăng nhập, đăng xuất). */
 export const serverWarehouseKeys = {
@@ -69,7 +69,7 @@ export function useStartServerLoading(tripId: string) {
 export function useStageServerPackage(tripId: string) {
   return useWrite(
     tripId,
-    ({ packageId, method }: { packageId: string; method: 'QR' | 'CODE' }) => stageServerPackage(tripId, packageId, method),
+    ({ packageId, label }: { packageId: string; label: LabelInput }) => stageServerPackage(tripId, packageId, label),
     (result) => result.session,
   )
 }
@@ -89,7 +89,7 @@ export function useReportServerShortage(tripId: string) {
 export function useConfirmServerPlacement(tripId: string) {
   return useWrite(
     tripId,
-    ({ placementId, method }: { placementId: string; method: 'QR' | 'CODE' }) => confirmServerPlacement(tripId, placementId, method),
+    ({ placementId, label }: { placementId: string; label: LabelInput }) => confirmServerPlacement(tripId, placementId, label),
     itself,
   )
 }

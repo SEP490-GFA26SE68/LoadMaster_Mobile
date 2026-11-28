@@ -140,7 +140,7 @@ describe('tab Tra cứu kiện — gõ mã', () => {
       await lookUp(code)
       // Kết quả của lần tra: trình đọc màn hình đọc câu ngay khi hiện
       expect(await screen.findByText(notFound(code))).toHaveProp('accessibilityLiveRegion', 'polite')
-      expect(screen.getByRole('header', { name: 'Không tìm thấy' })).toBeOnTheScreen()
+      expect(screen.getByRole('header', { name: 'Không tìm thấy kiện hàng phù hợp' })).toBeOnTheScreen()
       expect(screen.queryByRole('header', { name: /^Kiện / })).toBeNull()
       expect(screen.queryByText(foreign.destination)).toBeNull()
     }
@@ -218,7 +218,7 @@ describe('tab Tra cứu kiện — gõ mã', () => {
     expect(await screen.findByText('Phiên đăng nhập đã hết, hãy đăng nhập lại.')).toHaveProp('accessibilityLiveRegion', 'polite')
     expect(screen.getByRole('header', { name: 'Không tải được dữ liệu' })).toBeOnTheScreen()
     expect(screen.getByRole('button', { name: 'Thử lại' })).toBeOnTheScreen()
-    expect(screen.queryByRole('header', { name: 'Không tìm thấy' })).toBeNull()
+    expect(screen.queryByRole('header', { name: 'Không tìm thấy kiện hàng phù hợp' })).toBeNull()
   })
 
   test('tiếng Anh', async () => {

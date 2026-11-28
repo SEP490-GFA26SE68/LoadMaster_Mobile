@@ -1,0 +1,82 @@
+/** Màn "Xe ở kho" của nhân viên kho và khối xác nhận xe có ở kho xuất phát trong phiên xếp. */
+import type { Dictionary } from '../types'
+import type { vehiclePresence as source } from '../vi/vehiclePresence'
+
+export const vehiclePresence = {
+  title: 'Vehicles at warehouse',
+  open: 'Vehicles at warehouse',
+  openHint: 'Record vehicles present at the warehouse and see the history',
+  loadingWarehouses: 'Loading warehouses…',
+  noWarehouseTitle: 'You are not assigned to any warehouse',
+  noWarehouseDescription: 'Ask the company manager to assign you to a warehouse to record vehicles.',
+  warehouse: 'Warehouse',
+  filter: { label: 'Filter vehicles', all: 'All vehicles', here: 'At this warehouse' },
+  search: 'Search by plate or vehicle name',
+  searchHint: 'Type at least 2 characters.',
+  loading: 'Loading vehicles…',
+  emptyTitle: 'No vehicles',
+  emptyHere: 'No vehicle has been recorded at this warehouse yet.',
+  emptySearch: 'No vehicle matches "{query}".',
+  emptyAll: 'The company has no vehicles yet.',
+  limited: 'Showing the first {shown} vehicles — search by plate to narrow down.',
+  presence: {
+    UNKNOWN: 'Not recorded',
+    here: 'At this warehouse',
+    elsewhere: 'At {name}',
+    elsewhereUnnamed: 'At another warehouse',
+    IN_TRANSIT: 'On the road',
+    OTHER: 'Other status',
+  },
+  state: {
+    AVAILABLE: 'Available',
+    IN_TRIP: 'Serving a trip',
+    MAINTENANCE: 'In maintenance',
+    RETIRED: 'Retired',
+    OTHER: 'Other status',
+  },
+  loadingTrip: 'Loading for trip {code}',
+  transferring: 'Being transferred between warehouses',
+  observed: 'Recorded at {time} · {name}',
+  observedNoActor: 'Recorded at {time}',
+  checkIn: 'Record as present',
+  checkInBlocked: {
+    busy: 'The vehicle is on a trip that is in transit or loading at another warehouse — it cannot be recorded here yet.',
+    transferring: 'The vehicle is being transferred between warehouses — it cannot be recorded yet.',
+    elsewhere: 'The vehicle is recorded at another warehouse — that warehouse must record it leaving first.',
+  },
+  history: 'History',
+  checkInSheet: {
+    title: 'Record vehicle as present',
+    description: 'Only record when vehicle {plate} is really at {warehouse}.',
+    confirm: 'Record',
+    cancel: 'Cancel',
+  },
+  checkedIn: 'Vehicle {plate} recorded as present at {warehouse}.',
+  events: {
+    title: 'History of {plate}',
+    description: 'Records at {warehouse}, newest first.',
+    loading: 'Loading history…',
+    empty: 'No records at this warehouse yet.',
+    CHECK_IN: 'Recorded at warehouse',
+    CHECK_OUT: 'Left warehouse',
+    OTHER: 'Other change',
+    change: '{from} → {to}',
+    close: 'Close',
+  },
+  session: {
+    title: 'Vehicle at the origin warehouse',
+    here: 'Vehicle {plate} is recorded at {warehouse}.',
+    unknown: 'Vehicle {plate} is not recorded at {warehouse} yet. The driver can only depart once the vehicle is confirmed at the origin warehouse.',
+    elsewhere:
+      'Vehicle {plate} is recorded as "{presence}", not at {warehouse}. If the vehicle is here, confirm it so the driver can depart.',
+    origin: 'the origin warehouse',
+    notAssigned:
+      'You are not assigned to the origin warehouse of this trip, so you cannot confirm vehicle {plate}. Ask a worker of that warehouse to confirm it before the driver departs.',
+    confirm: 'Confirm vehicle is here',
+    confirmed: 'Vehicle {plate} confirmed at {warehouse}.',
+    blocked:
+      'Vehicle {plate} is recorded as "{presence}", so the warehouse cannot confirm it during loading. Ask the dispatcher to check the vehicle status before the driver departs.',
+    failed: 'Could not read the vehicle status at the warehouse. {reason}',
+    retry: 'Try again',
+  },
+} satisfies Dictionary<typeof source>

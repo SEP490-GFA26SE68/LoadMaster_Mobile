@@ -60,7 +60,7 @@ export function MonitoringScreen() {
     )
   }
 
-  const { trips, userNames, pendingPickups } = board.data
+  const { trips, userNames } = board.data
   const live = fleet.data
   const showTabs = canRenegotiate && trips.length > 0
   const shown: MonitoringTab = showTabs ? tab : 'trips'
@@ -104,7 +104,6 @@ export function MonitoringScreen() {
         <MonitoringTripList
           trips={trips}
           fleet={live}
-          pendingPickups={pendingPickups}
           header={
             <View style={styles.header}>
               {common}

@@ -25,7 +25,7 @@ export function stopOutcomeOf(screen: StopScreen, ack: CompleteStopResult): Stop
     stopNumber: screen.stop.number,
     stopName: screen.stop.name,
     stopCount: screen.stopCount,
-    pickup: screen.stop.kind === 'PICKUP',
+    pickup: false,
     delivered: screen.completion.delivered,
     returned: screen.completion.returned,
     issues: screen.completion.issues,

@@ -2,11 +2,9 @@ import { getMockDb, resetMockDb } from '@/data/mock-db'
 import { SEED_PASSWORD } from '@/lib/mock-db'
 
 import {
-  createPickupRequest,
   fetchLiveTrip,
   fetchMonitoringBoard,
   fetchNotifications,
-  fetchPickupRows,
   fetchTripRequirements,
   monitoringCapabilities,
   reportTripException,
@@ -29,10 +27,10 @@ test('chưa đăng nhập: NOT_SIGNED_IN', async () => {
 })
 
 test('kho mẫu làm được mọi việc của màn giám sát', () => {
-  expect(monitoringCapabilities()).toStrictEqual({ exceptions: true, reroute: true, escalation: true, pickups: true, notifications: true })
+  expect(monitoringCapabilities()).toStrictEqual({ exceptions: true, reroute: true, escalation: true, notifications: true })
 })
 
-test('bảng giám sát: chuyến đang chạy kèm xe, tài xế, kho đi, điểm giao, và số yêu cầu nhận hàng chờ duyệt', async () => {
+test('bảng giám sát: chuyến đang chạy kèm xe, tài xế, kho đi, điểm giao', async () => {
   await signIn(DISPATCHER)
   const board = await fetchMonitoringBoard()
   expect(board.trips.map((trip) => trip.tripId)).toStrictEqual(['TRIP-009'])
@@ -43,7 +41,6 @@ test('bảng giám sát: chuyến đang chạy kèm xe, tài xế, kho đi, đi�
     [2, false, true],
     [3, false, false],
   ])
-  expect(board.pendingPickups).toStrictEqual({ 'TRIP-009': 1 })
   expect(board.userNames['US-0006']).toBe('Ngô Văn Bảo')
 })
 
@@ -70,19 +67,6 @@ test('đánh dấu đã xử lý kèm ghi chú; quản lý công ty không xử 
 test('yêu cầu giao của chuyến: chuyến chạy từ seed không có yêu cầu nào', async () => {
   await signIn(MANAGER)
   expect(await fetchTripRequirements('TRIP-009')).toStrictEqual([])
-})
-
-test('yêu cầu nhận hàng: dòng kèm họ tên người gửi; gửi trả cả các điểm của chuyến để gọi tên điểm được bảo vệ', async () => {
-  await signIn(DISPATCHER)
-  const [seed] = await fetchPickupRows('TRIP-009')
-  expect([seed?.request.id, seed?.createdByName]).toStrictEqual(['PKR-001', 'Nguyễn Thanh Tùng'])
-  const { request, stops } = await createPickupRequest('TRIP-009', {
-    pickup: { name: 'Kho Minh Phát', address: 'KCN VSIP 1, Thuận An', lat: 10.928, lng: 106.712 },
-    delivery: seed?.request.delivery ?? { name: '', address: '', lat: 0, lng: 0 },
-    packages: [{ packageCode: 'MP-001', lengthCm: 60, widthCm: 40, heightCm: 40, weightKg: 12, handlingClass: 'STANDARD' }],
-  })
-  expect([request.id, request.status, request.validationResults.length]).toStrictEqual(['PKR-002', 'VALIDATED', 10])
-  expect(stops.map((stop) => stop.id)).toStrictEqual((await getMockDb().getTrip('TRIP-009')).stops.map((stop) => stop.id))
 })
 
 test('chuông văn phòng: sự kiện theo vai trò người đọc, kèm họ tên người làm và tên tuyến', async () => {

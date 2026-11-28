@@ -24,13 +24,12 @@ function screenOf(planVersion: number): StopScreen {
   return {
     mode: 'delivering',
     stop,
-    stops: [{ number: 1, name: 'Biên Hoà', done: false, kind: 'DELIVERY', packageCount: undefined, timing: undefined }],
+    stops: [{ number: 1, name: 'Biên Hoà', done: false, packageCount: undefined, timing: undefined }],
     stopCount: 1,
     arrived: false,
     arrivedAt: undefined,
     timing: undefined,
     items: [],
-    pickupItems: [],
     leftAtWarehouse: 0,
     total: 0,
     doneCount: 0,
@@ -40,7 +39,6 @@ function screenOf(planVersion: number): StopScreen {
     pendingConfirms: 0,
     completion: { delivered: 0, returned: [], picked: 0, issues: 0, next: undefined, nextKnown: true },
     names: {},
-    hasPickupStops: false,
     refreshMs: null,
     routeMap: {
       depot: { name: 'Kho Long Bình', lat: 10.78, lng: 106.7 },

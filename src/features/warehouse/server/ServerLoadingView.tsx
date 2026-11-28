@@ -8,15 +8,18 @@ import { Button } from '@/components/Button'
 import { Card } from '@/components/Card'
 import { Screen } from '@/components/Screen'
 import { PackageVerifySheet } from '@/components/verify/PackageVerifySheet'
+import { AssistantButton } from '@/features/assistant/AssistantButton'
 import { dataErrorMessage, useT } from '@/lib/i18n'
 import { colors, space } from '@/theme/tokens'
 
 import { DamagedSheet } from '../loading/DamagedSheet'
+import { VehiclePresenceCheck } from '../presence/VehiclePresenceCheck'
 import { placementLabel, restingCount, serverLoadingView } from '../server-loading'
 import { SessionExitButton } from '../SessionExitButton'
 import { StepHeader } from '../StepHeader'
 import type { ServerLoadingSession } from '../warehouse-server-model'
 import { ServerDeviationSheet } from './ServerDeviationSheet'
+import { ServerHoldSketch } from './ServerHoldSketch'
 import { ServerPlacementCard, ServerPlacementList } from './ServerPlacementCard'
 import { useCompleteServerLoading, useReportServerDamaged } from './useServerWarehouseQueries'
 import { useServerLoadVerify, type LoadFlash } from './useServerLoadVerify'
@@ -37,9 +40,9 @@ type ServerLoadingViewProps = {
 /**
  * Bước Xếp của phiên máy chủ (như `SessionView` của `ServerLoadingSession` web), một thao tác mỗi màn: kiện của bước hiện tại theo thứ tự
  * xếp của phương án đã duyệt. Thân màn: lý do điều phối viên từ chối xác nhận tay (khi có), thẻ kiện cần xếp (vị trí bằng số, nút phụ "Ghi
- * sai lệch vị trí"), rồi thứ tự xếp kèm trạng thái từng kiện. Chân màn: kết quả lần ghi vừa rồi (web: toast), "Kiện hỏng" (phụ) và "Đối chiếu
- * kiện" (chính). Mọi kiện đã có kết quả thì chân màn là "Hoàn tất xếp hàng" — mờ kèm lý do khi còn xác nhận tay chờ duyệt. Kéo xuống để
- * đọc lại phiên.
+ * sai lệch vị trí"), sơ đồ 2D lòng thùng (khi phiên có kích thước thùng), xác nhận xe có ở kho (khi máy chủ cần), rồi thứ tự xếp kèm trạng
+ * thái từng kiện. Chân màn: kết quả lần ghi vừa rồi (web: toast), "Kiện hỏng" (phụ) và "Đối chiếu kiện" (chính). Mọi kiện đã có kết quả
+ * thì chân màn là "Hoàn tất xếp hàng" — mờ kèm lý do khi còn xác nhận tay chờ duyệt. Kéo xuống để đọc lại phiên.
  */
 export function ServerLoadingView({ tripId, session, onStopped }: ServerLoadingViewProps) {
   const t = useT()
@@ -123,6 +126,7 @@ export function ServerLoadingView({ tripId, session, onStopped }: ServerLoadingV
     <Screen
       title={session.code}
       leading={<SessionExitButton />}
+      actions={<AssistantButton page="/kho" title={session.code} />}
       below={<StepHeader kind="loading" step={view.step} total={view.total} recorded={view.done} />}
       scroll
       refresh={refresh}
@@ -156,6 +160,8 @@ export function ServerLoadingView({ tripId, session, onStopped }: ServerLoadingV
           </Button>
         </ServerPlacementCard>
       )}
+      <ServerHoldSketch session={session} current={current} />
+      <VehiclePresenceCheck session={session} />
       <ServerPlacementList rows={view.rows} />
       {current === undefined ? null : (
         <>
@@ -164,6 +170,8 @@ export function ServerLoadingView({ tripId, session, onStopped }: ServerLoadingV
             title={t('serverWarehouse.session.verifyTitle', { step: view.step })}
             description={t('serverWarehouse.session.verifyDescription')}
             manualAllowed
+            codeLabel={t('serverWarehouse.session.codeLabel')}
+            codeHint={t('serverWarehouse.session.codeHint')}
           />
           <DamagedSheet
             open={asking === current.id}

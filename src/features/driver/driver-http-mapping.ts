@@ -160,7 +160,6 @@ export function tripDetailOf(dto: DriverTripDetailDto): DriverTripDetail {
       lat: stop.lat ?? undefined,
       lng: stop.lng ?? undefined,
       status: (stop.status as 'PENDING' | 'ARRIVED' | 'COMPLETED') ?? 'PENDING',
-      kind: (stop.stopType as 'DELIVERY' | 'PICKUP') ?? 'DELIVERY',
       plannedArrival: vnInstant(stop.plannedArrival),
       actualArrival: vnInstant(stop.actualArrival),
       deadline: vnInstant(stop.deadline),

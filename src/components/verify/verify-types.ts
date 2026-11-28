@@ -1,8 +1,8 @@
 import type { LabelVerifyMethod, ManualConfirmReason } from '@/lib/mock-db'
 
 /**
- * Kiểu của tờ đối chiếu kiện ba mức (`PackageVerifySheet`), dùng chung cho mọi bước có đối chiếu: tài xế dỡ và nhận dọc đường, kho soạn
- * và xếp hàng. Tờ chỉ vẽ và chuyển mã đi; nơi gọi giữ một `VerifyController` — kiện nào chọn được, mã đúng hay sai, câu kết quả, và khi
+ * Kiểu của tờ đối chiếu kiện ba mức (`PackageVerifySheet`), dùng chung cho mọi bước có đối chiếu: tài xế dỡ, kho soạn và xếp
+ * hàng. Tờ chỉ vẽ và chuyển mã đi; nơi gọi giữ một `VerifyController` — kiện nào chọn được, mã đúng hay sai, câu kết quả, và khi
  * nào tờ đóng.
  */
 

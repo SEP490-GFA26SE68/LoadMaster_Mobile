@@ -19,9 +19,6 @@ export const backendErrors = {
   MANUAL_CONFIRM_NOTE_REQUIRED: 'Lý do "Khác" cần ghi chú.',
   /** Máy chủ không nói còn bao nhiêu xác nhận tay chờ (mã `MANUAL_CONFIRM_PENDING` của kho mẫu có số). */
   STOP_MANUAL_CONFIRM_PENDING: 'Còn xác nhận tay chờ điều phối viên duyệt — chưa hoàn tất điểm được.',
-  PICKUP_PACKAGE_NOT_AT_STOP: 'Kiện này không phải kiện nhận ở điểm hiện tại.',
-  PICKUP_PACKAGE_ALREADY_PICKED: 'Kiện này đã được nhận lên xe.',
-  PICKUP_STOP_INCOMPLETE: 'Còn kiện nhận chưa đối chiếu lên xe — chưa hoàn tất điểm nhận được.',
   // Màn điều phối viên và quản lý công ty nối backend
   TRIP_NOT_FOUND: 'Không tìm thấy chuyến này, hoặc chuyến không thuộc công ty của bạn.',
   PAYROLL_RATE_ALREADY_EXISTS: 'Đã có phiên bản mức lương bắt đầu từ tháng này.',
@@ -75,6 +72,11 @@ export const backendErrors = {
   LOADING_MANUAL_CONFIRM_PENDING: 'Còn xác nhận tay chờ điều phối viên duyệt — chưa hoàn tất xếp được.',
   /** Mã `STAGING_INCOMPLETE` của máy chủ — không kèm số kiện như mã cùng tên của kho mẫu, nên adapter đổi sang mã này. */
   STAGING_NOT_READY: 'Chưa soạn đủ hàng vào khu chờ, hoặc còn kiện báo thiếu chờ điều phối viên quyết — chưa xếp được.',
+  /** Máy chủ kiểm lại mã đã quét / gõ với kiện: gõ mã so Package Code, quét so mã QR hoặc mã vạch. */
+  PACKAGE_CODE_MISMATCH: 'Mã không khớp kiện cần xác nhận trong phiên xếp này. Hãy kiểm tra Package Code trên nhãn.',
+  VALIDATION_ERROR: 'Dữ liệu chưa hợp lệ, kiểm tra lại các ô.',
+  /** Phiên đọc lại sau khi ghi không cho thấy điều vừa ghi (máy khác vừa ghi), hoặc máy chủ báo dữ liệu đã đổi. */
+  CONFLICT: 'Dữ liệu bị trùng hoặc đã thay đổi trên máy chủ. Tải lại rồi thử lại.',
   // Màn phiếu lương nối backend (`payroll-http.ts`)
   PAYROLL_INVALID_PERIOD: 'Kỳ lương không hợp lệ. Chọn lại tháng cần xem.',
   PAYROLL_PERIOD_NOT_FOUND: 'Không tìm thấy kỳ lương này.',
@@ -86,4 +88,16 @@ export const backendErrors = {
   TRIP_CLAIM_TRIP_NOT_OPEN: 'Chuyến không còn ở trạng thái cho phép nhận.',
   TRIP_CLAIM_ALREADY_DECIDED: 'Phiếu xin chuyến này đã có quyết định.',
   TRIP_CLAIM_NOT_OWN: 'Bạn không thể thao tác trên phiếu của người khác.',
+  // Xe ở kho (ghi nhận xe có mặt ở kho)
+  VEHICLE_WAREHOUSE_FORBIDDEN: 'Bạn không được phân công ở kho này.',
+  VEHICLE_TRANSFER_CONFLICT: 'Xe đang được điều chuyển giữa hai kho nên chưa ghi nhận được.',
+  VEHICLE_PRESENCE_CONFLICT: 'Trạng thái xe vừa đổi nên chưa ghi nhận được — tải lại rồi thử lại.',
+  PRESENCE_VEHICLE_BUSY: 'Xe đang ở một chuyến Đang xếp hàng hoặc Đang vận chuyển nên chưa ghi nhận được ở đây.',
+  VEHICLE_NOT_FOUND: 'Không tìm thấy xe này.',
+  INVALID_INPUT: 'Dữ liệu gửi đi chưa hợp lệ.',
+  // Trợ lý AI Lumo (POST /api/assistant/messages); ba câu đầu cùng chữ với bản web
+  ASSISTANT_UNAVAILABLE: 'Trợ lý AI tạm thời không trả lời được. Thử lại sau ít phút.',
+  ASSISTANT_RATE_LIMITED: 'Bạn đã hỏi trợ lý quá nhiều lần trong một giờ. Thử lại sau.',
+  ASSISTANT_BUDGET_EXCEEDED: 'Trợ lý AI đã dùng hết hạn mức hôm nay. Thử lại vào ngày mai.',
+  ASSISTANT_MESSAGE_TOO_LONG: 'Câu hỏi quá dài. Rút gọn rồi gửi lại.',
 } as const

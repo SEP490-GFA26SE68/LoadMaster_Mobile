@@ -87,7 +87,6 @@ describe('httpTripsApi', () => {
               plannedArrival: '2026-10-16T09:00:00',
               actualArrival: '2026-10-16T09:15:00',
               deadline: '2026-10-16T11:00:00',
-              stopType: 'DELIVERY',
             },
           ],
         }),
@@ -113,14 +112,13 @@ describe('httpTripsApi', () => {
           address: '12 Phạm Văn Thuận',
           lat: 10.95,
           lng: 106.82,
-          kind: 'DELIVERY',
           status: 'ARRIVED',
           requirementId: '11',
           plannedArrival: '2026-10-16T02:00:00.000Z',
           actualArrival: '2026-10-16T02:15:00.000Z',
           deadline: '2026-10-16T04:00:00.000Z',
         },
-        { id: '903', number: 2, name: 'Co.op Thủ Đức', address: '1 Võ Văn Ngân', kind: 'DELIVERY', status: 'PENDING' },
+        { id: '903', number: 2, name: 'Co.op Thủ Đức', address: '1 Võ Văn Ngân', status: 'PENDING' },
       ],
     })
   })

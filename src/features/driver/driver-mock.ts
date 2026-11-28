@@ -87,15 +87,10 @@ async function fetchMyTrips(): Promise<DriverTrips> {
 async function fetchTripScreen(tripId: string) {
   const db = getMockDb()
   const viewer = signedIn(db)
-  const [trip, revisions, requests, packages] = await Promise.all([
-    db.getTrip(tripId),
-    db.listRevisions(tripId),
-    db.listPickupRequests(tripId),
-    db.listPickupPackages(tripId),
-  ])
+  const [trip, revisions] = await Promise.all([db.getTrip(tripId), db.listRevisions(tripId)])
   if (!isVisibleTo(trip, viewer)) throw new MockDbError('NOT_FOUND', { collection: 'trips', id: tripId })
   const live = trip.phase === 'delivering' && trip.routePlan !== undefined ? await db.getTripMonitoring(tripId) : undefined
-  return tripScreen({ trip, plan: driverPlan(trip, revisions) ?? null, pickups: { requests, packages }, live })
+  return tripScreen({ trip, plan: driverPlan(trip, revisions) ?? null, live })
 }
 
 /** Câu của thông báo: việc của chuyến mình (`driverNotice`), xác nhận tay của mình bị từ chối, trả lời yêu cầu hỗ trợ. */
@@ -148,10 +143,8 @@ export function mockDriverApi(): DriverApi {
       departFromList: false,
       arrive: true,
       manualConfirm: true,
-      pickupManualConfirm: true,
       deliveryIssues: true,
       tripExceptions: true,
-      pickups: true,
       gps: true,
       notifications: true,
       payroll: false,
@@ -285,11 +278,6 @@ export function mockDriverApi(): DriverApi {
     async reportTripException(tripId, input) {
       const { id } = await db().reportTripException(tripId, input)
       return { id }
-    },
-    async createPickupRequest(tripId, input) {
-      const request = await db().createPickupRequest(tripId, input)
-      const trip = await db().getTrip(tripId)
-      return { request, stops: trip.stops.map(({ id, name }) => ({ id, name })) }
     },
     async setDriverGps(tripId, enabled) {
       await db().setDriverGps(tripId, enabled)

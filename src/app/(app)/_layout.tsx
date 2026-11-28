@@ -16,14 +16,17 @@ export { RouteErrorScreen as ErrorBoundary } from '@/features/errors/RouteErrorS
 /**
  * Nhóm đã đăng nhập: thanh tab đáy (`(tabs)`) và các màn mở chồng lên nó, có lối quay lại — một chuyến của tài xế, phiên soạn → xếp một
  * chuyến của nhân viên kho, chi tiết một chuyến và giám sát một chuyến đang chạy của điều phối viên và quản lý công ty, thông báo (của cả
- * bốn vai trò). Màn làm việc nằm sau quyền của nó (`Stack.Protected`): vai trò thiếu quyền không mở được route. Màn chồng mới thêm một
+ * bốn vai trò), trợ lý AI Lumo (tài xế, nhân viên kho). Màn làm việc nằm sau quyền của nó (`Stack.Protected`): vai trò thiếu quyền không mở được route. Màn chồng mới thêm một
  * `Stack.Screen` ở đây.
  * Tài khoản bị khoá ở máy chủ (gói cước hết hạn, bị gắn cờ — `account-lock.ts`) thì cả nhóm nhường chỗ cho màn khoá: mọi màn khác chỉ
  * nhận 403.
  */
 export default function AppLayout() {
   const can = useCan()
-  const lock = accountLockOf(useAuth().user)
+  const { status, user } = useAuth()
+  const lock = accountLockOf(user)
+  // Đang mở lại phiên (dưới splash): chưa biết quyền nên chưa dựng màn nào; trạng thái của liên kết sâu vẫn nằm ở router, mở được khi xong
+  if (status === 'restoring') return null
   if (lock !== null) return <AccountLockedScreen reason={lock} />
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -35,6 +38,7 @@ export default function AppLayout() {
       </Stack.Protected>
       <Stack.Protected guard={can('warehouse.operate')}>
         <Stack.Screen name="loading/[tripId]" />
+        <Stack.Screen name="vehicle-presence" />
       </Stack.Protected>
       <Stack.Protected guard={can('trips.view')}>
         <Stack.Screen name="trip-detail/[tripId]" />
@@ -45,6 +49,9 @@ export default function AppLayout() {
       </Stack.Protected>
       <Stack.Protected guard={can('driver.operate') || can('warehouse.operate') || can('trips.view')}>
         <Stack.Screen name="notifications" />
+      </Stack.Protected>
+      <Stack.Protected guard={can('driver.operate') || can('warehouse.operate')}>
+        <Stack.Screen name="assistant" />
       </Stack.Protected>
     </Stack>
   )
