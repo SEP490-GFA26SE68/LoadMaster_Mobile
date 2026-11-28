@@ -1,4 +1,4 @@
-import { Package, Route, Truck, Wallet } from 'lucide-react-native'
+import { Package, Truck, Wallet } from 'lucide-react-native'
 import type { ReactNode } from 'react'
 import { StyleSheet, View } from 'react-native'
 
@@ -75,7 +75,7 @@ type PayrollSummaryCardProps = {
   readonly statement: CalculatedPayrollStatement
 }
 
-/** Tổng lương tháng của tài xế: số chuyến, khối lượng, quãng đường. */
+/** Tổng lương tháng của tài xế: số chuyến, khối lượng (lương không tính theo km). */
 export function PayrollSummaryCard({ statement }: PayrollSummaryCardProps) {
   const t = useT()
   const format = useFormat()
@@ -98,12 +98,6 @@ export function PayrollSummaryCard({ statement }: PayrollSummaryCardProps) {
             icon={<Package color={badgeTones.warning.fg} size={15} strokeWidth={1.75} />}
             label={t('payroll.summary.totalKg')}
             value={format.weight(statement.totalKg)}
-          />
-          <MetricTile
-            tone="success"
-            icon={<Route color={badgeTones.success.fg} size={15} strokeWidth={1.75} />}
-            label={t('payroll.summary.totalKm')}
-            value={t('payroll.trips.kmUnit', { value: format.lengthValue(statement.totalKm) })}
           />
         </>
       }

@@ -12,20 +12,15 @@ type HttpPayrollDeps = {
 }
 
 function mapTripLine(dto: PayrollTripLineDto): PayrollTripLine {
-  const hasActual = dto.actualKg !== undefined || dto.actualKm !== undefined
+  const hasActual = dto.actualKg !== undefined
   const handlingAmountVnd = toOptionalNumber(dto.handlingAmountVnd)
   const commissionAmountVnd = toOptionalNumber(dto.commissionAmountVnd)
   return {
     tripId: String(dto.tripId),
     tripCode: dto.tripCode,
     metricBasis: hasActual ? 'actual' : 'plan',
-    baseKg: toNumber(hasActual ? (dto.actualKg ?? dto.planKg) : dto.planKg),
-    baseKm: toNumber(hasActual ? (dto.actualKm ?? dto.planKm) : dto.planKm),
-    sharePercent: toNumber(dto.sharePercent, 100),
     allocatedKg: toNumber(dto.allocatedKg),
-    allocatedKm: toNumber(dto.allocatedKm),
     kgAmountVnd: toNumber(dto.kgAmountVnd),
-    kmAmountVnd: toNumber(dto.kmAmountVnd),
     ...(handlingAmountVnd === undefined ? {} : { handlingAmountVnd }),
     ...(commissionAmountVnd === undefined ? {} : { commissionAmountVnd }),
     totalAmountVnd: toNumber(dto.totalAmountVnd),
@@ -44,6 +39,9 @@ export function mapPayrollStatement(dto: PayrollStatementDto, requestedPeriod: P
     }
   }
   const kpiTargetKg = toOptionalNumber(dto.kpiTargetKg)
+  const commissionPercent = toOptionalNumber(dto.commissionPercent)
+  const penaltyVnd = toOptionalNumber(dto.penaltyVnd)
+  const penaltyNote = dto.penaltyNote?.trim() ? dto.penaltyNote.trim() : undefined
   const kpiBonusVnd = toOptionalNumber(dto.kpiBonusVnd)
   const handlingAmountVnd = toOptionalNumber(dto.handlingAmountVnd)
   const commissionAmountVnd = toOptionalNumber(dto.commissionAmountVnd)
@@ -57,13 +55,13 @@ export function mapPayrollStatement(dto: PayrollStatementDto, requestedPeriod: P
     baseSalaryVnd: toNumber(dto.baseSalaryVnd),
     totalKg: toNumber(dto.totalKg),
     rateVndPerKg: toNumber(dto.rateVndPerKg),
+    ...(commissionPercent === undefined ? {} : { commissionPercent }),
     kgAmountVnd: toNumber(dto.kgAmountVnd),
-    totalKm: toNumber(dto.totalKm),
-    rateVndPerKm: toNumber(dto.rateVndPerKm),
-    kmAmountVnd: toNumber(dto.kmAmountVnd),
     ...(kpiTargetKg === undefined ? {} : { kpiTargetKg }),
     ...(dto.kpiAchieved === null || dto.kpiAchieved === undefined ? {} : { kpiAchieved: dto.kpiAchieved }),
     ...(kpiBonusVnd === undefined ? {} : { kpiBonusVnd }),
+    ...(penaltyVnd === undefined ? {} : { penaltyVnd }),
+    ...(penaltyNote === undefined ? {} : { penaltyNote }),
     ...(handlingAmountVnd === undefined ? {} : { handlingAmountVnd }),
     ...(commissionAmountVnd === undefined ? {} : { commissionAmountVnd }),
     totalSalaryVnd: toNumber(dto.totalSalaryVnd),

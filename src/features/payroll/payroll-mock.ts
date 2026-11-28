@@ -8,50 +8,41 @@ import { currentPayrollPeriod, shiftPayrollPeriod, type PayrollPeriodKey } from 
 import { mockWarehousePayroll } from './warehouse-payroll-mock'
 
 const BASE_SALARY_VND = 8_000_000
-const RATE_VND_PER_KG = 600
-const RATE_VND_PER_KM = 4_500
+/** Cước thu khách theo kg và % hoa hồng tài xế của công ty mẫu: tài xế được 4.000 × 15% = 600 đ mỗi kg. */
+const RATE_VND_PER_KG = 4_000
+const COMMISSION_PERCENT = 15
 
 type TripSeed = {
   readonly code: string
   readonly baseKg: number
-  readonly baseKm: number
-  readonly sharePercent: number
 }
 
 const DRAFT_SEEDS: readonly TripSeed[] = [
-  { code: 'TRIP-2611-01', baseKg: 1250, baseKm: 48.5, sharePercent: 100 },
-  { code: 'TRIP-2611-02', baseKg: 1840, baseKm: 92, sharePercent: 50 },
-  { code: 'TRIP-2611-03', baseKg: 980, baseKm: 36.2, sharePercent: 100 },
+  { code: 'TRIP-2611-01', baseKg: 1250 },
+  { code: 'TRIP-2611-02', baseKg: 1840 },
+  { code: 'TRIP-2611-03', baseKg: 980 },
 ]
 
 const LOCKED_SEEDS: readonly TripSeed[] = [
-  { code: 'TRIP-2610-01', baseKg: 1420, baseKm: 54, sharePercent: 100 },
-  { code: 'TRIP-2610-02', baseKg: 1100, baseKm: 41.5, sharePercent: 100 },
-  { code: 'TRIP-2610-03', baseKg: 2100, baseKm: 118, sharePercent: 50 },
-  { code: 'TRIP-2610-04', baseKg: 890, baseKm: 33.4, sharePercent: 100 },
-  { code: 'TRIP-2610-05', baseKg: 1650, baseKm: 74.2, sharePercent: 100 },
-  { code: 'TRIP-2610-06', baseKg: 1320, baseKm: 62.8, sharePercent: 100 },
+  { code: 'TRIP-2610-01', baseKg: 1420 },
+  { code: 'TRIP-2610-02', baseKg: 1100 },
+  { code: 'TRIP-2610-03', baseKg: 2100 },
+  { code: 'TRIP-2610-04', baseKg: 890 },
+  { code: 'TRIP-2610-05', baseKg: 1650 },
+  { code: 'TRIP-2610-06', baseKg: 1320 },
 ]
 
 function buildLines(seeds: readonly TripSeed[], knownTripIds: readonly string[]): PayrollTripLine[] {
   return seeds.map((seed, index) => {
-    const ratio = seed.sharePercent / 100
-    const allocatedKg = Math.round(seed.baseKg * ratio * 100) / 100
-    const allocatedKm = Math.round(seed.baseKm * ratio * 100) / 100
-    const kgAmountVnd = Math.round(allocatedKg * RATE_VND_PER_KG)
-    const kmAmountVnd = Math.round(allocatedKm * RATE_VND_PER_KM)
+    const allocatedKg = seed.baseKg
+    const kgAmountVnd = Math.round((allocatedKg * RATE_VND_PER_KG * COMMISSION_PERCENT) / 100)
     return {
       tripId: knownTripIds[index] ?? seed.code,
       tripCode: seed.code,
       metricBasis: 'plan',
-      baseKg: seed.baseKg,
-      baseKm: seed.baseKm,
-      sharePercent: seed.sharePercent,
       allocatedKg,
-      allocatedKm,
       kgAmountVnd,
-      kmAmountVnd,
-      totalAmountVnd: kgAmountVnd + kmAmountVnd,
+      totalAmountVnd: kgAmountVnd,
     }
   })
 }
@@ -64,9 +55,7 @@ function summarize(
   trips: readonly PayrollTripLine[],
 ): PayrollStatement {
   const totalKg = Math.round(trips.reduce((sum, trip) => sum + trip.allocatedKg, 0) * 100) / 100
-  const totalKm = Math.round(trips.reduce((sum, trip) => sum + trip.allocatedKm, 0) * 100) / 100
   const kgAmountVnd = trips.reduce((sum, trip) => sum + trip.kgAmountVnd, 0)
-  const kmAmountVnd = trips.reduce((sum, trip) => sum + trip.kmAmountVnd, 0)
   return {
     calculated: true,
     period,
@@ -76,11 +65,9 @@ function summarize(
     baseSalaryVnd: BASE_SALARY_VND,
     totalKg,
     rateVndPerKg: RATE_VND_PER_KG,
+    commissionPercent: COMMISSION_PERCENT,
     kgAmountVnd,
-    totalKm,
-    rateVndPerKm: RATE_VND_PER_KM,
-    kmAmountVnd,
-    totalSalaryVnd: BASE_SALARY_VND + kgAmountVnd + kmAmountVnd,
+    totalSalaryVnd: BASE_SALARY_VND + kgAmountVnd,
     trips,
   }
 }

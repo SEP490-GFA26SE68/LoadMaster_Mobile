@@ -1,9 +1,8 @@
 import { useRouter } from 'expo-router'
-import { ChevronRight, Route, Weight } from 'lucide-react-native'
+import { ChevronRight, Weight } from 'lucide-react-native'
 import { Pressable, StyleSheet, View } from 'react-native'
 
 import { AppText } from '@/components/AppText'
-import { Chip } from '@/components/Chip'
 import { driverTripDetailPath } from '@/features/driver/TripCard'
 import { useFormat, useT } from '@/lib/i18n'
 import { badgeTones, colors, radius, space } from '@/theme/tokens'
@@ -14,20 +13,11 @@ type PayrollTripCardProps = {
   readonly line: PayrollTripLine
 }
 
-/** Thẻ chi tiết thu nhập của một chuyến: gọn 2 ô sản lượng khối lượng & quãng đường có màu sắc phân biệt. */
+/** Thẻ chi tiết thu nhập của một chuyến: ô khối lượng (tiền theo kg) và các khoản thêm của chuyến. Lương không còn tính theo km. */
 export function PayrollTripCard({ line }: PayrollTripCardProps) {
   const t = useT()
   const format = useFormat()
   const router = useRouter()
-  const isShared = line.sharePercent < 100
-
-  const allocatedKgText = format.weight(line.allocatedKg)
-  const baseKgText = isShared ? ` ${t('payroll.trips.baseOf', { value: format.weight(line.baseKg) })}` : ''
-
-  const allocatedKmText = t('payroll.trips.kmUnit', { value: format.lengthValue(line.allocatedKm) })
-  const baseKmText = isShared
-    ? ` ${t('payroll.trips.baseOf', { value: t('payroll.trips.kmUnit', { value: format.lengthValue(line.baseKm) }) })}`
-    : ''
 
   return (
     <Pressable
@@ -36,7 +26,7 @@ export function PayrollTripCard({ line }: PayrollTripCardProps) {
       onPress={() => router.push(driverTripDetailPath(line.tripId))}
       style={({ pressed }) => [
         styles.card,
-        { borderLeftColor: isShared ? badgeTones.azure.fg : badgeTones.cyan.fg },
+        { borderLeftColor: badgeTones.cyan.fg },
         pressed && styles.cardPressed,
       ]}>
       <View style={styles.topRow}>
@@ -44,9 +34,6 @@ export function PayrollTripCard({ line }: PayrollTripCardProps) {
           <AppText variant="label" color={colors.text} numberOfLines={1} style={styles.code}>
             {line.tripCode}
           </AppText>
-          {isShared ? (
-            <Chip tone="azure" label={t('payroll.trips.shareBadge', { percent: format.lengthValue(line.sharePercent) })} />
-          ) : null}
         </View>
         <View style={styles.amountGroup}>
           <View style={styles.amountPill}>
@@ -67,27 +54,13 @@ export function PayrollTripCard({ line }: PayrollTripCardProps) {
             </AppText>
           </View>
           <AppText variant="meta" color={colors.text3} numberOfLines={1}>
-            {`${allocatedKgText}${baseKgText}`}
+            {format.weight(line.allocatedKg)}
           </AppText>
           <AppText variant="label" color={badgeTones.warning.fg} numberOfLines={1} adjustsFontSizeToFit style={styles.tabular}>
             {format.currency(line.kgAmountVnd)}
           </AppText>
         </View>
 
-        <View style={[styles.metricTile, styles.successTile]}>
-          <View style={styles.tileHead}>
-            <Route color={badgeTones.success.fg} size={14} strokeWidth={1.75} style={styles.noShrink} />
-            <AppText variant="meta" color={colors.text2} numberOfLines={2} style={styles.tileLabel}>
-              {t('payroll.trips.allocatedKm')}
-            </AppText>
-          </View>
-          <AppText variant="meta" color={colors.text3} numberOfLines={1}>
-            {`${allocatedKmText}${baseKmText}`}
-          </AppText>
-          <AppText variant="label" color={badgeTones.success.fg} numberOfLines={1} adjustsFontSizeToFit style={styles.tabular}>
-            {format.currency(line.kmAmountVnd)}
-          </AppText>
-        </View>
       </View>
 
       {(line.handlingAmountVnd !== undefined && line.handlingAmountVnd > 0) ||
@@ -183,10 +156,6 @@ const styles = StyleSheet.create({
   warningTile: {
     backgroundColor: badgeTones.warning.bg,
     borderColor: badgeTones.warning.border,
-  },
-  successTile: {
-    backgroundColor: badgeTones.success.bg,
-    borderColor: badgeTones.success.border,
   },
   tileHead: {
     flexDirection: 'row',
