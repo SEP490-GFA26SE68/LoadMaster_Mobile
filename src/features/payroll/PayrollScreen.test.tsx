@@ -27,12 +27,10 @@ function makeCalculatedStatement(overrides: Partial<CalculatedPayrollStatement> 
     driverName: 'Tài xế A',
     baseSalaryVnd: 8_000_000,
     totalKg: 6_250,
-    rateVndPerKg: 600,
+    rateVndPerKg: 4_000,
+    commissionPercent: 15,
     kgAmountVnd: 3_750_000,
-    totalKm: 0,
-    rateVndPerKm: 0,
-    kmAmountVnd: 0,
-    totalSalaryVnd: 12_250_000,
+    totalSalaryVnd: 11_750_000,
     trips: [],
     ...overrides,
   }
@@ -59,15 +57,25 @@ describe('màn Phiếu lương', () => {
     jest.restoreAllMocks()
   })
 
-  test('tháng hiện tại hiển thị trạng thái Bản nháp, cảnh báo tạm tính và chuyến chia ghép 50%', async () => {
+  test('tháng hiện tại hiển thị trạng thái Bản nháp, cảnh báo tạm tính và các chuyến của tài xế', async () => {
     await getMockDb().authenticate(driver?.email ?? '', SEED_PASSWORD)
 
     await renderApp(<PayrollScreen />, { auth: createMockAuth() })
     expect(await screen.findByRole('header', { name: 'Phiếu lương' })).toBeOnTheScreen()
     expect(await screen.findByText('Bản nháp')).toBeOnTheScreen()
     expect(screen.getByText(/số liệu có thể thay đổi/i)).toBeOnTheScreen()
-    expect(screen.getByText('Chia 50%')).toBeOnTheScreen()
     expect(screen.getByText('TRIP-2611-01')).toBeOnTheScreen()
+  })
+
+  test('mỗi chuyến chỉ một tài xế: không còn nhãn chia % hay khối lượng phân bổ', async () => {
+    await getMockDb().authenticate(driver?.email ?? '', SEED_PASSWORD)
+
+    await renderApp(<PayrollScreen />, { auth: createMockAuth() })
+    await screen.findByText('TRIP-2611-02')
+
+    expect(screen.queryByText(/^Chia \d/)).toBeNull()
+    expect(screen.queryByText(/phân bổ/i)).toBeNull()
+    expect(screen.queryByText(/ \/ /)).toBeNull()
   })
 
   test('lùi sang tháng trước hiện Đã chốt, nút Xem thêm cho 6 chuyến, và nút quay về Tháng này', async () => {
@@ -164,6 +172,72 @@ describe('màn Phiếu lương', () => {
 
     expect(await screen.findByText(t('payroll.breakdown.kpiNotAchieved'))).toBeOnTheScreen()
     expect(screen.queryByText(t('payroll.breakdown.kpiBonus'))).toBeNull()
+  })
+
+  test('đã bỏ tính lương theo km: phiếu không còn hiện quãng đường hay số km ở đâu', async () => {
+    mockPayrollStatement(
+      makeCalculatedStatement({
+        trips: [
+          {
+            tripId: '7',
+            tripCode: 'TRIP-KG-01',
+            metricBasis: 'plan',
+            allocatedKg: 372.5,
+            kgAmountVnd: 27_937,
+            totalAmountVnd: 27_937,
+          },
+        ],
+      }),
+    )
+
+    await renderApp(<PayrollScreen />, { auth: createMockAuth() })
+
+    expect(await screen.findByText('TRIP-KG-01')).toBeOnTheScreen()
+    expect(screen.getByText(t('payroll.breakdown.kgAmount'))).toBeOnTheScreen()
+    expect(screen.queryByText(/quãng đường/i)).toBeNull()
+    expect(screen.queryByText(/\bkm\b/)).toBeNull()
+  })
+
+  test('phiếu đã chốt có tiền phạt hiện dòng trừ kèm lý do quản lý ghi', async () => {
+    mockPayrollStatement(
+      makeCalculatedStatement({ penaltyVnd: 50_000, penaltyNote: 'Giao trễ chuyến TRIP-KG-01', totalSalaryVnd: 11_700_000 }),
+    )
+
+    await renderApp(<PayrollScreen />, { auth: createMockAuth() })
+
+    expect(await screen.findByText('Tiền phạt')).toBeOnTheScreen()
+    expect(screen.getByText(`−${format.currency(50_000)}`)).toBeOnTheScreen()
+    expect(screen.getByText('Giao trễ chuyến TRIP-KG-01')).toBeOnTheScreen()
+  })
+
+  test('phiếu không có tiền phạt thì không có dòng phạt', async () => {
+    mockPayrollStatement(makeCalculatedStatement({ penaltyVnd: 0 }))
+
+    await renderApp(<PayrollScreen />, { auth: createMockAuth() })
+
+    expect(await screen.findByText(t('payroll.breakdown.title'))).toBeOnTheScreen()
+    expect(screen.queryByText('Tiền phạt')).toBeNull()
+  })
+
+  test('công thức tiền theo khối lượng ghi đủ kg × cước × % hoa hồng', async () => {
+    mockPayrollStatement(makeCalculatedStatement())
+
+    await renderApp(<PayrollScreen />, { auth: createMockAuth() })
+
+    // 6.250 kg × 4.000 đ/kg × 15% = 3.750.000 đ — đúng số tiền của dòng.
+    expect(
+      await screen.findByText(`${format.weight(6_250)} × ${format.currency(4_000)}/kg × 15%`),
+    ).toBeOnTheScreen()
+    expect(screen.getByText(format.currency(3_750_000))).toBeOnTheScreen()
+  })
+
+  test('phiếu thiếu % hoa hồng thì không hiện công thức, tránh ghi sai', async () => {
+    mockPayrollStatement(makeCalculatedStatement({ commissionPercent: undefined }))
+
+    await renderApp(<PayrollScreen />, { auth: createMockAuth() })
+
+    expect(await screen.findByText(t('payroll.breakdown.kgAmount'))).toBeOnTheScreen()
+    expect(screen.queryByText(/\/kg/)).toBeNull()
   })
 
   test('phiếu không có chỉ tiêu KPI không hiện nội dung nào về KPI', async () => {

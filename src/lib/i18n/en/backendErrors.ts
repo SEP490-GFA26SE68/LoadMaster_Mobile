@@ -21,6 +21,8 @@ export const backendErrors = {
   PAYROLL_DATA_INCOMPLETE: 'The trip is missing planned weight or distance data.',
   PAYROLL_INVALID_DRIVER_ASSIGNMENT: 'The drivers assigned to productivity pay are not valid.',
   PAYROLL_INVALID_AMOUNT: 'Weight, distance and pay rates must be non-negative numbers.',
+  PAYROLL_PENALTY_NOTE_REQUIRED: 'A penalty needs a reason.',
+  PAYROLL_PENALTY_EXCEEDS_SALARY: 'The penalty cannot be larger than this driver’s total pay for the month.',
   TRIP_EXCEPTION_NOT_FOUND: 'This issue is no longer on the trip. Pull down to reload.',
   GPS_TRIP_NOT_IN_TRANSIT: 'The trip is no longer in transit.',
   NO_PENDING_DELIVERY_STOP: 'The trip has no stop left to deliver, so there is no route to search.',

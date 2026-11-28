@@ -1,4 +1,4 @@
-import { Award, Briefcase, Package, ReceiptText, Route, TrendingUp, Weight, type LucideIcon } from 'lucide-react-native'
+import { Award, Briefcase, CircleMinus, Package, ReceiptText, TrendingUp, Weight, type LucideIcon } from 'lucide-react-native'
 import type { ReactNode } from 'react'
 import { StyleSheet, View } from 'react-native'
 
@@ -18,14 +18,15 @@ export function PayrollBreakdownCard({ statement }: PayrollBreakdownCardProps) {
   const t = useT()
   const format = useFormat()
 
-  const kgFormula = t('payroll.breakdown.kgFormula', {
-    kg: format.weight(statement.totalKg),
-    rate: format.currency(statement.rateVndPerKg),
-  })
-  const kmFormula = t('payroll.breakdown.kmFormula', {
-    km: format.lengthValue(statement.totalKm),
-    rate: format.currency(statement.rateVndPerKm),
-  })
+  // Hoa hồng = kg × cước/kg × % hoa hồng. Thiếu % thì không ghi công thức: ghi thiếu một thừa số là ghi sai số tiền.
+  const kgFormula =
+    statement.commissionPercent === undefined
+      ? undefined
+      : t('payroll.breakdown.commissionFormula', {
+          kg: format.weight(statement.totalKg),
+          rate: format.currency(statement.rateVndPerKg),
+          percent: format.lengthValue(statement.commissionPercent),
+        })
 
   return (
     <PayrollBreakdownShell totalVnd={statement.totalSalaryVnd}>
@@ -42,13 +43,6 @@ export function PayrollBreakdownCard({ statement }: PayrollBreakdownCardProps) {
         label={t('payroll.breakdown.kgAmount')}
         hint={kgFormula}
         amount={format.currency(statement.kgAmountVnd)}
-      />
-      <BreakdownRow
-        icon={Route}
-        tone="success"
-        label={t('payroll.breakdown.kmAmount')}
-        hint={kmFormula}
-        amount={format.currency(statement.kmAmountVnd)}
       />
 
       {statement.kpiTargetKg === undefined ? null : (
@@ -94,6 +88,16 @@ export function PayrollBreakdownCard({ statement }: PayrollBreakdownCardProps) {
           tone="success"
           label={t('payroll.breakdown.commissionAmount')}
           amount={format.currency(statement.commissionAmountVnd)}
+        />
+      ) : null}
+
+      {statement.penaltyVnd !== undefined && statement.penaltyVnd > 0 ? (
+        <BreakdownRow
+          icon={CircleMinus}
+          tone="danger"
+          label={t('payroll.breakdown.penalty')}
+          hint={statement.penaltyNote}
+          amount={t('payroll.breakdown.penaltyAmount', { amount: format.currency(statement.penaltyVnd) })}
         />
       ) : null}
     </PayrollBreakdownShell>

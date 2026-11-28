@@ -13,16 +13,10 @@ export type PayrollTripLine = {
   readonly tripId: string
   readonly tripCode: string
   readonly metricBasis: PayrollMetricBasis
-  /** Khối lượng gốc của chuyến trước khi chia tỉ lệ (planKg hoặc actualKg). */
-  readonly baseKg: number
-  /** Quãng đường gốc của chuyến trước khi chia tỉ lệ (planKm hoặc actualKm). */
-  readonly baseKm: number
-  /** Tỉ lệ chia cho tài xế này (0..100, ví dụ 100 hoặc 50 khi chạy ghép). */
-  readonly sharePercent: number
+  /** Khối lượng hàng của chuyến (mỗi chuyến một tài xế, không còn chia tỉ lệ). */
   readonly allocatedKg: number
-  readonly allocatedKm: number
+  /** Hoa hồng tài xế của chuyến: kg × cước/kg × % hoa hồng (lương không tính theo km). */
   readonly kgAmountVnd: number
-  readonly kmAmountVnd: number
   /** Feat 2.2: phụ cấp tự bốc xếp theo chuyến (nếu có). */
   readonly handlingAmountVnd?: number
   /** Feat 3: hoa hồng doanh thu theo chuyến (nếu có). */
@@ -49,17 +43,22 @@ export type CalculatedPayrollStatement = {
   readonly payModel?: PayrollPayModel
   readonly baseSalaryVnd: number
   readonly totalKg: number
+  /** Cước thu khách theo kg của công ty (không phải tiền trả thẳng cho tài xế). */
   readonly rateVndPerKg: number
+  /** % hoa hồng tài xế trên cước; backend gửi khi phiếu đã chốt. */
+  readonly commissionPercent?: number
+  /** Hoa hồng tháng: tổng kg × cước/kg × % hoa hồng. */
   readonly kgAmountVnd: number
-  readonly totalKm: number
-  readonly rateVndPerKm: number
-  readonly kmAmountVnd: number
   /** Chỉ tiêu sản lượng KPI tháng, nếu backend có cấu hình. */
   readonly kpiTargetKg?: number
   /** Kết quả đạt chỉ tiêu do backend tính, nếu backend có cấu hình. */
   readonly kpiAchieved?: boolean
   /** Feat 1: thưởng KPI đạt mốc ngày/tháng/năm. */
   readonly kpiBonusVnd?: number
+  /** Tiền phạt quản lý công ty nhập tay cho tài xế trong tháng (đã trừ vào tổng); backend chỉ gửi khi đã chốt. */
+  readonly penaltyVnd?: number
+  /** Lý do phạt quản lý ghi. */
+  readonly penaltyNote?: string
   /** Feat 2.2: tổng phụ cấp tự bốc xếp. */
   readonly handlingAmountVnd?: number
   /** Feat 3: tổng hoa hồng doanh thu. */
