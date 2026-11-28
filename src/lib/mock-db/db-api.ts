@@ -138,13 +138,13 @@ type CoreMockDb = {
   /** Tài xế bấm "Đã đến" ở điểm giao hiện tại (FE-6-06, D-84): ghi giờ đến thật; bấm lại thì giữ giờ đầu. Điểm khác: `STOP_NOT_CURRENT`. */
   arriveAtStop(tripId: string, stopNumber: number): Promise<Trip>
   /**
-   * Báo sự cố ở điểm giao hiện tại. Sự cố theo kiện cần tài xế đã đến điểm (`STOP_NOT_ARRIVED`); "khách từ chối" làm kiện ở lại xe —
-   * dấu đã dỡ của nó bị bỏ, hoàn tất điểm thì kiện thành `RETURNED`.
+   * Báo sự cố ở điểm giao hiện tại. Sự cố theo kiện cần tài xế đã đến điểm (`STOP_NOT_ARRIVED`). Nền tảng chỉ ghi nhận; kiện vẫn phải
+   * dỡ và giao cho bên nhận.
    */
   reportDeliveryIssue(tripId: string, issue: DeliveryIssueInput): Promise<Trip>
   /**
-   * Hoàn tất điểm giao hiện tại: tài xế đã đến (`STOP_NOT_ARRIVED`), mọi kiện đã dỡ hoặc có sự cố (`STOP_INCOMPLETE`), không còn xác
-   * nhận tay của điểm chờ duyệt. Kiện đã dỡ sang `DELIVERED`, kiện còn lại của điểm `RETURNED`. Điểm cuối chuyển chuyến sang `completed`.
+   * Hoàn tất điểm giao hiện tại: tài xế đã đến (`STOP_NOT_ARRIVED`), mọi kiện đã dỡ (`STOP_INCOMPLETE`), không còn xác
+   * nhận tay của điểm chờ duyệt. Kiện đã dỡ sang `DELIVERED`. Điểm cuối chuyển chuyến sang `completed`.
    */
   completeStop(tripId: string, stopNumber: number): Promise<Trip>
 

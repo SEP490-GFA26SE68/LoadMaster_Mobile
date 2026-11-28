@@ -8,7 +8,8 @@ import { deliveredHistoryOf, myTripsOf, shownStatusOf, tripDetailOf, tripRowOf, 
 import { deliveryPackageOf, isUnloaded, packageOfCode, stopScreenOf, withUnloaded } from './driver-http-stop'
 import { serverEtaSources, serverTripStops, tripStopsOf, type DriverTripStopsDto, type ServerTripStops } from './driver-http-stop-times'
 import { coded, HTTP_DRIVER_CAPABILITIES, refused, SERVER_REFRESH_MS, unsupported } from './driver-http-support'
-import type { DriverPayrollStatement, DriverTripClaim, DriverTripDetail, DriverTripException, DriverTripRow, DriverTripScreen, OpenTrip, StopKey, TripClaimStatus, TripHead } from './driver-model'
+import { completeResultOf } from './stop-outcome'
+import type { CompleteStopResult, DriverPayrollStatement, DriverTripClaim, DriverTripDetail, DriverTripException, DriverTripRow, DriverTripScreen, OpenTrip, StopKey, TripClaimStatus, TripHead } from './driver-model'
 
 type DriverPayrollStatementDto = {
   calculated: boolean
@@ -367,14 +368,14 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
         if (coded(error, 'WRONG_DELIVERY_STOP')) throw new ApiError('PACKAGE_NOT_AT_STOP', { status: error.status, params: { code: pkg.label } })
         throw error
       }
-      // Khách từ chối: máy chủ bỏ dấu đã dỡ của kiện — lần đọc lại cho thấy
       mine().stops.delete(tripId)
     },
 
     // POST /api/driver/stops/{id}/complete
-    async completeStop(tripId, stop) {
+    async completeStop(tripId, stop): Promise<CompleteStopResult> {
+      let dto: CompleteStopDto | undefined
       try {
-        await client().post<CompleteStopDto>(`/api/driver/stops/${encodeURIComponent(stop.ref)}/complete`, { query: { driverId: driverId() } })
+        dto = await client().post<CompleteStopDto>(`/api/driver/stops/${encodeURIComponent(stop.ref)}/complete`, { query: { driverId: driverId() } })
       } catch (error) {
         if (coded(error, 'MANUAL_CONFIRM_PENDING')) throw new ApiError('STOP_MANUAL_CONFIRM_PENDING', { status: error.status })
         if (refused(error, 400, 'INCOMPLETE_STOP_UNLOAD')) {
@@ -384,6 +385,7 @@ export function httpDriverApi({ client = api, userId = currentUserId }: HttpDriv
         throw error
       }
       mine().stops.delete(tripId)
+      return completeResultOf(dto)
     },
 
     // POST /api/driver/location

@@ -1,7 +1,7 @@
 import { configure, fireEvent, screen } from '@testing-library/react-native'
 
 import { getMockDb, resetMockDb } from '@/data/mock-db'
-import { departLoadedTrip, DRIVER_EMAIL, labelsAt, LOADED_TRIP, renderTrip, unloadAllButLast } from '@/test/driver-flow'
+import { completeStopsThrough, departLoadedTrip, DRIVER_EMAIL, labelsAt, LOADED_TRIP, renderTrip, unloadAllButLast } from '@/test/driver-flow'
 import { resetNativeMocks, router, setCameraPermission } from '@/test/native-mocks'
 import { clearStored, signInAs } from '@/test/render'
 
@@ -107,7 +107,7 @@ describe('màn chuyến của tài xế', () => {
     await openVerify('Gõ mã')
 
     await typeCode(last.qrToken)
-    expect(await screen.findByText('Mọi kiện của điểm này đã dỡ hoặc đã báo sự cố.')).toBeOnTheScreen()
+    expect(await screen.findByText('Mọi kiện của điểm này đã dỡ.')).toBeOnTheScreen()
     expect(screen.queryByRole('header', { name: 'Đối chiếu kiện dỡ tại điểm 1' })).toBeNull()
 
     await fireEvent.press(screen.getByRole('button', { name: 'Hoàn tất điểm giao' }))
@@ -116,8 +116,60 @@ describe('màn chuyến của tài xế', () => {
     expect(screen.getByText(/^Tiếp theo: điểm 2 · /)).toBeOnTheScreen()
 
     await fireEvent.press(screen.getByRole('button', { name: 'Hoàn tất' }))
-    expect(await screen.findByRole('header', { name: 'Điểm 2 / 3' })).toBeOnTheScreen()
+    expect(await screen.findByRole('header', { name: 'Đã giao điểm 1' })).toBeOnTheScreen()
+    expect(await screen.findByRole('header', { name: 'Đã giao hàng thành công đến điểm giao 1' })).toBeOnTheScreen()
+    expect(screen.getByText(/Còn 2 điểm giao phía sau/)).toBeOnTheScreen()
+    expect(screen.getByText(/^Tiếp theo: điểm 2 · /)).toBeOnTheScreen()
     expect(screen.queryByRole('header', { name: /^Hoàn tất điểm/ })).toBeNull()
+
+    await fireEvent.press(screen.getByRole('button', { name: /^Tiếp tục giao điểm 2$/ }))
+    expect(await screen.findByRole('header', { name: 'Điểm 2 / 3' })).toBeOnTheScreen()
+  })
+
+  test('báo sự cố rồi vẫn dỡ kiện: màn sự cố, quay lại chuyến để giao điểm 2', async () => {
+    await departLoadedTrip({ arrive: true })
+    const { last } = await unloadAllButLast()
+    await renderTrip()
+    await fireEvent.press(await screen.findByRole('button', { name: 'Báo sự cố' }))
+    await fireEvent.press(await screen.findByRole('radio', { name: 'Khách từ chối' }))
+    await fireEvent.press(screen.getByRole('button', { name: 'Ghi sự cố' }))
+    expect(await screen.findByText(/^Đã ghi sự cố cho /)).toBeOnTheScreen()
+    expect(screen.getByRole('button', { name: 'Hoàn tất điểm giao' })).toBeDisabled()
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Đối chiếu kiện dỡ' }))
+    await fireEvent.press(screen.getByRole('tab', { name: 'Gõ mã' }))
+    await fireEvent.changeText(screen.getByLabelText(CODE_FIELD), last.qrToken)
+    await fireEvent.press(screen.getByRole('button', { name: 'Đối chiếu mã' }))
+
+    await fireEvent.press(await screen.findByRole('button', { name: 'Hoàn tất điểm giao' }))
+    await fireEvent.press(await screen.findByRole('button', { name: 'Hoàn tất' }))
+    expect(await screen.findByRole('header', { name: 'Đã hoàn tất điểm giao 1 — có sự cố' })).toBeOnTheScreen()
+    expect(screen.getByText(/Sự cố đã ghi cho bên gửi và bên nhận tự bàn/)).toBeOnTheScreen()
+    expect(screen.getByText(/Còn 2 điểm giao phía sau/)).toBeOnTheScreen()
+
+    await fireEvent.press(screen.getByRole('button', { name: /^Tiếp tục giao điểm 2$/ }))
+    expect(await screen.findByRole('header', { name: 'Điểm 2 / 3' })).toBeOnTheScreen()
+  })
+
+  test('hoàn tất điểm cuối: màn hoàn thành chuyến, nút về Chuyến của tôi', async () => {
+    await completeStopsThrough(2)
+    await getMockDb().arriveAtStop(LOADED_TRIP, 3)
+    for (const label of await labelsAt(3)) await getMockDb().confirmUnloadByQr(LOADED_TRIP, 3, label.qrToken, 'QR')
+    await renderTrip()
+
+    await fireEvent.press(await screen.findByRole('button', { name: 'Hoàn tất điểm giao' }))
+    expect(await screen.findByRole('header', { name: /^Hoàn tất điểm 3 — / })).toBeOnTheScreen()
+    expect(screen.getByText('Đây là điểm cuối: hoàn tất là giao xong chuyến.')).toBeOnTheScreen()
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Hoàn tất' }))
+    expect(await screen.findByRole('header', { name: 'Hoàn thành chuyến' })).toBeOnTheScreen()
+    expect(screen.getByRole('header', { name: /^Đã hoàn thành chuyến / })).toBeOnTheScreen()
+    expect(screen.getByText('Mọi điểm của chuyến đã xong.')).toBeOnTheScreen()
+
+    const [footer] = screen.getAllByRole('button', { name: 'Về danh sách chuyến' }).slice(-1)
+    if (footer === undefined) throw new Error('màn hoàn thành chuyến không có nút về danh sách')
+    await fireEvent.press(footer)
+    expect(router.dismissTo).toHaveBeenCalledWith('/trips')
   })
 
   test('xác nhận tay kiện cuối: chờ điều phối viên duyệt, chưa hoàn tất điểm được', async () => {

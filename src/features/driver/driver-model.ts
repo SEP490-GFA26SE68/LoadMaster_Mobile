@@ -204,7 +204,7 @@ export type StopItem = {
   /** Lý do điều phối viên từ chối xác nhận tay — kiện cần kiểm lại. */
   readonly rejectedReason: string | undefined
   readonly issueKind: DeliveryIssueKind | undefined
-  /** Khách từ chối: kiện ở lại xe, thành Hoàn trả khi hoàn tất điểm. */
+  /** Luồng tài xế hiện không đánh dấu hoàn trả trên xe: sự cố vẫn giao cho bên nhận. */
   readonly returned: boolean
 }
 
@@ -257,6 +257,29 @@ export type StopCompletionInfo = {
   /** Điểm kế tiếp; vắng là điểm cuối. Vắng cả khi nguồn không biết điểm kế tiếp: `nextKnown` nói rõ. */
   readonly next: { readonly number: number; readonly name: string } | undefined
   readonly nextKnown: boolean
+}
+
+/**
+ * Máy chủ trả sau POST hoàn tất điểm: `tripCompleted` là hết chuyến; `hasNext` là còn điểm chưa xong. Cả hai sai khi máy chủ cũ không
+ * nói — màn tin `StopCompletionInfo.next` khi nguồn biết cả tuyến.
+ */
+export type CompleteStopResult = {
+  readonly tripCompleted: boolean
+  readonly hasNext: boolean
+}
+
+/** Màn xen giữa sau khi hoàn tất một điểm: còn điểm thì quay lại chuyến; hết thì về Chuyến của tôi. */
+export type StopOutcome = {
+  readonly stopNumber: number
+  readonly stopName: string
+  readonly stopCount: number
+  readonly pickup: boolean
+  readonly delivered: number
+  readonly returned: readonly { readonly id: string; readonly label: string; readonly name: string }[]
+  readonly issues: number
+  readonly picked: number
+  readonly tripCompleted: boolean
+  readonly next: { readonly number: number; readonly name: string } | undefined
 }
 
 /** Màn điểm giao của một chuyến. */

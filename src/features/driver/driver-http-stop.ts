@@ -98,8 +98,8 @@ export function withUnloaded(dto: CurrentStopDto, packageId: number): CurrentSto
 const ISSUE_KINDS: Readonly<Record<string, DeliveryIssueKind>> = { DAMAGED: 'damaged', MISSING: 'missing', REFUSED: 'refused', OTHER: 'other' }
 
 /**
- * Một kiện cần dỡ theo máy chủ (như `itemProgressOf` của web): sự cố mới nhất (khách từ chối mà kiện chưa dỡ thì kiện ở lại xe — hoàn
- * trả); xác nhận tay chờ / đã duyệt làm cách đối chiếu của kiện đã dỡ; bị từ chối và kiện về chưa dỡ thì lý do phải kiểm lại. Máy chủ
+ * Một kiện cần dỡ theo máy chủ (như `itemProgressOf` của web): sự cố mới nhất chỉ là ghi nhận — kiện vẫn phải dỡ và giao cho bên nhận;
+ * xác nhận tay chờ / đã duyệt làm cách đối chiếu của kiện đã dỡ; bị từ chối và kiện về chưa dỡ thì lý do phải kiểm lại. Máy chủ
  * không trả kiện đã dỡ bằng quét hay gõ mã: cách đối chiếu để trống.
  */
 function itemOf(pkg: StopPackage, index: number, packages: readonly StopPackage[]): StopItem {
@@ -127,7 +127,7 @@ function itemOf(pkg: StopPackage, index: number, packages: readonly StopPackage[
     via,
     rejectedReason: !unloaded && pkg.manualStatus === 'REJECTED' ? (pkg.manualRejectReason ?? '') : undefined,
     issueKind,
-    returned: !unloaded && issueKind === 'refused',
+    returned: false,
   }
 }
 
@@ -166,9 +166,8 @@ export function stopScreenOf(dto: CurrentStopDto, tripStopCount: number, plan: R
   const picked = pickupItems.length - pickupWaiting
   const delivered = items.filter((item) => item.unloaded).length
   const issueCount = items.filter((item) => item.issueKind !== undefined).length
-  // Kiện chưa dỡ mà đã báo sự cố không phải dỡ (máy chủ hoàn tất điểm thì kiện đó là hoàn trả)
-  const remaining = items.filter((item) => !item.unloaded && item.issueKind === undefined).length + pickupWaiting
-  const verifiable = items.filter((item) => !item.unloaded && !item.returned).length + pickupWaiting
+  const remaining = items.filter((item) => !item.unloaded).length + pickupWaiting
+  const verifiable = items.filter((item) => !item.unloaded).length + pickupWaiting
   const pendingConfirms = items.filter((item) => item.via === 'MANUAL_PENDING').length
   const arrivedAt = vnInstant(dto.actualArrival)
   const known = times === null ? [] : serverTripStops(times)

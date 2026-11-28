@@ -23,9 +23,9 @@ type CompleteStopSheetProps = {
 
 /**
  * Hỏi lại trước khi hoàn tất điểm giao hoặc điểm nhận (như `CompleteStopDialog` của web): hoàn tất là ghi thật và không mở lại được. Tờ
- * nói điều sẽ xảy ra với từng nhóm kiện — đã dỡ thành Đã giao, chưa dỡ ở lại xe thành Hoàn trả (bằng chữ, kèm mã từng kiện), kiện nhận lên
+ * nói điều sẽ xảy ra với từng nhóm kiện — đã dỡ thành Đã giao (kể cả kiện đã báo sự cố), kiện nhận lên
  * xe thành Đang vận chuyển —, số sự cố đã báo, và điểm kế tiếp hay đây là điểm cuối (nguồn không biết thì nói màn sẽ tự chuyển). Đang ghi
- * thì không đóng được; lỗi thì tờ giữ nguyên và nói lỗi; ghi xong màn sang điểm kế tiếp hoặc tổng kết chuyến.
+ * thì không đóng được; lỗi thì tờ giữ nguyên và nói lỗi; ghi xong màn xen giữa: còn điểm thì quay lại chuyến, hết thì hoàn thành chuyến.
  */
 export function CompleteStopSheet({ open, onClose, screen, pending, failure, onConfirm }: CompleteStopSheetProps) {
   const t = useT()

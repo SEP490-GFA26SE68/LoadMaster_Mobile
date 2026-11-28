@@ -19,7 +19,7 @@ export const dataErrors = {
   INSTANCE_NOT_IN_PLAN: 'Package {packageInstanceId} is not in this plan or stop.',
   INSTANCE_NOT_LOADED: 'Package {packageInstanceId} was damaged while loading and left at the warehouse; it is not on the truck.',
   LOADING_INCOMPLETE: '{remaining} packages are not staged or not loaded yet.',
-  STOP_INCOMPLETE: 'Stop {stopNumber} still has {remaining} packages not unloaded or reported.',
+  STOP_INCOMPLETE: 'Stop {stopNumber} still has {remaining} packages not unloaded.',
   STOP_NOT_CURRENT: 'Stop {stopNumber} is not the current stop.',
   REASON_REQUIRED: 'Enter a reason.',
   DRIVER_INVALID: 'The selected person is not an active driver.',

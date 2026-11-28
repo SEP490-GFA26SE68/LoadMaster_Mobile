@@ -123,11 +123,11 @@ describe('httpDriverApi: chuyến và điểm hiện tại', () => {
       ['2', true, 'MANUAL_PENDING', undefined, undefined, false, 2],
       ['3', true, 'MANUAL_APPROVED', undefined, undefined, false, 3],
       ['4', false, undefined, 'Kiện vẫn còn trên xe', undefined, false, 4],
-      ['5', false, undefined, undefined, 'refused', true, 5],
+      ['5', false, undefined, undefined, 'refused', false, 5],
       ['6', false, undefined, undefined, 'damaged', false, 6],
       ['7', false, undefined, undefined, undefined, false, 7],
     ])
-    expect(stop).toMatchObject({ doneCount: 3, remaining: 2, verifiable: 3, pendingConfirms: 1, issueCount: 2 })
+    expect(stop).toMatchObject({ doneCount: 3, remaining: 4, verifiable: 4, pendingConfirms: 1, issueCount: 2 })
     expect(stop.completion).toMatchObject({ delivered: 3, issues: 2, picked: 0, nextKnown: false })
     expect(stop.completion.returned.map(({ id }) => id)).toEqual(['4', '5', '6', '7'])
   })

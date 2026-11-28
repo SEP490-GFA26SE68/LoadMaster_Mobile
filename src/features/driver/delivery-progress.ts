@@ -19,7 +19,7 @@ export type ItemProgress = {
   readonly unloaded: boolean
   /** Sự cố mới nhất tài xế báo cho kiện này ở điểm này. */
   readonly issue: DeliveryIssue | undefined
-  /** Khách từ chối nhận kiện này (sự cố mới nhất là "khách từ chối"): kiện ở lại xe, hoàn tất điểm thì thành Hoàn trả (D-84). */
+  /** Kiện hoàn trả ở lại xe — luồng tài xế hiện không dùng: sự cố vẫn giao cho bên nhận. */
   readonly returned: boolean
   /**
    * Lần đối chiếu mới nhất của kiện khi dỡ (FE-6-03): cách đối chiếu của kiện đã dỡ; kiện chưa dỡ mà lần mới nhất là xác nhận tay bị
@@ -101,7 +101,7 @@ export function deliveryView(trip: Pick<Trip, 'phase' | 'loading' | 'delivery' |
         item,
         unloaded,
         issue,
-        returned: !unloaded && issue?.kind === 'refused',
+        returned: false,
         // Kiện bị khách từ chối sau khi dỡ không còn mang cách đối chiếu cũ; lần xác nhận tay bị từ chối thì giữ để nói lý do kiểm lại
         verification: unloaded !== (verification?.manual?.status === 'MANUAL_REJECTED') ? verification : undefined,
       }
@@ -116,8 +116,8 @@ export function deliveryView(trip: Pick<Trip, 'phase' | 'loading' | 'delivery' |
     total: items.length + pickupItems.length,
     unloadedCount: items.filter((item) => item.unloaded).length + pickupItems.length - pickupWaiting,
     issueCount: items.filter((item) => item.issue !== undefined).length,
-    remaining: items.filter((item) => !item.unloaded && item.issue === undefined).length + pickupWaiting,
-    verifiable: items.filter((item) => !item.unloaded && !item.returned).length + pickupWaiting,
+    remaining: items.filter((item) => !item.unloaded).length + pickupWaiting,
+    verifiable: items.filter((item) => !item.unloaded).length + pickupWaiting,
     pendingConfirms: mode === 'delivering' ? pendingManualConfirms(trip, 'UNLOADING', stop.number).length + pendingManualConfirms(trip, 'PICKUP', stop.number).length : 0,
     completedStops: new Set(progress?.stops.filter((item) => item.completedAt !== undefined).map((item) => item.number)),
   }

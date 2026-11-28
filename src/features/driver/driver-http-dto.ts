@@ -93,8 +93,8 @@ export type RoutePlanDetailDto = {
   readonly legs?: readonly RouteLegDto[] | null
 }
 
-/** `POST /api/driver/stops/{id}/complete` */
-export type CompleteStopDto = { readonly tripCompleted: boolean | null }
+/** `POST /api/driver/stops/{id}/complete` — `nextStopId` có khi còn điểm chưa hoàn tất. */
+export type CompleteStopDto = { readonly tripCompleted: boolean | null; readonly nextStopId?: number | null }
 
 /** `POST /api/driver/location` */
 export type LocationPointDto = { readonly recordedAt: string }

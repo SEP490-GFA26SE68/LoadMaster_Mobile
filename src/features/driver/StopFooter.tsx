@@ -8,7 +8,7 @@ import { useT } from '@/lib/i18n'
 import { space } from '@/theme/tokens'
 
 import { CompleteStopSheet } from './CompleteStopSheet'
-import type { DriverCapabilities, StopScreen } from './driver-model'
+import type { DriverCapabilities, StopOutcome, StopScreen } from './driver-model'
 import type { StopActions } from './useStopActions'
 
 type StopFooterProps = {
@@ -17,6 +17,8 @@ type StopFooterProps = {
   capabilities: DriverCapabilities
   /** Tờ đối chiếu đang ghi một kiện: chưa hoàn tất điểm được. */
   verifyPending: boolean
+  /** Ghi xong: màn xen giữa (còn điểm / hết chuyến). */
+  onCompleted: (outcome: StopOutcome) => void
 }
 
 /** Bước của nút chính ở chân màn. */
@@ -34,10 +36,10 @@ export function footerStep({ mode, arrived }: StopScreen, capabilities: DriverCa
  * Chân màn điểm giao (như `StopFooter` của web): **đúng một nút chính** theo bước (`footerStep`) — "Xuất phát" khi kho đã xếp xong; đang
  * vận chuyển thì "Đã đến điểm n" (ghi giờ đến thật), rồi "Hoàn tất điểm giao" / "Hoàn tất điểm nhận". Còn xác nhận tay chờ duyệt thì nút
  * mờ, lý do ngay trên nút. Bấm hoàn tất mở tờ hỏi lại; tờ gắn với điểm đang hỏi nên điểm đổi hoặc hết hoàn tất được (điều phối viên vừa
- * từ chối một xác nhận tay) thì tờ tự đóng và không tự mở lại. Câu báo của lần ghi vừa rồi (`actions.flash`) nằm ngay trên nút — app
- * không có toast.
+ * từ chối một xác nhận tay) thì tờ tự đóng và không tự mở lại. Ghi xong thì màn xen giữa: còn điểm sau thì quay lại chuyến, hết thì hoàn
+ * thành chuyến. Câu báo của lần ghi vừa rồi (`actions.flash`) nằm ngay trên nút — app không có toast.
  */
-export function StopFooter({ screen, actions, capabilities, verifyPending }: StopFooterProps) {
+export function StopFooter({ screen, actions, capabilities, verifyPending, onCompleted }: StopFooterProps) {
   const t = useT()
   const [asking, setAsking] = useState<string | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
@@ -50,9 +52,12 @@ export function StopFooter({ screen, actions, capabilities, verifyPending }: Sto
 
   async function handleConfirm() {
     setFailure(null)
-    const error = await actions.completeStop()
-    if (error === null) setAsking(null)
-    else setFailure(error)
+    const result = await actions.completeStop()
+    if ('error' in result) setFailure(result.error)
+    else {
+      setAsking(null)
+      onCompleted(result.outcome)
+    }
   }
 
   const flash = actions.flash

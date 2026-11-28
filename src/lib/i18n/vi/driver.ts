@@ -220,8 +220,8 @@ export const driver = {
   contact: '{name} · {phone}',
   summary: 'Cần dỡ {total} kiện · Đã dỡ {done} · Sự cố {issues}',
   progress: 'Tiến độ dỡ hàng',
-  remaining: { one: 'Còn {count} kiện chưa dỡ hoặc chưa báo sự cố', other: 'Còn {count} kiện chưa dỡ hoặc chưa báo sự cố' },
-  allHandled: 'Mọi kiện của điểm này đã dỡ hoặc đã báo sự cố.',
+  remaining: { one: 'Còn {count} kiện chưa dỡ', other: 'Còn {count} kiện chưa dỡ' },
+  allHandled: 'Mọi kiện của điểm này đã dỡ.',
   itemsTitle: 'Kiện cần dỡ',
   unloadingRule: {
     title: 'Quy tắc dỡ hàng bắt buộc (LIFO — Xếp sau ra trước)',
@@ -234,7 +234,7 @@ export const driver = {
     description: 'Hoàn tất rồi thì không mở lại được điểm này.',
     delivered: { one: '{count} kiện đã dỡ được ghi Đã giao.', other: '{count} kiện đã dỡ được ghi Đã giao.' },
     returned: { one: '{count} kiện chưa dỡ ở lại xe, được ghi Hoàn trả:', other: '{count} kiện chưa dỡ ở lại xe, được ghi Hoàn trả:' },
-    issues: { one: 'Đã báo sự cố cho {count} kiện ở điểm này.', other: 'Đã báo sự cố cho {count} kiện ở điểm này.' },
+    issues: { one: 'Đã ghi sự cố cho {count} kiện — vẫn giao cho bên nhận; bên gửi và bên nhận tự bàn.', other: 'Đã ghi sự cố cho {count} kiện — vẫn giao cho bên nhận; bên gửi và bên nhận tự bàn.' },
     picked: { one: '{count} kiện đã nhận lên xe, được ghi Đang vận chuyển.', other: '{count} kiện đã nhận lên xe, được ghi Đang vận chuyển.' },
     next: 'Tiếp theo: điểm {number} · {name}.',
     last: 'Đây là điểm cuối: hoàn tất là giao xong chuyến.',
@@ -242,6 +242,31 @@ export const driver = {
     nextUnknown: 'Hoàn tất xong, màn chuyển sang điểm kế tiếp của chuyến.',
     confirm: 'Hoàn tất',
     cancel: 'Quay lại',
+  },
+  /**
+   * Màn xen giữa sau khi xác nhận hoàn tất điểm: còn điểm sau thì quay lại chuyến; điểm cuối thì hoàn thành chuyến.
+   * Có sự cố thì heading khác — kiện vẫn giao cho bên nhận, bên gửi và bên nhận tự bàn.
+   */
+  stopOutcome: {
+    title: 'Đã giao điểm {number}',
+    titlePickup: 'Đã nhận điểm {number}',
+    heading: 'Đã giao hàng thành công đến điểm giao {number}',
+    headingPickup: 'Đã nhận hàng thành công tại điểm {number}',
+    headingWithIssues: 'Đã hoàn tất điểm giao {number} — có sự cố',
+    headingPickupWithIssues: 'Đã hoàn tất điểm nhận {number} — có sự cố',
+    tripDoneTitle: 'Hoàn thành chuyến',
+    tripDoneHeading: 'Đã hoàn thành chuyến {tripId}',
+    tripDoneDescription: 'Mọi điểm của chuyến đã xong.',
+    remaining: { one: 'Còn {count} điểm giao phía sau.', other: 'Còn {count} điểm giao phía sau.' },
+    next: 'Tiếp theo: điểm {number} · {name}.',
+    remainingUnknown: 'Chuyến còn điểm phía sau. Quay lại chuyến để tiếp tục giao.',
+    backToTrip: 'Quay lại chuyến',
+    continueNext: 'Tiếp tục giao điểm {number}',
+    delivered: { one: '{count} kiện đã giao', other: '{count} kiện đã giao' },
+    returned: { one: '{count} kiện hoàn trả', other: '{count} kiện hoàn trả' },
+    picked: { one: '{count} kiện đã nhận lên xe', other: '{count} kiện đã nhận lên xe' },
+    issues: { one: '{count} sự cố', other: '{count} sự cố' },
+    problemNote: 'Sự cố đã ghi cho bên gửi và bên nhận tự bàn. Kiện vẫn giao tại điểm này, không giữ trên xe.',
   },
   /** Giờ đến và hạn giao: ở thẻ liên hệ của điểm đang giao và ở dòng từng điểm của hai danh sách điểm. */
   timing: {
@@ -290,14 +315,17 @@ export const driver = {
   issue: {
     report: 'Báo sự cố',
     title: 'Báo sự cố tại điểm {number}',
-    description: 'Ghi sự cố cho một kiện của điểm giao này. Sự cố đã ghi không xoá được. Khách từ chối thì kiện ở lại xe và thành Hoàn trả.',
+    description: 'Ghi sự cố cho một kiện của điểm giao này. Sự cố đã ghi không xoá được. Kiện vẫn dỡ và giao cho bên nhận — bên gửi và bên nhận tự bàn.',
+    whatNext:
+      'Báo sự cố (hỏng, thiếu, khách không đồng ý…) rồi vẫn dỡ và giao cho bên nhận. Nền tảng chỉ ghi nhận — bên gửi và bên nhận tự bàn. Không giữ kiện trên xe. Cần điều phối đổi tuyến: dùng Sự cố trên đường.',
     package: 'Kiện',
     kind: 'Loại sự cố',
     note: 'Ghi chú',
     noteHint: 'Bắt buộc khi chọn Khác.',
     submit: 'Ghi sự cố',
     cancel: 'Quay lại',
-    refusedRecorded: 'Khách từ chối {id}: kiện ở lại xe và thành Hoàn trả khi hoàn tất điểm giao.',
+    recorded: 'Đã ghi sự cố cho {id}. Vẫn dỡ và giao cho bên nhận.',
+    refusedRecorded: 'Đã ghi sự cố cho {id}. Vẫn dỡ và giao cho bên nhận.',
     errors: {
       packageRequired: 'Chọn kiện gặp sự cố.',
       kindRequired: 'Chọn loại sự cố.',

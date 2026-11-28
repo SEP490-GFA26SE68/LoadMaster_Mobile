@@ -14,7 +14,7 @@ import { useT } from '@/lib/i18n'
 import { stopColor } from '@/lib/stops'
 import { badgeTones, colors, palette, radius, shadow, space } from '@/theme/tokens'
 
-import type { StopScreen, TripHead } from './driver-model'
+import type { StopOutcome, StopScreen, TripHead } from './driver-model'
 import { DriverNavigation } from './DriverNavigation'
 import { GpsToggle } from './GpsToggle'
 import { ReportIssueSheet } from './ReportIssueSheet'
@@ -41,7 +41,7 @@ const closed = (turn: SheetTurn): SheetTurn => ({ ...turn, open: false })
 /**
  * Màn tài xế tại điểm giao (như `DeliveryStopView` của web) — điện thoại, một tay, ngoài trời.
  */
-export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen }) {
+export function StopView({ trip, screen, onCompleted }: { trip: TripHead; screen: StopScreen; onCompleted: (outcome: StopOutcome) => void }) {
   const t = useT()
   const router = useRouter()
   const capabilities = useDriverCapabilities()
@@ -56,7 +56,7 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
   useStartGpsWhenDelivering(delivering, capabilities.gps, gps)
   const exceptionsQuery = useTripExceptionsQuery(trip.id, delivering && capabilities.tripExceptions)
   const exceptions = exceptionsQuery.data ?? []
-  const nextItemId = items.find((entry) => !entry.unloaded && entry.issueKind === undefined)?.id
+  const nextItemId = items.find((entry) => !entry.unloaded)?.id
   // Không có nút chính và không có câu báo (xem trước): không vẽ chân màn trống
   const footerShown = footerStep(screen, capabilities) !== null || actions.flash !== null
 
@@ -82,7 +82,7 @@ export function StopView({ trip, screen }: { trip: TripHead; screen: StopScreen 
       }
       below={<ProgressStrip screen={screen} />}
       scroll
-      footer={footerShown ? <StopFooter screen={screen} actions={actions} capabilities={capabilities} verifyPending={verify.pending} /> : undefined}>
+      footer={footerShown ? <StopFooter screen={screen} actions={actions} capabilities={capabilities} verifyPending={verify.pending} onCompleted={onCompleted} /> : undefined}>
       <StopNotices screen={screen} />
       {delivering && exceptions.length > 0 ? (
         <TripExceptionsBanner exceptions={exceptions} onOpen={() => setHistorySignal((n) => n + 1)} />

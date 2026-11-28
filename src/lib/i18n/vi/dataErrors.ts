@@ -22,7 +22,7 @@ export const dataErrors = {
   INSTANCE_NOT_IN_PLAN: 'Kiện {packageInstanceId} không thuộc phương án hoặc điểm giao này.',
   INSTANCE_NOT_LOADED: 'Kiện {packageInstanceId} hỏng lúc xếp nên đã bỏ lại kho, không có trên xe.',
   LOADING_INCOMPLETE: 'Còn {remaining} kiện chưa soạn hoặc chưa xếp.',
-  STOP_INCOMPLETE: 'Điểm {stopNumber} còn {remaining} kiện chưa dỡ hoặc chưa báo sự cố.',
+  STOP_INCOMPLETE: 'Điểm {stopNumber} còn {remaining} kiện chưa dỡ.',
   STOP_NOT_CURRENT: 'Điểm {stopNumber} chưa phải điểm giao hiện tại.',
   REASON_REQUIRED: 'Cần ghi lý do.',
   DRIVER_INVALID: 'Người được chọn không phải tài xế đang hoạt động.',
