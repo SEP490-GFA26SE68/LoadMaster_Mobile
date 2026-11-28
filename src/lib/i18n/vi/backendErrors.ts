@@ -26,6 +26,8 @@ export const backendErrors = {
   PAYROLL_DATA_INCOMPLETE: 'Chuyến có dữ liệu phương án khối lượng hoặc quãng đường còn thiếu.',
   PAYROLL_INVALID_DRIVER_ASSIGNMENT: 'Phân công tài xế nhận lương năng suất không hợp lệ.',
   PAYROLL_INVALID_AMOUNT: 'Khối lượng, quãng đường và đơn giá phải là số không âm.',
+  PAYROLL_PENALTY_NOTE_REQUIRED: 'Có tiền phạt thì phải ghi lý do phạt.',
+  PAYROLL_PENALTY_EXCEEDS_SALARY: 'Tiền phạt không được lớn hơn tổng lương tháng của tài xế này.',
   TRIP_EXCEPTION_NOT_FOUND: 'Sự cố này không còn trên chuyến. Kéo xuống để đọc lại.',
   GPS_TRIP_NOT_IN_TRANSIT: 'Chuyến không còn đang vận chuyển.',
   NO_PENDING_DELIVERY_STOP: 'Chuyến không còn điểm nào chờ giao nên không có tuyến để tìm.',

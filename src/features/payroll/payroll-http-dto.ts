@@ -7,14 +7,10 @@ export type PayrollTripLineDto = {
   readonly tripId: number | string
   readonly tripCode: string
   readonly planKg?: NumericDto
-  readonly planKm?: NumericDto
   readonly actualKg?: NumericDto
-  readonly actualKm?: NumericDto
   readonly sharePercent?: NumericDto
   readonly allocatedKg?: NumericDto
-  readonly allocatedKm?: NumericDto
   readonly kgAmountVnd?: NumericDto
-  readonly kmAmountVnd?: NumericDto
   readonly handlingAmountVnd?: NumericDto
   readonly commissionAmountVnd?: NumericDto
   readonly totalAmountVnd?: NumericDto
@@ -32,12 +28,12 @@ export type PayrollStatementDto = {
   readonly totalKg?: NumericDto
   readonly rateVndPerKg?: NumericDto
   readonly kgAmountVnd?: NumericDto
-  readonly totalKm?: NumericDto
-  readonly rateVndPerKm?: NumericDto
-  readonly kmAmountVnd?: NumericDto
+  readonly commissionPercent?: NumericDto
   readonly kpiTargetKg?: NumericDto
   readonly kpiAchieved?: boolean | null
   readonly kpiBonusVnd?: NumericDto
+  readonly penaltyVnd?: NumericDto
+  readonly penaltyNote?: string | null
   readonly handlingAmountVnd?: NumericDto
   readonly commissionAmountVnd?: NumericDto
   readonly totalSalaryVnd?: NumericDto

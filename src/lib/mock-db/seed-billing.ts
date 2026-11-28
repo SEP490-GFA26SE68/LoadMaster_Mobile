@@ -26,8 +26,8 @@ export const SEED_PLANS: readonly SubscriptionPlan[] = [
     features: ['OPTIMIZATION_3D', 'ROUTE_OPTIMIZATION', 'ADVANCED_ALGORITHM'], active: true, provisional: true,
   },
   {
-    id: 'PLAN-003', name: 'Ultimate', tier: 'ULTIMATE', priceVnd: 7_900_000, monthlyCredits: null, algorithmTier: 'EP_DBLF_GA_AI',
-    features: ['OPTIMIZATION_3D', 'ROUTE_OPTIMIZATION', 'ADVANCED_ALGORITHM', 'UNLIMITED_CREDITS'], active: true, provisional: true,
+    id: 'PLAN-003', name: 'Ultimate', tier: 'ULTIMATE', priceVnd: 7_900_000, monthlyCredits: 30_000, algorithmTier: 'EP_DBLF_GA_AI',
+    features: ['OPTIMIZATION_3D', 'ROUTE_OPTIMIZATION', 'ADVANCED_ALGORITHM'], active: true, provisional: true,
   },
 ]
 

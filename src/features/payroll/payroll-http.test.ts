@@ -31,24 +31,19 @@ describe('httpPayrollApi', () => {
             driverName: 'Nguyễn Văn Tài',
             baseSalaryVnd: '8000000.00',
             totalKg: '1500.50',
-            rateVndPerKg: '600',
+            rateVndPerKg: '4000',
             kgAmountVnd: '900300',
-            totalKm: '85.25',
-            rateVndPerKm: '4500',
-            kmAmountVnd: '383625',
-            totalSalaryVnd: '9283925',
+            commissionPercent: '15.00',
+            totalSalaryVnd: '8900300',
             trips: [
               {
                 tripId: 101,
                 tripCode: 'TRIP-101',
                 planKg: '3001.00',
-                planKm: '170.50',
-                sharePercent: '50.00',
+                sharePercent: '100.00',
                 allocatedKg: '1500.50',
-                allocatedKm: '85.25',
                 kgAmountVnd: '900300',
-                kmAmountVnd: '383625',
-                totalAmountVnd: '1283925',
+                totalAmountVnd: '900300',
               },
             ],
           },
@@ -63,7 +58,9 @@ describe('httpPayrollApi', () => {
     expect(statement.status).toBe('LOCKED')
     expect(statement.driverId).toBe('42')
     expect(statement.baseSalaryVnd).toBe(8_000_000)
-    expect(statement.totalSalaryVnd).toBe(9_283_925)
+    expect(statement.totalSalaryVnd).toBe(8_900_300)
+    expect(statement.rateVndPerKg).toBe(4_000)
+    expect(statement.commissionPercent).toBe(15)
     expect(statement.kpiTargetKg).toBeUndefined()
     expect(statement.kpiAchieved).toBeUndefined()
     expect(statement.trips).toEqual([
@@ -71,14 +68,9 @@ describe('httpPayrollApi', () => {
         tripId: '101',
         tripCode: 'TRIP-101',
         metricBasis: 'plan',
-        baseKg: 3001,
-        baseKm: 170.5,
-        sharePercent: 50,
         allocatedKg: 1500.5,
-        allocatedKm: 85.25,
         kgAmountVnd: 900_300,
-        kmAmountVnd: 383_625,
-        totalAmountVnd: 1_283_925,
+        totalAmountVnd: 900_300,
       },
     ])
   })
@@ -96,9 +88,6 @@ describe('httpPayrollApi', () => {
           totalKg: null,
           rateVndPerKg: null,
           kgAmountVnd: null,
-          totalKm: null,
-          rateVndPerKm: null,
-          kmAmountVnd: null,
           totalSalaryVnd: null,
           trips: [],
         }),
@@ -129,27 +118,23 @@ describe('httpPayrollApi', () => {
         kpiAchieved: true,
         rateVndPerKg: 500,
         kgAmountVnd: 250_000,
-        totalKm: 100,
-        rateVndPerKm: 4_000,
-        kmAmountVnd: 400_000,
         kpiBonusVnd: 500_000,
+        penaltyVnd: '50000',
+        penaltyNote: 'Giao trễ',
         handlingAmountVnd: 150_000,
         commissionAmountVnd: 300_000,
-        totalSalaryVnd: 8_600_000,
+        totalSalaryVnd: 8_200_000,
         trips: [
           {
             tripId: 202,
             tripCode: 'TRIP-202',
             actualKg: 500,
-            actualKm: 100,
             sharePercent: 100,
             allocatedKg: 500,
-            allocatedKm: 100,
             kgAmountVnd: 250_000,
-            kmAmountVnd: 400_000,
             handlingAmountVnd: 150_000,
             commissionAmountVnd: 300_000,
-            totalAmountVnd: 1_100_000,
+            totalAmountVnd: 700_000,
           },
         ],
       },
@@ -162,6 +147,8 @@ describe('httpPayrollApi', () => {
     expect(mapped.kpiTargetKg).toBe(500)
     expect(mapped.kpiAchieved).toBe(true)
     expect(mapped.kpiBonusVnd).toBe(500_000)
+    expect(mapped.penaltyVnd).toBe(50_000)
+    expect(mapped.penaltyNote).toBe('Giao trễ')
     expect(mapped.handlingAmountVnd).toBe(150_000)
     expect(mapped.commissionAmountVnd).toBe(300_000)
     expect(mapped.trips[0]?.metricBasis).toBe('actual')
